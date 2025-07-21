@@ -6,6 +6,9 @@
     "jsx": "react-jsx",
     "lib": ["es2015", "es2016", "es2017", "dom"],
     "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
     "pretty": true,
     "removeComments": true,
     "target": "es2017",
@@ -14,5 +17,6 @@
       "@env/*": ["./src/@development/*", "./src/@production/*"]
     }
   },
-  "files": ["./src/index.tsx"]
+  "files": ["./src/@development/index.tsx", "./src/@production/index.tsx"],
+  "include": ["src", "src/custom.d.ts"]
 }

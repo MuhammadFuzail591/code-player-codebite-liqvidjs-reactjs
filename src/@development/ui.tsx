@@ -1,9 +1,7 @@
 import React from 'react'
-import { createRoot } from 'react-dom/client'
 
 import { cpp } from '@codemirror/lang-cpp'
 
-import { Player, Playback } from 'liqvid'
 
 import {
   basicSetup,

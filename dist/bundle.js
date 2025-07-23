@@ -5933,6 +5933,75 @@ function eventTargetAgnosticAddListener(emitter, name, listener, flags) {
 
 /***/ }),
 
+/***/ 872:
+/***/ ((module, exports) => {
+
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;
+/*!
+    Copyright (c) 2018 Jed Watson.
+    Licensed under the MIT License (MIT), see
+    http://jedwatson.github.io/classnames
+*/
+(function () {
+    'use strict';
+    var hasOwn = {}.hasOwnProperty;
+    function classNames() {
+        var classes = '';
+        for (var i = 0; i < arguments.length; i++) {
+            var arg = arguments[i];
+            if (arg) {
+                classes = appendClass(classes, parseValue(arg));
+            }
+        }
+        return classes;
+    }
+    function parseValue(arg) {
+        if (typeof arg === 'string' || typeof arg === 'number') {
+            return arg;
+        }
+        if (typeof arg !== 'object') {
+            return '';
+        }
+        if (Array.isArray(arg)) {
+            return classNames.apply(null, arg);
+        }
+        if (arg.toString !== Object.prototype.toString && !arg.toString.toString().includes('[native code]')) {
+            return arg.toString();
+        }
+        var classes = '';
+        for (var key in arg) {
+            if (hasOwn.call(arg, key) && arg[key]) {
+                classes = appendClass(classes, key);
+            }
+        }
+        return classes;
+    }
+    function appendClass(value, newClass) {
+        if (!newClass) {
+            return value;
+        }
+        if (value) {
+            return value + ' ' + newClass;
+        }
+        return value + newClass;
+    }
+    if ( true && module.exports) {
+        classNames.default = classNames;
+        module.exports = classNames;
+    }
+    else if (true) {
+        !(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_RESULT__ = (function () {
+            return classNames;
+        }).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
+		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+    }
+    else // removed by dead control flow
+{}
+}());
+
+
+/***/ }),
+
 /***/ 888:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
@@ -8896,6 +8965,114 @@ function getJSON(key) {
         throw new Error(`JSON record "${key}" not loaded`);
     }
     return results[key];
+}
+
+// EXTERNAL MODULE: ./node_modules/classnames/index.js
+var classnames = __webpack_require__(872);
+;// ./node_modules/zustand/esm/react.mjs
+
+
+
+const identity = (arg) => arg;
+function useStore(api, selector = identity) {
+  const slice = react.useSyncExternalStore(
+    api.subscribe,
+    () => selector(api.getState()),
+    () => selector(api.getInitialState())
+  );
+  react.useDebugValue(slice);
+  return slice;
+}
+const createImpl = (createState) => {
+  const api = createStore(createState);
+  const useBoundStore = (selector) => useStore(api, selector);
+  Object.assign(useBoundStore, api);
+  return useBoundStore;
+};
+const create = (createState) => createState ? createImpl(createState) : createImpl;
+
+
+
+;// ./node_modules/@lqv/codebooth/dist/esm/store.mjs
+"use client";
+
+
+
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+const makeStore = (state = {}) => createStore()(subscribeWithSelector((_set, get) => ({
+    // default values
+    activeGroup: undefined,
+    classNames: ["lqv-codebooth"],
+    getActiveFile() {
+        const state = get();
+        const group = state.groups[state.activeGroup];
+        return group?.files?.find((_) => _.filename === group.activeFile);
+    },
+    getActiveView() {
+        return get().getActiveFile().view;
+    },
+    groups: {},
+    messages: [],
+    recorder: undefined,
+    run: 0,
+    shortcuts: {},
+    ...state,
+})));
+const BoothStore = (0,react.createContext)(null);
+/** Get a reference to the Zustand store for this CodeBooth. See {@link State} for store shape. */
+function store_useBoothStore() {
+    return (0,react.useContext)(BoothStore);
+}
+
+;// ./node_modules/@lqv/codebooth/dist/esm/utils.mjs
+/**
+ * Sanitize a string for use as a CSS class or ID
+ */
+function sanitize(str) {
+    return str.replace(/[^A-Za-z0-9_-]/g, "_");
+}
+const ids = {
+    fileTab: ({ filename, group }) => `lqv-tab-${group}-${sanitize(filename)}`,
+    groupTab: ({ group }) => `lqv-grouptab-${group}`,
+    editorGroup: ({ group }) => `lqv-group-${group}`,
+    editorPanel: ({ filename, group }) => `lqv-panel-${group}-${sanitize(filename)}`,
+};
+
+;// ./node_modules/@lqv/codebooth/dist/esm/components/EditorGroup.mjs
+
+
+
+
+
+
+/** Holds a group of editors. */
+function EditorGroup({ children, className, id, ...attrs }) {
+    const store = store_useBoothStore();
+    const active = useStore(store, (state) => state.activeGroup === id);
+    (0,react.useEffect)(() => {
+        const state = store.getState();
+        if (!state.activeGroup) {
+            store.setState({ activeGroup: id });
+        }
+        return () => {
+            store.setState((prev) => {
+                const newGroups = Object.fromEntries(Object.entries(prev.groups).filter(([key]) => key !== id));
+                return {
+                    ...prev,
+                    activeGroup: prev.activeGroup === id
+                        ? Object.keys(newGroups)[0]
+                        : prev.activeGroup,
+                    groups: newGroups,
+                };
+            });
+        };
+    }, [id, store]);
+    return ((0,jsx_runtime.jsx)("div", { "aria-expanded": active, "aria-labelledby": ids.groupTab({ group: id }), hidden: !active, className: classnames("lqv-editor-group", className), id: ids.editorGroup({ group: id }), role: "tabpanel", ...attrs, children: react.Children.map(children, (node) => {
+            if (typeof node === "object" && node !== null && "props" in node) {
+                return (0,react.cloneElement)(node, { group: id });
+            }
+            return node;
+        }) }));
 }
 
 ;// ./node_modules/@marijn/find-cluster-break/src/index.js
@@ -22121,37 +22298,6 @@ function react_useTime(callback, transform, deps) {
     }, typeof transform === "function" ? deps : transform);
 }
 
-;// ./node_modules/@lqv/codebooth/dist/esm/store.mjs
-"use client";
-
-
-
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-const makeStore = (state = {}) => createStore()(subscribeWithSelector((_set, get) => ({
-    // default values
-    activeGroup: undefined,
-    classNames: ["lqv-codebooth"],
-    getActiveFile() {
-        const state = get();
-        const group = state.groups[state.activeGroup];
-        return group?.files?.find((_) => _.filename === group.activeFile);
-    },
-    getActiveView() {
-        return get().getActiveFile().view;
-    },
-    groups: {},
-    messages: [],
-    recorder: undefined,
-    run: 0,
-    shortcuts: {},
-    ...state,
-})));
-const BoothStore = (0,react.createContext)(null);
-/** Get a reference to the Zustand store for this CodeBooth. See {@link State} for store shape. */
-function store_useBoothStore() {
-    return (0,react.useContext)(BoothStore);
-}
-
 ;// ./node_modules/@lezer/common/dist/index.js
 const DefaultBufferLength = 1024;
 let nextPropID = 0;
@@ -31389,9 +31535,23 @@ function ReplayMultiple({ didScroll, group, handle: propsHandle, replay, scrollB
 
 
 
+
 console.log('Hi there');
 function UI() {
-    return (0,jsx_runtime.jsx)(Replay, { replay: loadJSON('code'), start: 0, filename: 'code.cpp' });
+    const [data, setData] = (0,react.useState)(null);
+    (0,react.useEffect)(() => {
+        loadJSON('code')
+            .then(json => {
+            console.log('Replay data loaded:', json);
+            setData(json);
+        })
+            .catch(err => {
+            console.error('Failed to load replay data:', err);
+        });
+    }, []);
+    if (!data)
+        return (0,jsx_runtime.jsx)("div", { children: "Loading replay..." });
+    return ((0,jsx_runtime.jsx)(EditorGroup, Object.assign({ id: 'replay' }, { children: (0,jsx_runtime.jsx)(Replay, { replay: loadJSON('code') }) })));
 }
 
 ;// ./src/@production/index.tsx

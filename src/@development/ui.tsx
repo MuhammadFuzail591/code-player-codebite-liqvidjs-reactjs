@@ -2,7 +2,6 @@ import React from 'react'
 
 import { cpp } from '@codemirror/lang-cpp'
 
-
 import {
   basicSetup,
   Buttons,
@@ -15,8 +14,7 @@ import {
 import { CodeRecording } from '@lqv/codemirror/recording'
 import { javascript } from '@codemirror/lang-javascript'
 
-function UI () {
-  const content = `
+export const content = `
       // The main function where the program execution begins
     int main() {
     // Create an instance of the Car class
@@ -32,12 +30,12 @@ function UI () {
 }
   `
 
+function UI () {
   const extensions = React.useMemo(() => [basicSetup, cpp(), javascript()], [])
 
   return (
     <CodeBooth recorder={CodeRecording.recorder}>
       <Record
-        content={content}
         extensions={extensions}
         filename='test.ts'
       ></Record>

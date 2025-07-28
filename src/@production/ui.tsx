@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { loadJSON } from '@liqvid/utils/json'
-import { Replay } from '@lqv/codebooth'
+import { CodeBooth, Replay } from '@lqv/codebooth'
 import { cmReplay } from '@lqv/codemirror'
+import { content } from '../@development/ui'
 
 declare module '@liqvid/utils/json' {
   interface GetJSONMap {
@@ -29,6 +30,9 @@ export function UI () {
 
   if (!data) return <div>Loading replay...</div>
 
-  return <h1>Hi there I am Fuzail From codebite</h1>
-  // return <Replay replay={loadJSON('code')} />
+  return (
+    <CodeBooth>
+      <Replay replay={loadJSON('code')} />
+    </CodeBooth>
+  )
 }

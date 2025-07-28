@@ -5280,14 +5280,13 @@ exports.version = "18.3.1-next-f1338f8080-20240426";
 /***/ 458:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
-var __webpack_unused_export__;
 
 var f = __webpack_require__(466), k = Symbol.for("react.element"), l = Symbol.for("react.fragment"), m = Object.prototype.hasOwnProperty, n = f.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentOwner, p = { key: !0, ref: !0, __self: !0, __source: !0 };
 function q(c, a, g) { var b, d = {}, e = null, h = null; void 0 !== g && (e = "" + g); void 0 !== a.key && (e = "" + a.key); void 0 !== a.ref && (h = a.ref); for (b in a)
     m.call(a, b) && !p.hasOwnProperty(b) && (d[b] = a[b]); if (c && c.defaultProps)
     for (b in a = c.defaultProps, a)
         void 0 === d[b] && (d[b] = a[b]); return { $$typeof: k, type: c, key: e, ref: h, props: d, _owner: n.current }; }
-__webpack_unused_export__ = l;
+exports.Fragment = l;
 exports.jsx = q;
 exports.jsxs = q;
 
@@ -6435,7 +6434,7 @@ for (const key of mixedCaseVals) {
 const modifierOrder = Object.keys(modifierMap).map((k) => modifierMap[k]);
 const useCode = ["Backspace", "Enter", "Space", "Tab"];
 /** Maps keyboard shortcuts to actions */
-class Keymap {
+class esm_Keymap {
     constructor() {
         this.__bindings = {};
     }
@@ -6506,7 +6505,7 @@ class Keymap {
             }
             return;
         }
-        seq = Keymap.normalize(seq);
+        seq = esm_Keymap.normalize(seq);
         if (!this.__bindings.hasOwnProperty(seq)) {
             this.__bindings[seq] = [];
         }
@@ -6524,7 +6523,7 @@ class Keymap {
             }
             return;
         }
-        seq = Keymap.normalize(seq);
+        seq = esm_Keymap.normalize(seq);
         if (!this.__bindings.hasOwnProperty(seq)) {
             return;
         }
@@ -6549,7 +6548,7 @@ class Keymap {
     }
     /** Dispatches all handlers matching the given event. */
     handle(e) {
-        const seq = Keymap.identify(e);
+        const seq = esm_Keymap.identify(e);
         if (!this.__bindings[seq] && !this.__bindings["*"])
             return;
         if (this.__bindings[seq]) {
@@ -6589,7 +6588,7 @@ if (!(react_symbol in globalThis)) {
 const KeymapContext = globalThis[react_symbol];
 KeymapContext.displayName = "Keymap";
 /** Access the ambient {@link Keymap} */
-function useKeymap() {
+function react_useKeymap() {
     return (0,react.useContext)(KeymapContext);
 }
 /** Register a keyboard shortcut for the duration of the component. */
@@ -6598,7 +6597,7 @@ function useKeyboardShortcut(
 seq, 
 /** Callback to handle the shortcut */
 callback) {
-    const keymap = useKeymap();
+    const keymap = react_useKeymap();
     useEffect(() => {
         keymap.bind(seq, callback);
         return () => keymap.unbind(seq, callback);
@@ -6742,9 +6741,9 @@ function formatTime(time) {
  * @param time Time in milliseconds
  * @returns Formatted time
  */
-function formatTimeMs(time) {
+function time_formatTimeMs(time) {
     if (time < 0) {
-        return MINUS_SIGN + formatTimeMs(-time);
+        return MINUS_SIGN + time_formatTimeMs(-time);
     }
     const milliseconds = Math.floor(time % 1000);
     if (milliseconds === 0) {
@@ -6895,7 +6894,7 @@ up = () => { }) {
  * @param callback Event listener.
  * @returns A function to remove the event listener.
  */
-function onClick(node, callback) {
+function interaction_onClick(node, callback) {
     if (anyHover) {
         node.addEventListener("click", callback);
         return () => {
@@ -7056,7 +7055,7 @@ function recursiveMap(children, fn) {
  * Get a function to force the component to update
  * @returns A forceUpdate() function
  */
-function useForceUpdate() {
+function react_useForceUpdate() {
     return (0,react.useReducer)((c) => c + 1, 0)[1];
 }
 /**
@@ -7083,7 +7082,7 @@ function usePromise(deps = []) {
 
 
 function ScrubberBar(props) {
-    const keymap = useKeymap();
+    const keymap = react_useKeymap();
     const playback = react_usePlayback();
     const script = useScript();
     const [progress, setProgress] = (0,react.useState)({
@@ -7284,7 +7283,7 @@ function ScrubberBar(props) {
 // hiding timeout
 const TIMEOUT = 3000;
 function Controls(props) {
-    const keymap = useKeymap();
+    const keymap = react_useKeymap();
     const playback = react_usePlayback();
     const [visible, setVisible] = (0,react.useState)(true);
     const timer = (0,react.useRef)(0);
@@ -7339,7 +7338,7 @@ function Controls(props) {
 /** Captions control. */
 function Captions_Captions() {
     const player = usePlayer();
-    const keymap = useKeymap();
+    const keymap = react_useKeymap();
     const [visible, setVisible] = (0,react.useState)(false);
     const toggleCaptions = (0,react.useCallback)((e) => {
         player.canvas.parentElement.classList.toggle("lv-captions");
@@ -7480,8 +7479,8 @@ const toggleFullScreen = () => fake_fullscreen_isFullScreen() ? fake_fullscreen_
 const FullScreen_events = react_onClick(toggleFullScreen);
 /** Fullscreen control */
 function FullScreen() {
-    const keymap = useKeymap();
-    const forceUpdate = useForceUpdate();
+    const keymap = react_useKeymap();
+    const forceUpdate = react_useForceUpdate();
     (0,react.useEffect)(() => {
         // listener
         fake_fullscreen_onFullScreenChange(forceUpdate);
@@ -7518,9 +7517,9 @@ const enterFullScreenIcon = (react.createElement(react.Fragment, null,
 
 /** Control for playing/pausing */
 function PlayPause() {
-    const keymap = useKeymap();
+    const keymap = react_useKeymap();
     const playback = react_usePlayback();
-    const forceUpdate = useForceUpdate();
+    const forceUpdate = react_useForceUpdate();
     (0,react.useEffect)(() => {
         // subscribe to events
         const events = ["pause", "play", "seeking", "seeked", "stop"];
@@ -7574,7 +7573,7 @@ function Settings() {
     const player = usePlayer(), { keymap, playback } = player;
     const [dialog, setDialog] = (0,react.useState)(Dialogs.None);
     const [currentRate, setRate] = (0,react.useState)(playback.playbackRate);
-    const forceUpdate = useForceUpdate();
+    const forceUpdate = react_useForceUpdate();
     (0,react.useEffect)(() => {
         const ratechange = () => setRate(playback.playbackRate);
         const canvasClick = () => setDialog(Dialogs.None);
@@ -7709,7 +7708,7 @@ function get(arr, i) {
 
 function TimeDisplay() {
     const playback = react_usePlayback();
-    const forceUpdate = useForceUpdate();
+    const forceUpdate = react_useForceUpdate();
     (0,react.useEffect)(() => {
         playback.on("durationchange", forceUpdate);
         playback.on("seek", forceUpdate);
@@ -7734,9 +7733,9 @@ function TimeDisplay() {
 
 /** Volume control */
 function Volume() {
-    const keymap = useKeymap();
+    const keymap = react_useKeymap();
     const playback = react_usePlayback();
-    const forceUpdate = useForceUpdate();
+    const forceUpdate = react_useForceUpdate();
     // keyboard controls
     const incrementVolume = (0,react.useCallback)(() => (playback.volume = playback.volume + 0.05), [playback]);
     const decrementVolume = (0,react.useCallback)(() => (playback.volume = playback.volume - 0.05), [playback]);
@@ -7855,7 +7854,7 @@ class Player extends react.PureComponent {
         this.hub = new events.EventEmitter();
         this.__canPlayTasks = [];
         this.__canPlayThroughTasks = [];
-        this.keymap = new Keymap();
+        this.keymap = new esm_Keymap();
         this.captureKeys = true;
         if (props.script) {
             this.script = props.script;
@@ -8921,9 +8920,9 @@ if (isClient && !window.hasOwnProperty("RactivePlayer")) {
 // EXTERNAL MODULE: ./node_modules/react-dom/client.js
 var client = __webpack_require__(572);
 ;// ./static/audio.mp4
-const audio_namespaceObject = __webpack_require__.p + "c979c1b4ce9a054e6a5a.mp4";
+const audio_namespaceObject = __webpack_require__.p + "f6ebd4599cb3dd48ca46.mp4";
 ;// ./static/audio.webm
-const static_audio_namespaceObject_0 = __webpack_require__.p + "9659cfb2949cf44771cb.webm";
+const static_audio_namespaceObject_0 = __webpack_require__.p + "1b355384e4b03e7991af.webm";
 ;// ./node_modules/@liqvid/utils/dist/esm/json.mjs
 const results = {};
 /**
@@ -8965,114 +8964,6 @@ function getJSON(key) {
         throw new Error(`JSON record "${key}" not loaded`);
     }
     return results[key];
-}
-
-// EXTERNAL MODULE: ./node_modules/classnames/index.js
-var classnames = __webpack_require__(872);
-;// ./node_modules/zustand/esm/react.mjs
-
-
-
-const identity = (arg) => arg;
-function useStore(api, selector = identity) {
-  const slice = react.useSyncExternalStore(
-    api.subscribe,
-    () => selector(api.getState()),
-    () => selector(api.getInitialState())
-  );
-  react.useDebugValue(slice);
-  return slice;
-}
-const createImpl = (createState) => {
-  const api = createStore(createState);
-  const useBoundStore = (selector) => useStore(api, selector);
-  Object.assign(useBoundStore, api);
-  return useBoundStore;
-};
-const create = (createState) => createState ? createImpl(createState) : createImpl;
-
-
-
-;// ./node_modules/@lqv/codebooth/dist/esm/store.mjs
-"use client";
-
-
-
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-const makeStore = (state = {}) => createStore()(subscribeWithSelector((_set, get) => ({
-    // default values
-    activeGroup: undefined,
-    classNames: ["lqv-codebooth"],
-    getActiveFile() {
-        const state = get();
-        const group = state.groups[state.activeGroup];
-        return group?.files?.find((_) => _.filename === group.activeFile);
-    },
-    getActiveView() {
-        return get().getActiveFile().view;
-    },
-    groups: {},
-    messages: [],
-    recorder: undefined,
-    run: 0,
-    shortcuts: {},
-    ...state,
-})));
-const BoothStore = (0,react.createContext)(null);
-/** Get a reference to the Zustand store for this CodeBooth. See {@link State} for store shape. */
-function store_useBoothStore() {
-    return (0,react.useContext)(BoothStore);
-}
-
-;// ./node_modules/@lqv/codebooth/dist/esm/utils.mjs
-/**
- * Sanitize a string for use as a CSS class or ID
- */
-function sanitize(str) {
-    return str.replace(/[^A-Za-z0-9_-]/g, "_");
-}
-const ids = {
-    fileTab: ({ filename, group }) => `lqv-tab-${group}-${sanitize(filename)}`,
-    groupTab: ({ group }) => `lqv-grouptab-${group}`,
-    editorGroup: ({ group }) => `lqv-group-${group}`,
-    editorPanel: ({ filename, group }) => `lqv-panel-${group}-${sanitize(filename)}`,
-};
-
-;// ./node_modules/@lqv/codebooth/dist/esm/components/EditorGroup.mjs
-
-
-
-
-
-
-/** Holds a group of editors. */
-function EditorGroup({ children, className, id, ...attrs }) {
-    const store = store_useBoothStore();
-    const active = useStore(store, (state) => state.activeGroup === id);
-    (0,react.useEffect)(() => {
-        const state = store.getState();
-        if (!state.activeGroup) {
-            store.setState({ activeGroup: id });
-        }
-        return () => {
-            store.setState((prev) => {
-                const newGroups = Object.fromEntries(Object.entries(prev.groups).filter(([key]) => key !== id));
-                return {
-                    ...prev,
-                    activeGroup: prev.activeGroup === id
-                        ? Object.keys(newGroups)[0]
-                        : prev.activeGroup,
-                    groups: newGroups,
-                };
-            });
-        };
-    }, [id, store]);
-    return ((0,jsx_runtime.jsx)("div", { "aria-expanded": active, "aria-labelledby": ids.groupTab({ group: id }), hidden: !active, className: classnames("lqv-editor-group", className), id: ids.editorGroup({ group: id }), role: "tabpanel", ...attrs, children: react.Children.map(children, (node) => {
-            if (typeof node === "object" && node !== null && "props" in node) {
-                return (0,react.cloneElement)(node, { group: id });
-            }
-            return node;
-        }) }));
 }
 
 ;// ./node_modules/@marijn/find-cluster-break/src/index.js
@@ -21776,398 +21667,6 @@ const __test = { HeightMap, HeightOracle, MeasuredHeights, QueryType, ChangedRan
     moveVisually, clearHeightChangeFlag, getHeightChangeFlag: () => heightChangeFlag };
 
 
-;// ./node_modules/@lqv/codemirror/dist/esm/fake-selection.mjs
-
-
-const FakeSelection = dist_StateEffect.define();
-const fakeSelectionConfig = Facet.define({
-    combine(configs) {
-        return combineConfig(configs, {
-            cursorBlinkRate: 1200,
-            cursorStyle: "block",
-            drawRangeCursor: true,
-        }, {
-            cursorBlinkRate: (a, b) => a ?? b,
-            cursorStyle: (a, b) => a ?? b,
-            drawRangeCursor: (a, b) => a ?? b,
-        });
-    },
-});
-/**
- * CodeMirror extension to imitate selections in replay.
- */
-function fakeSelection(config = {}) {
-    return [
-        fakeSelectionConfig.of(config),
-        fakeCursorLayer,
-        fakeSelectionLayer,
-        style,
-    ];
-}
-/// Retrieve the [`drawSelection`](#view.drawSelection) configuration
-/// for this state. (Note that this will return a set of defaults even
-/// if `drawSelection` isn't enabled.)
-function getDrawFakeSelectionConfig(state) {
-    return state.facet(fakeSelectionConfig);
-}
-function fake_selection_configChanged(update) {
-    return (update.startState.facet(fakeSelectionConfig) !==
-        update.state.facet(fakeSelectionConfig));
-}
-const fakeCursorLayer = dist_layer({
-    above: true,
-    markers(view) {
-        const { state } = view;
-        const conf = state.facet(fakeSelectionConfig);
-        const cursors = [];
-        if (!this.range)
-            return [];
-        for (const r of [this.range]) {
-            if (r.empty || conf.drawRangeCursor) {
-                const className = conf.cursorStyle === "block"
-                    ? "lqv-fakeCursorBlock"
-                    : "lqv-fakeCursorColumn";
-                const cursor = r.empty
-                    ? r
-                    : dist_EditorSelection.cursor(r.head, r.head > r.anchor ? -1 : 1);
-                for (const piece of RectangleMarker.forRange(view, className, cursor))
-                    cursors.push(piece);
-            }
-        }
-        return cursors;
-    },
-    update(update, dom) {
-        const effects = update.transactions
-            .map((tr) => tr.effects.filter((e) => e.is(FakeSelection)))
-            .reduce((a, b) => a.concat(b), []);
-        const confChange = fake_selection_configChanged(update);
-        if (confChange)
-            fake_selection_setBlinkRate(update.state, dom);
-        if (effects.length === 0) {
-            return update.docChanged || update.selectionSet || confChange;
-        }
-        if (effects.length > 0) {
-            dom.style.animationName =
-                dom.style.animationName === "lqv-blink" ? "lqv-blink2" : "lqv-blink";
-            this.range = SelectionRange.fromJSON(effects[effects.length - 1].value);
-            return true;
-        }
-    },
-    mount(dom, view) {
-        fake_selection_setBlinkRate(view.state, dom);
-    },
-    class: "lqv-fakeCursorLayer",
-});
-function fake_selection_setBlinkRate(state, dom) {
-    dom.style.animationDuration = `${state.facet(fakeSelectionConfig).cursorBlinkRate}ms`;
-}
-const fakeSelectionLayer = dist_layer({
-    above: false,
-    markers(view) {
-        if (!this.range) {
-            return [];
-        }
-        return RectangleMarker.forRange(view, "lqv-fakeSelectionBackground", this.range);
-    },
-    update(update) {
-        const effects = update.transactions
-            .map((tr) => tr.effects.filter((e) => e.is(FakeSelection)))
-            .reduce((a, b) => a.concat(b), []);
-        if (effects.length === 0) {
-            return (update.docChanged ||
-                update.selectionSet ||
-                update.viewportChanged ||
-                fake_selection_configChanged(update));
-        }
-        if (effects.length > 0) {
-            this.range = SelectionRange.fromJSON(effects[effects.length - 1].value);
-            return true;
-        }
-    },
-    class: "lqv-fakeSelectionLayer",
-});
-const themeSpec = {
-    ".lqv-fakeSelectionBackground": {
-        background: "#d7d4f0",
-    },
-    ".lqv-fakeCursorLayer": {
-        animation: "steps(1) lqv-blink 1.2s infinite",
-        pointerEvents: "none",
-    },
-    // Two animations defined so that we can switch between them to
-    // restart the animation without forcing another style
-    // recomputation.
-    "@keyframes lqv-blink": { "0%": {}, "50%": { opacity: 0 }, "100%": {} },
-    "@keyframes lqv-blink2": { "0%": {}, "50%": { opacity: 0 }, "100%": {} },
-    ".lqv-fakeCursorBlock": {
-        background: "#f00a",
-        width: "1ch",
-        marginLeft: "-0.6px",
-        pointerEvents: "none",
-    },
-    ".lqv-fakeCursorColumn": {
-        borderLeft: "1.2px solid black",
-        marginLeft: "-0.6px",
-        pointerEvents: "none",
-    },
-};
-const style = Prec.highest(EditorView.theme(themeSpec));
-
-;// ./node_modules/@lqv/codemirror/dist/esm/index.mjs
-
-
-
-/** Reserved command for specifying file. */
-const esm_selectCmd = "file:";
-/** Reserved string for specifying scroll actions. */
-const scrollCmd = "s";
-/** Key for the default view (in single-file mode). */
-const defaultViewName = "default";
-/**
- * Replay typing in CodeMirror.
- * @returns Unsubscription function.
- */
-function cmReplay({ data, handle, playback, scrollBehavior, didScroll, shouldScroll = () => true, start, view, }) {
-    return esm_cmReplayMultiple({
-        data: [[0, esm_selectCmd + defaultViewName], ...data],
-        handle: (key, docs) => handle(key, docs.default),
-        playback,
-        scrollBehavior,
-        didScroll: (_filename, scrollToOptions) => {
-            didScroll?.(scrollToOptions);
-        },
-        shouldScroll,
-        start,
-        views: {
-            [defaultViewName]: view,
-        },
-    });
-}
-/**
- * Replay typing to several CodeMirror instances in parallel.
- * @returns Unsubscription function.
- */
-function esm_cmReplayMultiple({ data, didScroll, handle, playback, scrollBehavior = "auto", shouldScroll = () => true, start = 0, views, }) {
-    /** Current file being replayed into */
-    let file = undefined;
-    // validation
-    if (!(data.length > 0 &&
-        data[0][0] === 0 &&
-        typeof data[0][1] === "string" &&
-        data[0][1].startsWith(esm_selectCmd))) {
-        throw new Error("First command must have time 0 and select the file");
-    }
-    // we're going to mess with data, clone it
-    data = JSON.parse(JSON.stringify(data));
-    /* unpackage */
-    // decompress times
-    const times = data.map((_) => _[0]);
-    for (let i = 1; i < times.length; ++i)
-        times[i] += times[i - 1];
-    // deserialize changesets
-    for (const [, action] of data) {
-        // changeset
-        if (Array.isArray(action) && Array.isArray(action[0])) {
-            action[0] = ChangeSet.fromJSON(action[0]);
-        }
-    }
-    // for scrolling in legacy recordings
-    const hasScroll = {};
-    for (const key in views) {
-        hasScroll[key] = false;
-    }
-    // initialize inverses
-    const inverses = {};
-    const lastScroll = {};
-    for (const key in views) {
-        inverses[key] = [];
-        lastScroll[key] = [0, 0];
-    }
-    // compute inverses
-    {
-        const docs = {};
-        for (const key in views) {
-            docs[key] = views[key].state.doc;
-        }
-        for (let i = 0; i < data.length; ++i) {
-            const action = data[i][1];
-            if (Array.isArray(action)) {
-                if (action[0] instanceof ChangeSet) {
-                    // editor change
-                    inverses[file][i] = action[0].invert(docs[file]);
-                    docs[file] = action[0].apply(docs[file]);
-                }
-                else if (action[0] === scrollCmd) {
-                    // scroll
-                    hasScroll[file] = true;
-                    inverses[file][i] = lastScroll[file];
-                    lastScroll[file] = [action[1], action[2] ?? 0];
-                }
-            }
-            else if (action.startsWith(esm_selectCmd)) {
-                file = action.slice(esm_selectCmd.length);
-            }
-        }
-    }
-    /* main logic */
-    let index = 0;
-    let lastTime = 0;
-    const repaint = () => {
-        const t = playback.currentTime;
-        const progress = (t - start) * 1000;
-        const changes = {};
-        for (const key in views) {
-            changes[key] = ChangeSet.empty(views[key].state.doc.length);
-        }
-        const selections = {};
-        // apply / revert changes
-        if (lastTime <= t && index < data.length) {
-            // forward
-            let i = index;
-            for (; i < data.length && times[i] <= progress; ++i) {
-                const action = data[i][1];
-                if (typeof action === "string") {
-                    if (action.startsWith(esm_selectCmd)) {
-                        file = action.slice(esm_selectCmd.length);
-                    }
-                    // handle action
-                    const docs = {};
-                    for (const key in views) {
-                        docs[key] = changes[key].apply(views[key].state.doc);
-                    }
-                    handle(action, docs);
-                }
-                else {
-                    if (action[0] === scrollCmd) {
-                        if (shouldScroll(file)) {
-                            // scroll
-                            const [, y, x = 0] = action;
-                            const fontSize = getFontSize(views[file]);
-                            if (!Number.isNaN(fontSize)) {
-                                const scrollToOptions = {
-                                    left: x * fontSize,
-                                    top: y * fontSize,
-                                    behavior: scrollBehavior,
-                                };
-                                views[file].scrollDOM.scrollTo(scrollToOptions);
-                                didScroll?.(file, scrollToOptions);
-                            }
-                        }
-                    }
-                    else {
-                        // editor change
-                        changes[file] = changes[file].compose(action[0]);
-                        // handle selection
-                        if (action[1]) {
-                            const [anchor, head] = action[1];
-                            selections[file] = { anchor, head };
-                        }
-                    }
-                }
-            }
-            index = i;
-        }
-        else if (t < lastTime && 0 < index) {
-            // revert
-            let i = index - 1;
-            for (; 0 <= i && progress < times[i]; --i) {
-                if (inverses[file][i]) {
-                    const inverse = inverses[file][i];
-                    // editor change
-                    if (inverse instanceof ChangeSet) {
-                        changes[file] = changes[file].compose(inverses[file][i]);
-                    }
-                    // scroll
-                    else if (inverses[file][i].length === 2) {
-                        if (shouldScroll(file)) {
-                            const [y, x] = inverses[file][i];
-                            const fontSize = getFontSize(views[file]);
-                            if (!Number.isNaN(fontSize)) {
-                                const scrollToOptions = {
-                                    left: x * fontSize,
-                                    top: y * fontSize,
-                                    behavior: scrollBehavior,
-                                };
-                                views[file].scrollDOM.scrollTo(scrollToOptions);
-                                didScroll?.(file, scrollToOptions);
-                            }
-                        }
-                    }
-                }
-                else if (data[i][1] === esm_selectCmd + file) {
-                    // find file to replay into
-                    for (let j = i - 1; 0 <= j; --j) {
-                        const action = data[j][1];
-                        if (typeof action === "string" && action.startsWith(esm_selectCmd)) {
-                            file = action.slice(esm_selectCmd.length);
-                            // XXX figure out how to handle more general actions
-                            handle(action, {});
-                            break;
-                        }
-                    }
-                }
-            }
-            index = i + 1;
-        }
-        for (const key in views) {
-            const effects = selections[key]
-                ? [FakeSelection.of(selections[key])]
-                : undefined;
-            const view = views[key];
-            view.dispatch(view.state.update({
-                changes: changes[key],
-                effects,
-            }));
-            // scrolling for legacy recordings
-            const scrollIntoView = !hasScroll[key] && shouldScroll(key);
-            if (scrollIntoView) {
-                // get position of last change
-                let pos;
-                changes[key].iterChangedRanges((_fromA, _toA, _fromB, toB) => {
-                    pos = toB;
-                });
-                // changes can be empty
-                if (pos === undefined) {
-                    return;
-                }
-                const { scrollDOM } = view;
-                const rect = scrollDOM.getBoundingClientRect();
-                // it isn't possible to measure things that are offscreen
-                const line = view.state.doc.lineAt(pos);
-                const wordTop = view.defaultLineHeight * (line.number - 1);
-                if (wordTop < scrollDOM.scrollTop) {
-                    const scrollToOptions = {
-                        behavior: scrollBehavior,
-                        top: wordTop,
-                    };
-                    scrollDOM.scrollTo(scrollToOptions);
-                    didScroll?.(key, scrollToOptions);
-                }
-                else if (wordTop > scrollDOM.scrollTop + rect.height) {
-                    const scrollToOptions = {
-                        behavior: scrollBehavior,
-                        top: wordTop - rect.height + view.defaultLineHeight,
-                    };
-                    scrollDOM.scrollTo(scrollToOptions);
-                    didScroll?.(key, scrollToOptions);
-                }
-            }
-        }
-        lastTime = t;
-    };
-    /* subscribe */
-    playback.addEventListener("seeking", repaint);
-    playback.addEventListener("timeupdate", repaint);
-    return () => {
-        playback.removeEventListener("seeking", repaint);
-        playback.removeEventListener("timeupdate", repaint);
-    };
-}
-/** Get the fontSize of a view's scrollDOM. */
-function getFontSize(view) {
-    return Number.parseFloat(getComputedStyle(view.scrollDOM).fontSize);
-}
-
 ;// ./node_modules/@lqv/playback/dist/esm/hack.mjs
 /** Hack to make Liqvid behave like {@link MediaElement}. */
 const PlaybackMEProxy = {
@@ -22297,6 +21796,32 @@ function react_useTime(callback, transform, deps) {
         };
     }, typeof transform === "function" ? deps : transform);
 }
+
+// EXTERNAL MODULE: ./node_modules/classnames/index.js
+var classnames = __webpack_require__(872);
+;// ./node_modules/zustand/esm/react.mjs
+
+
+
+const identity = (arg) => arg;
+function useStore(api, selector = identity) {
+  const slice = react.useSyncExternalStore(
+    api.subscribe,
+    () => selector(api.getState()),
+    () => selector(api.getInitialState())
+  );
+  react.useDebugValue(slice);
+  return slice;
+}
+const createImpl = (createState) => {
+  const api = createStore(createState);
+  const useBoundStore = (selector) => useStore(api, selector);
+  Object.assign(useBoundStore, api);
+  return useBoundStore;
+};
+const create = (createState) => createState ? createImpl(createState) : createImpl;
+
+
 
 ;// ./node_modules/@lezer/common/dist/index.js
 const DefaultBufferLength = 1024;
@@ -31260,7 +30785,7 @@ const searchExtensions = [
 
 
 
-const basicSetup = [
+const extensions_basicSetup = [
     lineNumbers(),
     highlightActiveLineGutter(),
     highlightSpecialChars(),
@@ -31295,6 +30820,982 @@ const basicSetup = [
 ];
 const recording = new Compartment();
 const shortcuts = new Compartment();
+
+;// ./node_modules/zustand/esm/vanilla.mjs
+const createStoreImpl = (createState) => {
+  let state;
+  const listeners = /* @__PURE__ */ new Set();
+  const setState = (partial, replace) => {
+    const nextState = typeof partial === "function" ? partial(state) : partial;
+    if (!Object.is(nextState, state)) {
+      const previousState = state;
+      state = (replace != null ? replace : typeof nextState !== "object" || nextState === null) ? nextState : Object.assign({}, state, nextState);
+      listeners.forEach((listener) => listener(state, previousState));
+    }
+  };
+  const getState = () => state;
+  const getInitialState = () => initialState;
+  const subscribe = (listener) => {
+    listeners.add(listener);
+    return () => listeners.delete(listener);
+  };
+  const api = { setState, getState, getInitialState, subscribe };
+  const initialState = state = createState(setState, getState, api);
+  return api;
+};
+const vanilla_createStore = (createState) => createState ? createStoreImpl(createState) : createStoreImpl;
+
+
+
+;// ./node_modules/zustand/esm/middleware.mjs
+const reduxImpl = (reducer, initial) => (set, _get, api) => {
+  api.dispatch = (action) => {
+    set((state) => reducer(state, action), false, action);
+    return action;
+  };
+  api.dispatchFromDevtools = true;
+  return { dispatch: (...args) => api.dispatch(...args), ...initial };
+};
+const redux = (/* unused pure expression or super */ null && (reduxImpl));
+
+const trackedConnections = /* @__PURE__ */ new Map();
+const getTrackedConnectionState = (name) => {
+  const api = trackedConnections.get(name);
+  if (!api) return {};
+  return Object.fromEntries(
+    Object.entries(api.stores).map(([key, api2]) => [key, api2.getState()])
+  );
+};
+const extractConnectionInformation = (store, extensionConnector, options) => {
+  if (store === void 0) {
+    return {
+      type: "untracked",
+      connection: extensionConnector.connect(options)
+    };
+  }
+  const existingConnection = trackedConnections.get(options.name);
+  if (existingConnection) {
+    return { type: "tracked", store, ...existingConnection };
+  }
+  const newConnection = {
+    connection: extensionConnector.connect(options),
+    stores: {}
+  };
+  trackedConnections.set(options.name, newConnection);
+  return { type: "tracked", store, ...newConnection };
+};
+const removeStoreFromTrackedConnections = (name, store) => {
+  if (store === void 0) return;
+  const connectionInfo = trackedConnections.get(name);
+  if (!connectionInfo) return;
+  delete connectionInfo.stores[store];
+  if (Object.keys(connectionInfo.stores).length === 0) {
+    trackedConnections.delete(name);
+  }
+};
+const findCallerName = (stack) => {
+  var _a, _b;
+  if (!stack) return void 0;
+  const traceLines = stack.split("\n");
+  const apiSetStateLineIndex = traceLines.findIndex(
+    (traceLine) => traceLine.includes("api.setState")
+  );
+  if (apiSetStateLineIndex < 0) return void 0;
+  const callerLine = ((_a = traceLines[apiSetStateLineIndex + 1]) == null ? void 0 : _a.trim()) || "";
+  return (_b = /.+ (.+) .+/.exec(callerLine)) == null ? void 0 : _b[1];
+};
+const devtoolsImpl = (fn, devtoolsOptions = {}) => (set, get, api) => {
+  const { enabled, anonymousActionType, store, ...options } = devtoolsOptions;
+  let extensionConnector;
+  try {
+    extensionConnector = (enabled != null ? enabled : ( false ? 0 : void 0) !== "production") && window.__REDUX_DEVTOOLS_EXTENSION__;
+  } catch (e) {
+  }
+  if (!extensionConnector) {
+    return fn(set, get, api);
+  }
+  const { connection, ...connectionInformation } = extractConnectionInformation(store, extensionConnector, options);
+  let isRecording = true;
+  api.setState = (state, replace, nameOrAction) => {
+    const r = set(state, replace);
+    if (!isRecording) return r;
+    const action = nameOrAction === void 0 ? {
+      type: anonymousActionType || findCallerName(new Error().stack) || "anonymous"
+    } : typeof nameOrAction === "string" ? { type: nameOrAction } : nameOrAction;
+    if (store === void 0) {
+      connection == null ? void 0 : connection.send(action, get());
+      return r;
+    }
+    connection == null ? void 0 : connection.send(
+      {
+        ...action,
+        type: `${store}/${action.type}`
+      },
+      {
+        ...getTrackedConnectionState(options.name),
+        [store]: api.getState()
+      }
+    );
+    return r;
+  };
+  api.devtools = {
+    cleanup: () => {
+      if (connection && typeof connection.unsubscribe === "function") {
+        connection.unsubscribe();
+      }
+      removeStoreFromTrackedConnections(options.name, store);
+    }
+  };
+  const setStateFromDevtools = (...a) => {
+    const originalIsRecording = isRecording;
+    isRecording = false;
+    set(...a);
+    isRecording = originalIsRecording;
+  };
+  const initialState = fn(api.setState, get, api);
+  if (connectionInformation.type === "untracked") {
+    connection == null ? void 0 : connection.init(initialState);
+  } else {
+    connectionInformation.stores[connectionInformation.store] = api;
+    connection == null ? void 0 : connection.init(
+      Object.fromEntries(
+        Object.entries(connectionInformation.stores).map(([key, store2]) => [
+          key,
+          key === connectionInformation.store ? initialState : store2.getState()
+        ])
+      )
+    );
+  }
+  if (api.dispatchFromDevtools && typeof api.dispatch === "function") {
+    let didWarnAboutReservedActionType = false;
+    const originalDispatch = api.dispatch;
+    api.dispatch = (...args) => {
+      if (( false ? 0 : void 0) !== "production" && args[0].type === "__setState" && !didWarnAboutReservedActionType) {
+        console.warn(
+          '[zustand devtools middleware] "__setState" action type is reserved to set state from the devtools. Avoid using it.'
+        );
+        didWarnAboutReservedActionType = true;
+      }
+      originalDispatch(...args);
+    };
+  }
+  connection.subscribe((message) => {
+    var _a;
+    switch (message.type) {
+      case "ACTION":
+        if (typeof message.payload !== "string") {
+          console.error(
+            "[zustand devtools middleware] Unsupported action format"
+          );
+          return;
+        }
+        return parseJsonThen(
+          message.payload,
+          (action) => {
+            if (action.type === "__setState") {
+              if (store === void 0) {
+                setStateFromDevtools(action.state);
+                return;
+              }
+              if (Object.keys(action.state).length !== 1) {
+                console.error(
+                  `
+                    [zustand devtools middleware] Unsupported __setState action format.
+                    When using 'store' option in devtools(), the 'state' should have only one key, which is a value of 'store' that was passed in devtools(),
+                    and value of this only key should be a state object. Example: { "type": "__setState", "state": { "abc123Store": { "foo": "bar" } } }
+                    `
+                );
+              }
+              const stateFromDevtools = action.state[store];
+              if (stateFromDevtools === void 0 || stateFromDevtools === null) {
+                return;
+              }
+              if (JSON.stringify(api.getState()) !== JSON.stringify(stateFromDevtools)) {
+                setStateFromDevtools(stateFromDevtools);
+              }
+              return;
+            }
+            if (!api.dispatchFromDevtools) return;
+            if (typeof api.dispatch !== "function") return;
+            api.dispatch(action);
+          }
+        );
+      case "DISPATCH":
+        switch (message.payload.type) {
+          case "RESET":
+            setStateFromDevtools(initialState);
+            if (store === void 0) {
+              return connection == null ? void 0 : connection.init(api.getState());
+            }
+            return connection == null ? void 0 : connection.init(getTrackedConnectionState(options.name));
+          case "COMMIT":
+            if (store === void 0) {
+              connection == null ? void 0 : connection.init(api.getState());
+              return;
+            }
+            return connection == null ? void 0 : connection.init(getTrackedConnectionState(options.name));
+          case "ROLLBACK":
+            return parseJsonThen(message.state, (state) => {
+              if (store === void 0) {
+                setStateFromDevtools(state);
+                connection == null ? void 0 : connection.init(api.getState());
+                return;
+              }
+              setStateFromDevtools(state[store]);
+              connection == null ? void 0 : connection.init(getTrackedConnectionState(options.name));
+            });
+          case "JUMP_TO_STATE":
+          case "JUMP_TO_ACTION":
+            return parseJsonThen(message.state, (state) => {
+              if (store === void 0) {
+                setStateFromDevtools(state);
+                return;
+              }
+              if (JSON.stringify(api.getState()) !== JSON.stringify(state[store])) {
+                setStateFromDevtools(state[store]);
+              }
+            });
+          case "IMPORT_STATE": {
+            const { nextLiftedState } = message.payload;
+            const lastComputedState = (_a = nextLiftedState.computedStates.slice(-1)[0]) == null ? void 0 : _a.state;
+            if (!lastComputedState) return;
+            if (store === void 0) {
+              setStateFromDevtools(lastComputedState);
+            } else {
+              setStateFromDevtools(lastComputedState[store]);
+            }
+            connection == null ? void 0 : connection.send(
+              null,
+              // FIXME no-any
+              nextLiftedState
+            );
+            return;
+          }
+          case "PAUSE_RECORDING":
+            return isRecording = !isRecording;
+        }
+        return;
+    }
+  });
+  return initialState;
+};
+const devtools = (/* unused pure expression or super */ null && (devtoolsImpl));
+const parseJsonThen = (stringified, fn) => {
+  let parsed;
+  try {
+    parsed = JSON.parse(stringified);
+  } catch (e) {
+    console.error(
+      "[zustand devtools middleware] Could not parse the received json",
+      e
+    );
+  }
+  if (parsed !== void 0) fn(parsed);
+};
+
+const subscribeWithSelectorImpl = (fn) => (set, get, api) => {
+  const origSubscribe = api.subscribe;
+  api.subscribe = (selector, optListener, options) => {
+    let listener = selector;
+    if (optListener) {
+      const equalityFn = (options == null ? void 0 : options.equalityFn) || Object.is;
+      let currentSlice = selector(api.getState());
+      listener = (state) => {
+        const nextSlice = selector(state);
+        if (!equalityFn(currentSlice, nextSlice)) {
+          const previousSlice = currentSlice;
+          optListener(currentSlice = nextSlice, previousSlice);
+        }
+      };
+      if (options == null ? void 0 : options.fireImmediately) {
+        optListener(currentSlice, currentSlice);
+      }
+    }
+    return origSubscribe(listener);
+  };
+  const initialState = fn(set, get, api);
+  return initialState;
+};
+const subscribeWithSelector = subscribeWithSelectorImpl;
+
+function combine(initialState, create) {
+  return (...args) => Object.assign({}, initialState, create(...args));
+}
+
+function createJSONStorage(getStorage, options) {
+  let storage;
+  try {
+    storage = getStorage();
+  } catch (e) {
+    return;
+  }
+  const persistStorage = {
+    getItem: (name) => {
+      var _a;
+      const parse = (str2) => {
+        if (str2 === null) {
+          return null;
+        }
+        return JSON.parse(str2, options == null ? void 0 : options.reviver);
+      };
+      const str = (_a = storage.getItem(name)) != null ? _a : null;
+      if (str instanceof Promise) {
+        return str.then(parse);
+      }
+      return parse(str);
+    },
+    setItem: (name, newValue) => storage.setItem(name, JSON.stringify(newValue, options == null ? void 0 : options.replacer)),
+    removeItem: (name) => storage.removeItem(name)
+  };
+  return persistStorage;
+}
+const toThenable = (fn) => (input) => {
+  try {
+    const result = fn(input);
+    if (result instanceof Promise) {
+      return result;
+    }
+    return {
+      then(onFulfilled) {
+        return toThenable(onFulfilled)(result);
+      },
+      catch(_onRejected) {
+        return this;
+      }
+    };
+  } catch (e) {
+    return {
+      then(_onFulfilled) {
+        return this;
+      },
+      catch(onRejected) {
+        return toThenable(onRejected)(e);
+      }
+    };
+  }
+};
+const persistImpl = (config, baseOptions) => (set, get, api) => {
+  let options = {
+    storage: createJSONStorage(() => localStorage),
+    partialize: (state) => state,
+    version: 0,
+    merge: (persistedState, currentState) => ({
+      ...currentState,
+      ...persistedState
+    }),
+    ...baseOptions
+  };
+  let hasHydrated = false;
+  const hydrationListeners = /* @__PURE__ */ new Set();
+  const finishHydrationListeners = /* @__PURE__ */ new Set();
+  let storage = options.storage;
+  if (!storage) {
+    return config(
+      (...args) => {
+        console.warn(
+          `[zustand persist middleware] Unable to update item '${options.name}', the given storage is currently unavailable.`
+        );
+        set(...args);
+      },
+      get,
+      api
+    );
+  }
+  const setItem = () => {
+    const state = options.partialize({ ...get() });
+    return storage.setItem(options.name, {
+      state,
+      version: options.version
+    });
+  };
+  const savedSetState = api.setState;
+  api.setState = (state, replace) => {
+    savedSetState(state, replace);
+    void setItem();
+  };
+  const configResult = config(
+    (...args) => {
+      set(...args);
+      void setItem();
+    },
+    get,
+    api
+  );
+  api.getInitialState = () => configResult;
+  let stateFromStorage;
+  const hydrate = () => {
+    var _a, _b;
+    if (!storage) return;
+    hasHydrated = false;
+    hydrationListeners.forEach((cb) => {
+      var _a2;
+      return cb((_a2 = get()) != null ? _a2 : configResult);
+    });
+    const postRehydrationCallback = ((_b = options.onRehydrateStorage) == null ? void 0 : _b.call(options, (_a = get()) != null ? _a : configResult)) || void 0;
+    return toThenable(storage.getItem.bind(storage))(options.name).then((deserializedStorageValue) => {
+      if (deserializedStorageValue) {
+        if (typeof deserializedStorageValue.version === "number" && deserializedStorageValue.version !== options.version) {
+          if (options.migrate) {
+            const migration = options.migrate(
+              deserializedStorageValue.state,
+              deserializedStorageValue.version
+            );
+            if (migration instanceof Promise) {
+              return migration.then((result) => [true, result]);
+            }
+            return [true, migration];
+          }
+          console.error(
+            `State loaded from storage couldn't be migrated since no migrate function was provided`
+          );
+        } else {
+          return [false, deserializedStorageValue.state];
+        }
+      }
+      return [false, void 0];
+    }).then((migrationResult) => {
+      var _a2;
+      const [migrated, migratedState] = migrationResult;
+      stateFromStorage = options.merge(
+        migratedState,
+        (_a2 = get()) != null ? _a2 : configResult
+      );
+      set(stateFromStorage, true);
+      if (migrated) {
+        return setItem();
+      }
+    }).then(() => {
+      postRehydrationCallback == null ? void 0 : postRehydrationCallback(stateFromStorage, void 0);
+      stateFromStorage = get();
+      hasHydrated = true;
+      finishHydrationListeners.forEach((cb) => cb(stateFromStorage));
+    }).catch((e) => {
+      postRehydrationCallback == null ? void 0 : postRehydrationCallback(void 0, e);
+    });
+  };
+  api.persist = {
+    setOptions: (newOptions) => {
+      options = {
+        ...options,
+        ...newOptions
+      };
+      if (newOptions.storage) {
+        storage = newOptions.storage;
+      }
+    },
+    clearStorage: () => {
+      storage == null ? void 0 : storage.removeItem(options.name);
+    },
+    getOptions: () => options,
+    rehydrate: () => hydrate(),
+    hasHydrated: () => hasHydrated,
+    onHydrate: (cb) => {
+      hydrationListeners.add(cb);
+      return () => {
+        hydrationListeners.delete(cb);
+      };
+    },
+    onFinishHydration: (cb) => {
+      finishHydrationListeners.add(cb);
+      return () => {
+        finishHydrationListeners.delete(cb);
+      };
+    }
+  };
+  if (!options.skipHydration) {
+    hydrate();
+  }
+  return stateFromStorage || configResult;
+};
+const persist = (/* unused pure expression or super */ null && (persistImpl));
+
+
+
+;// ./node_modules/@lqv/codebooth/dist/esm/store.mjs
+"use client";
+
+
+
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+const makeStore = (state = {}) => vanilla_createStore()(subscribeWithSelector((_set, get) => ({
+    // default values
+    activeGroup: undefined,
+    classNames: ["lqv-codebooth"],
+    getActiveFile() {
+        const state = get();
+        const group = state.groups[state.activeGroup];
+        return group?.files?.find((_) => _.filename === group.activeFile);
+    },
+    getActiveView() {
+        return get().getActiveFile().view;
+    },
+    groups: {},
+    messages: [],
+    recorder: undefined,
+    run: 0,
+    shortcuts: {},
+    ...state,
+})));
+const BoothStore = (0,react.createContext)(null);
+/** Get a reference to the Zustand store for this CodeBooth. See {@link State} for store shape. */
+function store_useBoothStore() {
+    return (0,react.useContext)(BoothStore);
+}
+
+;// ./node_modules/@lqv/codebooth/dist/esm/index.mjs
+
+
+
+
+
+
+
+
+// buttons
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * Container for code editing/recording/replaying.
+ */
+const esm_CodeBooth = ({ children, className, recorder, ...attrs }) => {
+    const store = (0,react.useRef)();
+    if (!store.current) {
+        store.current = makeStore({ recorder });
+    }
+    const stateClassNames = useStore(store.current, (state) => state.classNames);
+    /* render */
+    return ((0,jsx_runtime.jsx)("div", { className: classnames(stateClassNames, className), "data-affords": "click", ...attrs, children: (0,jsx_runtime.jsx)(BoothStore.Provider, { value: store.current, children: (0,jsx_runtime.jsxs)(react_PlaybackContext.Provider, { value: react_useME(), children: [(0,jsx_runtime.jsx)(KeyboardShortcuts, {}), children] }) }) }));
+};
+function KeyboardShortcuts() {
+    const store = store_useBoothStore();
+    (0,react.useEffect)(() => {
+        // this is somewhat wasteful but oh well
+        function reconfigure() {
+            const state = store.getState();
+            for (const groupName in state.groups) {
+                for (const { view } of state.groups[groupName].files) {
+                    view.dispatch({
+                        effects: shortcuts.reconfigure([
+                            keymap.of(Object.values(state.shortcuts)),
+                        ]),
+                    });
+                }
+            }
+        }
+        const unsubs = [];
+        // update with new shortcuts
+        unsubs.push(store.subscribe((state) => state.shortcuts, reconfigure));
+        // update with new editors
+        unsubs.push(store.subscribe((state) => state.groups, reconfigure));
+        return () => {
+            for (const unsub of unsubs) {
+                unsub();
+            }
+        };
+    }, [store]);
+    return null;
+}
+
+;// ./node_modules/@lqv/codemirror/dist/esm/fake-selection.mjs
+
+
+const FakeSelection = dist_StateEffect.define();
+const fakeSelectionConfig = Facet.define({
+    combine(configs) {
+        return combineConfig(configs, {
+            cursorBlinkRate: 1200,
+            cursorStyle: "block",
+            drawRangeCursor: true,
+        }, {
+            cursorBlinkRate: (a, b) => a ?? b,
+            cursorStyle: (a, b) => a ?? b,
+            drawRangeCursor: (a, b) => a ?? b,
+        });
+    },
+});
+/**
+ * CodeMirror extension to imitate selections in replay.
+ */
+function fakeSelection(config = {}) {
+    return [
+        fakeSelectionConfig.of(config),
+        fakeCursorLayer,
+        fakeSelectionLayer,
+        style,
+    ];
+}
+/// Retrieve the [`drawSelection`](#view.drawSelection) configuration
+/// for this state. (Note that this will return a set of defaults even
+/// if `drawSelection` isn't enabled.)
+function getDrawFakeSelectionConfig(state) {
+    return state.facet(fakeSelectionConfig);
+}
+function fake_selection_configChanged(update) {
+    return (update.startState.facet(fakeSelectionConfig) !==
+        update.state.facet(fakeSelectionConfig));
+}
+const fakeCursorLayer = dist_layer({
+    above: true,
+    markers(view) {
+        const { state } = view;
+        const conf = state.facet(fakeSelectionConfig);
+        const cursors = [];
+        if (!this.range)
+            return [];
+        for (const r of [this.range]) {
+            if (r.empty || conf.drawRangeCursor) {
+                const className = conf.cursorStyle === "block"
+                    ? "lqv-fakeCursorBlock"
+                    : "lqv-fakeCursorColumn";
+                const cursor = r.empty
+                    ? r
+                    : dist_EditorSelection.cursor(r.head, r.head > r.anchor ? -1 : 1);
+                for (const piece of RectangleMarker.forRange(view, className, cursor))
+                    cursors.push(piece);
+            }
+        }
+        return cursors;
+    },
+    update(update, dom) {
+        const effects = update.transactions
+            .map((tr) => tr.effects.filter((e) => e.is(FakeSelection)))
+            .reduce((a, b) => a.concat(b), []);
+        const confChange = fake_selection_configChanged(update);
+        if (confChange)
+            fake_selection_setBlinkRate(update.state, dom);
+        if (effects.length === 0) {
+            return update.docChanged || update.selectionSet || confChange;
+        }
+        if (effects.length > 0) {
+            dom.style.animationName =
+                dom.style.animationName === "lqv-blink" ? "lqv-blink2" : "lqv-blink";
+            this.range = SelectionRange.fromJSON(effects[effects.length - 1].value);
+            return true;
+        }
+    },
+    mount(dom, view) {
+        fake_selection_setBlinkRate(view.state, dom);
+    },
+    class: "lqv-fakeCursorLayer",
+});
+function fake_selection_setBlinkRate(state, dom) {
+    dom.style.animationDuration = `${state.facet(fakeSelectionConfig).cursorBlinkRate}ms`;
+}
+const fakeSelectionLayer = dist_layer({
+    above: false,
+    markers(view) {
+        if (!this.range) {
+            return [];
+        }
+        return RectangleMarker.forRange(view, "lqv-fakeSelectionBackground", this.range);
+    },
+    update(update) {
+        const effects = update.transactions
+            .map((tr) => tr.effects.filter((e) => e.is(FakeSelection)))
+            .reduce((a, b) => a.concat(b), []);
+        if (effects.length === 0) {
+            return (update.docChanged ||
+                update.selectionSet ||
+                update.viewportChanged ||
+                fake_selection_configChanged(update));
+        }
+        if (effects.length > 0) {
+            this.range = SelectionRange.fromJSON(effects[effects.length - 1].value);
+            return true;
+        }
+    },
+    class: "lqv-fakeSelectionLayer",
+});
+const themeSpec = {
+    ".lqv-fakeSelectionBackground": {
+        background: "#d7d4f0",
+    },
+    ".lqv-fakeCursorLayer": {
+        animation: "steps(1) lqv-blink 1.2s infinite",
+        pointerEvents: "none",
+    },
+    // Two animations defined so that we can switch between them to
+    // restart the animation without forcing another style
+    // recomputation.
+    "@keyframes lqv-blink": { "0%": {}, "50%": { opacity: 0 }, "100%": {} },
+    "@keyframes lqv-blink2": { "0%": {}, "50%": { opacity: 0 }, "100%": {} },
+    ".lqv-fakeCursorBlock": {
+        background: "#f00a",
+        width: "1ch",
+        marginLeft: "-0.6px",
+        pointerEvents: "none",
+    },
+    ".lqv-fakeCursorColumn": {
+        borderLeft: "1.2px solid black",
+        marginLeft: "-0.6px",
+        pointerEvents: "none",
+    },
+};
+const style = Prec.highest(EditorView.theme(themeSpec));
+
+;// ./node_modules/@lqv/codemirror/dist/esm/index.mjs
+
+
+
+/** Reserved command for specifying file. */
+const esm_selectCmd = "file:";
+/** Reserved string for specifying scroll actions. */
+const scrollCmd = "s";
+/** Key for the default view (in single-file mode). */
+const defaultViewName = "default";
+/**
+ * Replay typing in CodeMirror.
+ * @returns Unsubscription function.
+ */
+function cmReplay({ data, handle, playback, scrollBehavior, didScroll, shouldScroll = () => true, start, view, }) {
+    return esm_cmReplayMultiple({
+        data: [[0, esm_selectCmd + defaultViewName], ...data],
+        handle: (key, docs) => handle(key, docs.default),
+        playback,
+        scrollBehavior,
+        didScroll: (_filename, scrollToOptions) => {
+            didScroll?.(scrollToOptions);
+        },
+        shouldScroll,
+        start,
+        views: {
+            [defaultViewName]: view,
+        },
+    });
+}
+/**
+ * Replay typing to several CodeMirror instances in parallel.
+ * @returns Unsubscription function.
+ */
+function esm_cmReplayMultiple({ data, didScroll, handle, playback, scrollBehavior = "auto", shouldScroll = () => true, start = 0, views, }) {
+    /** Current file being replayed into */
+    let file = undefined;
+    // validation
+    if (!(data.length > 0 &&
+        data[0][0] === 0 &&
+        typeof data[0][1] === "string" &&
+        data[0][1].startsWith(esm_selectCmd))) {
+        throw new Error("First command must have time 0 and select the file");
+    }
+    // we're going to mess with data, clone it
+    data = JSON.parse(JSON.stringify(data));
+    /* unpackage */
+    // decompress times
+    const times = data.map((_) => _[0]);
+    for (let i = 1; i < times.length; ++i)
+        times[i] += times[i - 1];
+    // deserialize changesets
+    for (const [, action] of data) {
+        // changeset
+        if (Array.isArray(action) && Array.isArray(action[0])) {
+            action[0] = ChangeSet.fromJSON(action[0]);
+        }
+    }
+    // for scrolling in legacy recordings
+    const hasScroll = {};
+    for (const key in views) {
+        hasScroll[key] = false;
+    }
+    // initialize inverses
+    const inverses = {};
+    const lastScroll = {};
+    for (const key in views) {
+        inverses[key] = [];
+        lastScroll[key] = [0, 0];
+    }
+    // compute inverses
+    {
+        const docs = {};
+        for (const key in views) {
+            docs[key] = views[key].state.doc;
+        }
+        for (let i = 0; i < data.length; ++i) {
+            const action = data[i][1];
+            if (Array.isArray(action)) {
+                if (action[0] instanceof ChangeSet) {
+                    // editor change
+                    inverses[file][i] = action[0].invert(docs[file]);
+                    docs[file] = action[0].apply(docs[file]);
+                }
+                else if (action[0] === scrollCmd) {
+                    // scroll
+                    hasScroll[file] = true;
+                    inverses[file][i] = lastScroll[file];
+                    lastScroll[file] = [action[1], action[2] ?? 0];
+                }
+            }
+            else if (action.startsWith(esm_selectCmd)) {
+                file = action.slice(esm_selectCmd.length);
+            }
+        }
+    }
+    /* main logic */
+    let index = 0;
+    let lastTime = 0;
+    const repaint = () => {
+        const t = playback.currentTime;
+        const progress = (t - start) * 1000;
+        const changes = {};
+        for (const key in views) {
+            changes[key] = ChangeSet.empty(views[key].state.doc.length);
+        }
+        const selections = {};
+        // apply / revert changes
+        if (lastTime <= t && index < data.length) {
+            // forward
+            let i = index;
+            for (; i < data.length && times[i] <= progress; ++i) {
+                const action = data[i][1];
+                if (typeof action === "string") {
+                    if (action.startsWith(esm_selectCmd)) {
+                        file = action.slice(esm_selectCmd.length);
+                    }
+                    // handle action
+                    const docs = {};
+                    for (const key in views) {
+                        docs[key] = changes[key].apply(views[key].state.doc);
+                    }
+                    handle(action, docs);
+                }
+                else {
+                    if (action[0] === scrollCmd) {
+                        if (shouldScroll(file)) {
+                            // scroll
+                            const [, y, x = 0] = action;
+                            const fontSize = getFontSize(views[file]);
+                            if (!Number.isNaN(fontSize)) {
+                                const scrollToOptions = {
+                                    left: x * fontSize,
+                                    top: y * fontSize,
+                                    behavior: scrollBehavior,
+                                };
+                                views[file].scrollDOM.scrollTo(scrollToOptions);
+                                didScroll?.(file, scrollToOptions);
+                            }
+                        }
+                    }
+                    else {
+                        // editor change
+                        changes[file] = changes[file].compose(action[0]);
+                        // handle selection
+                        if (action[1]) {
+                            const [anchor, head] = action[1];
+                            selections[file] = { anchor, head };
+                        }
+                    }
+                }
+            }
+            index = i;
+        }
+        else if (t < lastTime && 0 < index) {
+            // revert
+            let i = index - 1;
+            for (; 0 <= i && progress < times[i]; --i) {
+                if (inverses[file][i]) {
+                    const inverse = inverses[file][i];
+                    // editor change
+                    if (inverse instanceof ChangeSet) {
+                        changes[file] = changes[file].compose(inverses[file][i]);
+                    }
+                    // scroll
+                    else if (inverses[file][i].length === 2) {
+                        if (shouldScroll(file)) {
+                            const [y, x] = inverses[file][i];
+                            const fontSize = getFontSize(views[file]);
+                            if (!Number.isNaN(fontSize)) {
+                                const scrollToOptions = {
+                                    left: x * fontSize,
+                                    top: y * fontSize,
+                                    behavior: scrollBehavior,
+                                };
+                                views[file].scrollDOM.scrollTo(scrollToOptions);
+                                didScroll?.(file, scrollToOptions);
+                            }
+                        }
+                    }
+                }
+                else if (data[i][1] === esm_selectCmd + file) {
+                    // find file to replay into
+                    for (let j = i - 1; 0 <= j; --j) {
+                        const action = data[j][1];
+                        if (typeof action === "string" && action.startsWith(esm_selectCmd)) {
+                            file = action.slice(esm_selectCmd.length);
+                            // XXX figure out how to handle more general actions
+                            handle(action, {});
+                            break;
+                        }
+                    }
+                }
+            }
+            index = i + 1;
+        }
+        for (const key in views) {
+            const effects = selections[key]
+                ? [FakeSelection.of(selections[key])]
+                : undefined;
+            const view = views[key];
+            view.dispatch(view.state.update({
+                changes: changes[key],
+                effects,
+            }));
+            // scrolling for legacy recordings
+            const scrollIntoView = !hasScroll[key] && shouldScroll(key);
+            if (scrollIntoView) {
+                // get position of last change
+                let pos;
+                changes[key].iterChangedRanges((_fromA, _toA, _fromB, toB) => {
+                    pos = toB;
+                });
+                // changes can be empty
+                if (pos === undefined) {
+                    return;
+                }
+                const { scrollDOM } = view;
+                const rect = scrollDOM.getBoundingClientRect();
+                // it isn't possible to measure things that are offscreen
+                const line = view.state.doc.lineAt(pos);
+                const wordTop = view.defaultLineHeight * (line.number - 1);
+                if (wordTop < scrollDOM.scrollTop) {
+                    const scrollToOptions = {
+                        behavior: scrollBehavior,
+                        top: wordTop,
+                    };
+                    scrollDOM.scrollTo(scrollToOptions);
+                    didScroll?.(key, scrollToOptions);
+                }
+                else if (wordTop > scrollDOM.scrollTop + rect.height) {
+                    const scrollToOptions = {
+                        behavior: scrollBehavior,
+                        top: wordTop - rect.height + view.defaultLineHeight,
+                    };
+                    scrollDOM.scrollTo(scrollToOptions);
+                    didScroll?.(key, scrollToOptions);
+                }
+            }
+        }
+        lastTime = t;
+    };
+    /* subscribe */
+    playback.addEventListener("seeking", repaint);
+    playback.addEventListener("timeupdate", repaint);
+    return () => {
+        playback.removeEventListener("seeking", repaint);
+        playback.removeEventListener("timeupdate", repaint);
+    };
+}
+/** Get the fontSize of a view's scrollDOM. */
+function getFontSize(view) {
+    return Number.parseFloat(getComputedStyle(view.scrollDOM).fontSize);
+}
 
 ;// ./node_modules/@lqv/codebooth/dist/esm/components/Editor.mjs
 
@@ -31531,13 +32032,856 @@ function ReplayMultiple({ didScroll, group, handle: propsHandle, replay, scrollB
     return null;
 }
 
+;// ./node_modules/@liqvid/recording/dist/esm/recorder.mjs
+/**
+ * Abstract class for recording interactions.
+ */
+class Recorder {
+    constructor() {
+        /**
+         * A recorder is intransigent if it cannot be started immediately (e.g. AudioRecorder).
+         */
+        this.intransigent = false;
+    }
+    /** Begin recording. */
+    beginRecording() { }
+    /** Pause recording. */
+    pauseRecording() { }
+    /** Resume recording from paused. */
+    resumeRecording() { }
+    /** End recording. */
+    endRecording() { }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    finalizeRecording(data, startDelay = 0, stopDelay = 0) {
+        return data;
+    }
+    provide({ push, manager, }) {
+        this.push = push;
+        this.manager = manager;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    getUpdate(data, lastDuration) { }
+}
+
+;// ./node_modules/@liqvid/recording/dist/esm/recorders/audio-recording.mjs
+
+
+
+const icon = ((0,jsx_runtime.jsx)("g", { transform: "scale(0.126261032057) translate(164.575)", children: (0,jsx_runtime.jsxs)("g", { stroke: "#FFF", transform: "translate(-140.62 -173.21)", children: [(0,jsx_runtime.jsx)("path", { d: "m568.57 620.93c0 116.77-94.66 211.43-211.43 211.43s-211.43-94.66-211.43-211.43v-0.00001", fillOpacity: "0", transform: "translate(14.904)", strokeLinecap: "round", strokeWidth: "20" }), (0,jsx_runtime.jsx)("path", { d: "m568.57 620.93c0 116.77-94.66 211.43-211.43 211.43s-211.43-94.66-211.43-211.43v-0.00001", fillOpacity: "0", transform: "translate(14.904)", strokeLinecap: "round", strokeWidth: "40" }), (0,jsx_runtime.jsx)("path", { d: "m372.05 832.36v114.29", strokeWidth: "30", fill: "none" }), (0,jsx_runtime.jsx)("path", { fill: "#FFF", d: "m197.14 920.93c0.00001-18.935 59.482-34.286 132.86-34.286 73.375 0 132.86 15.35 132.86 34.286z", transform: "translate(42.047 34.286)", strokeLinecap: "round", strokeWidth: "20" }), (0,jsx_runtime.jsx)("path", { fill: "#FFF", strokeWidth: "21.455", strokeLinecap: "round", d: "m372.06 183.94c-77.019-0.00001-139.47 62.45-139.47 139.47v289.62c0 77.019 62.45 139.47 139.47 139.47 77.019 0 139.44-62.45 139.44-139.47v-289.62c0-77.02-62.42-139.47-139.44-139.47z" })] }) }));
+class AudioRecorder extends Recorder {
+    constructor() {
+        super(...arguments);
+        this.requested = false;
+        this.intransigent = true;
+    }
+    beginRecording() {
+        if (!this.stream)
+            throw new Error("Navigator stream not available");
+        this.promise = new Promise(async (resolve) => {
+            // record the audio
+            this.mediaRecorder = new MediaRecorder(this.stream, {
+                mimeType: "audio/webm",
+            });
+            // subscribe to events
+            this.mediaRecorder.addEventListener("dataavailable", (e) => {
+                this.push(e.data);
+            });
+            let startDelay;
+            this.mediaRecorder.addEventListener("start", () => {
+                startDelay = this.manager.getTime();
+            });
+            this.mediaRecorder.addEventListener("stop", () => {
+                resolve([startDelay, this.manager.getTime()]);
+            });
+            this.mediaRecorder.start();
+        });
+    }
+    pauseRecording() {
+        this.mediaRecorder.pause();
+    }
+    resumeRecording() {
+        this.mediaRecorder.resume();
+    }
+    async endRecording() {
+        this.mediaRecorder.stop();
+        return this.promise;
+    }
+    finalizeRecording(chunks) {
+        return new Blob(chunks, { type: "audio/webm" });
+    }
+    requestRecording(constraints = { audio: true }) {
+        // be idempotent
+        if (this.requested)
+            return;
+        const request = async () => {
+            // Only need to do this once...
+            window.removeEventListener("click", request);
+            try {
+                this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+            }
+            catch (e) {
+                // User said no or browser rejected request due to insecure context
+                console.log("no recording allowed");
+            }
+        };
+        // Need user interaction to request media
+        window.addEventListener("click", request);
+        this.requested = true;
+    }
+}
+function AudioSaveComponent(props) {
+    return ((0,jsx_runtime.jsx)(jsx_runtime.Fragment, { children: props.data ? ((0,jsx_runtime.jsx)("a", { download: "audio.webm", href: URL.createObjectURL(props.data), children: "Download Audio" })) : ("Audio not yet available") }));
+}
+const recorder = new AudioRecorder();
+const AudioRecording = {
+    enabled: () => {
+        if (typeof recorder.stream === "undefined") {
+            if (ssr_isClient)
+                recorder.requestRecording();
+            return false;
+        }
+        return true;
+    },
+    icon,
+    key: "audio",
+    name: "Audio",
+    recorder,
+    saveComponent: AudioSaveComponent,
+    title: "Record audio",
+};
+
+;// ./node_modules/@liqvid/recording/dist/esm/recorders/marker-recording.mjs
+
+
+
+
+const marker_recording_icon = ((0,jsx_runtime.jsx)("text", { fill: "#FFF", fontFamily: "Helvetica", fontSize: "75", textAnchor: "middle", x: "50", y: "75", children: "M" }));
+class MarkerRecorder extends Recorder {
+    constructor() {
+        super();
+        bind(this, ["onMarkerUpdate"]);
+    }
+    beginRecording() {
+        this.lastTime = 0;
+        this.script.on("markerupdate", this.onMarkerUpdate);
+    }
+    endRecording() {
+        this.script.off("markerupdate", this.onMarkerUpdate);
+        this.captureMarker(this.script.markerName);
+    }
+    finalizeRecording(data, startDelay, stopDelay) {
+        data[0][1] -= startDelay;
+        data[data.length - 1][1] += stopDelay;
+        return data.map((cue) => [cue[0], time_formatTimeMs(cue[1])]);
+    }
+    onMarkerUpdate(prevIndex) {
+        if (this.manager.paused)
+            return;
+        this.captureMarker(this.script.markers[prevIndex][0]);
+    }
+    captureMarker(markerName) {
+        const t = this.manager.getTime();
+        this.push([markerName, t - this.lastTime]);
+        this.lastTime = t;
+    }
+}
+function MarkerSaveComponent(props) {
+    return ((0,jsx_runtime.jsx)(jsx_runtime.Fragment, { children: (0,jsx_runtime.jsx)("textarea", { readOnly: true, value: format(props.data) }) }));
+}
+const MarkerRecording = {
+    icon: marker_recording_icon,
+    key: "markers",
+    name: "Markers",
+    recorder: new MarkerRecorder(),
+    saveComponent: MarkerSaveComponent,
+};
+function format(data) {
+    return JSON.stringify(data, null, 2).replace(/\[\s+"(.+?)",\s+"(.+?)"\s+\]/g, '["$1", "$2"]');
+}
+
+;// ./node_modules/@liqvid/recording/dist/esm/RecordingManager.mjs
+
+
+/**
+ * Class for managing recording sessions.
+ */
+class RecordingManager_RecordingManager extends events.EventEmitter {
+    constructor() {
+        super();
+        this.captureData = {};
+        this.setMaxListeners(0);
+        this.paused = false;
+        this.active = false;
+        bind(this, [
+            "beginRecording",
+            "endRecording",
+            "pauseRecording",
+            "resumeRecording",
+            "capture",
+        ]);
+    }
+    /**
+     * Begin recording.
+     *
+     * @emits start
+     */
+    beginRecording(plugins) {
+        this.plugins = plugins;
+        // initialize
+        this.pauseTime = 0;
+        this.intransigentRecorder = void 0;
+        // dependency injection for plugins
+        for (const key in this.plugins) {
+            const recorder = this.plugins[key];
+            recorder.provide({
+                push: (value) => this.capture(key, value),
+                manager: this,
+            });
+            this.captureData[key] = [];
+            if (recorder.intransigent) {
+                if (this.intransigentRecorder)
+                    throw new Error("At most one intransigent recorder is allowed");
+                this.intransigentRecorder = recorder;
+            }
+        }
+        // call this as close as possible to beginRecording() to minimize "lag"
+        this.baseTime = performance.now();
+        for (const key in this.plugins) {
+            this.plugins[key].beginRecording();
+        }
+        this.paused = false;
+        this.active = true;
+        this.emit("start");
+    }
+    /**
+     * Commit a piece of recording data.
+     * @param key Key for recording source.
+     * @param value Data to record.
+     *
+     * @emits capture
+     */
+    capture(key, value) {
+        this.captureData[key].push(value);
+        this.emit("capture", key, value);
+    }
+    /**
+     * End recording and collect finalized data from recorders.
+     *
+     * @emits finalize
+     */
+    async endRecording() {
+        const endTime = this.getTime();
+        this.duration = endTime;
+        const recording = {};
+        let startDelay = 0, stopDelay = 0;
+        let promise;
+        // stop intransigentRecorder
+        if (this.intransigentRecorder) {
+            promise =
+                this.intransigentRecorder.endRecording();
+        }
+        // stop other recorders
+        for (const key in this.plugins) {
+            if (this.plugins[key] === this.intransigentRecorder)
+                continue;
+            this.plugins[key].endRecording();
+        }
+        // get start/stop delays from intransigentRecorder
+        if (this.intransigentRecorder) {
+            try {
+                const [startTime, stopTime] = await promise;
+                startDelay = startTime;
+                stopDelay = stopTime - endTime;
+                this.duration = this.duration + stopDelay - startDelay;
+            }
+            catch (e) {
+                startDelay = 0;
+                stopDelay = 0;
+                console.error(e);
+            }
+        }
+        // finalize
+        for (const key in this.plugins) {
+            recording[key] = this.plugins[key].finalizeRecording(this.captureData[key], startDelay, stopDelay);
+            this.emit("finalize", key, recording[key]);
+        }
+        this.active = false;
+        this.emit("finalize", undefined, undefined);
+        return recording;
+    }
+    /** Get current recording time. */
+    getTime() {
+        return performance.now() - this.baseTime - this.pauseTime;
+    }
+    /**
+     * Pause recording.
+     *
+     * @emits pause
+     */
+    pauseRecording() {
+        this.lastPauseTime = performance.now();
+        for (const key in this.plugins) {
+            this.plugins[key].pauseRecording();
+        }
+        this.paused = true;
+        this.emit("pause");
+    }
+    /**
+     * Resume recording from paused state.
+     *
+     * @emits resume
+     */
+    resumeRecording() {
+        this.pauseTime += performance.now() - this.lastPauseTime;
+        for (const key in this.plugins) {
+            this.plugins[key].resumeRecording();
+        }
+        this.paused = false;
+        this.emit("resume");
+    }
+}
+
+;// ./node_modules/@liqvid/recording/dist/esm/RecordingRow.mjs
+
+
+
+function RecordingRow_RecordingRow(props) {
+    const [name, setName] = useState("Untitled");
+    const onChange = useCallback((e) => {
+        setName(e.target.value);
+    }, []);
+    const { data, pluginsByKey } = props;
+    return (_jsxs("li", { className: "recording-row", children: [_jsx("input", { className: "recording-name", onChange: onChange, type: "text", value: name }), _jsxs("table", { className: "recording-results", children: [_jsxs("caption", { children: ["Duration: ", data.duration, " (", formatTimeMs(data.duration), ")"] }), _jsx("tbody", { children: Object.keys(data).map((pluginKey) => {
+                            if (pluginKey === "duration")
+                                return null;
+                            const plugin = pluginsByKey[pluginKey], SaveComponent = plugin.saveComponent;
+                            return (_jsxs("tr", { children: [_jsx("th", { scope: "row", title: plugin.name, children: _jsxs("svg", { className: "recorder-plugin-icon", height: "36", width: "36", viewBox: "0 0 100 100", children: [_jsx("rect", { height: "100", width: "100", fill: "#222" }), plugin.icon] }) }, "head"), _jsx("td", { children: _jsx(SaveComponent, { data: data[pluginKey] }) }, "cell")] }, pluginKey));
+                        }) })] })] }));
+}
+
+;// ./node_modules/@liqvid/recording/dist/esm/Control.mjs
+"use client";
+
+
+
+
+
+
+
+/**
+ * Liqvid recording control.
+ */
+function RecordingControl(props) {
+    const keymap = useKeymap();
+    const [recordings, setRecordings] = useState([]);
+    const forceUpdate = useForceUpdate();
+    // recording manager
+    const manager = useRef();
+    useEffect(() => {
+        manager.current = props.manager ?? new RecordingManager();
+        const eventNames = ["finalize", "start", "pause", "resume"];
+        for (const eventName of eventNames) {
+            manager.current.on(eventName, forceUpdate);
+        }
+        return () => {
+            for (const eventName of eventNames) {
+                manager.current.off(eventName, forceUpdate);
+            }
+        };
+    }, [forceUpdate, props.manager]);
+    // active plugins
+    const activePlugins = useRef(null);
+    if (activePlugins.current === null) {
+        activePlugins.current = {};
+        for (const plugin of props.plugins) {
+            activePlugins.current[plugin.key] = false;
+        }
+    }
+    // plugins dictionary
+    const [pluginsByKey] = useState(() => {
+        const dict = {};
+        for (const plugin of props.plugins) {
+            dict[plugin.key] = plugin;
+        }
+        return dict;
+    });
+    /* commands */
+    const start = useCallback(() => {
+        const { active, beginRecording, endRecording } = manager.current;
+        if (active) {
+            endRecording().then((recording) => {
+                recording.duration = manager.current.duration;
+                setRecordings((prev) => prev.concat(recording));
+            });
+        }
+        else {
+            const recorders = {};
+            for (const plugin of props.plugins) {
+                if (activePlugins.current[plugin.key]) {
+                    recorders[plugin.key] = plugin.recorder;
+                }
+            }
+            beginRecording(recorders);
+        }
+    }, [props.plugins]);
+    const pause = useCallback(() => {
+        const { active, paused, pauseRecording, resumeRecording } = manager.current;
+        if (active) {
+            paused ? resumeRecording() : pauseRecording();
+        }
+    }, []);
+    const discard = useCallback(async () => {
+        const { active, endRecording } = manager.current;
+        if (active) {
+            const listeners = manager.current.listeners("finalize");
+            for (const listener of listeners) {
+                manager.current.off("finalize", listener);
+            }
+            try {
+                await endRecording();
+            }
+            catch (e) {
+                console.error(e);
+            }
+            for (const listener of listeners) {
+                manager.current.on("finalize", listener);
+            }
+            forceUpdate();
+        }
+    }, [forceUpdate]);
+    /* keyboard controls */
+    const callbacks = useMemo(() => ({ start, pause, discard }), [discard, pause, start]);
+    const reducer = useCallback((state, action) => {
+        // return new state
+        return {
+            ...state,
+            [action.command]: action.seq,
+        };
+    }, []);
+    const [state, dispatch] = useReducer(reducer, null, () => ({
+        start: isMac() ? "Alt+Meta+2" : "Ctrl+Alt+2",
+        pause: isMac() ? "Alt+Meta+3" : "Ctrl+Alt+3",
+        discard: isMac() ? "Alt+Meta+4" : "Ctrl+Alt+4",
+    }));
+    // bind
+    useEffect(() => {
+        for (const key of Object.keys(state)) {
+            keymap.bind(state[key], callbacks[key]);
+        }
+        return () => {
+            for (const key of Object.keys(state)) {
+                keymap.unbind(state[key], callbacks[key]);
+            }
+        };
+    }, [callbacks, keymap, state]);
+    // onBlur event, triggers rebind
+    const onBlur = useCallback((e) => {
+        e.preventDefault();
+        const name = e.currentTarget.getAttribute("name");
+        // bind sequence
+        const seq = e.currentTarget.dataset.value;
+        dispatch({ command: name, seq });
+    }, []);
+    // display shortcut sequence
+    const identifyKey = useCallback((e) => {
+        e.preventDefault();
+        const seq = Keymap.identify(e);
+        e.currentTarget.dataset.value = seq;
+        e.currentTarget.value = fmtSeq(seq);
+    }, []);
+    // warn before closing if recordings exist
+    const warn = useRef(false);
+    warn.current = recordings.length > 0;
+    useEffect(() => {
+        window.addEventListener("beforeunload", (e) => {
+            if (warn.current)
+                e.returnValue = "You have recording data";
+        });
+    }, []);
+    // show/hide control pane
+    const [paneOpen, setPaneOpen] = useState(false);
+    const togglePane = useMemo(() => onClick(() => {
+        setPaneOpen((prev) => !prev);
+    }), []);
+    const dialogStyle = {
+        display: paneOpen ? "block" : "none",
+    };
+    // toggle plugin
+    const setActive = useMemo(() => onClick((e) => {
+        const key = e.currentTarget.dataset.plugin;
+        activePlugins.current[key] = !activePlugins.current[key];
+        forceUpdate();
+    }), [forceUpdate]);
+    /* render */
+    const commands = [
+        ["Start/Stop recording", "start"],
+        ["Pause recording", "pause"],
+        ["Discard recording", "discard"],
+    ];
+    return (_jsxs("div", { id: "lv-recording", children: [_jsxs("div", { id: "lv-recording-dialog", style: dialogStyle, children: [_jsx("table", { id: "lv-recording-configuration", children: _jsxs("tbody", { children: [_jsx("tr", { children: _jsx("th", { colSpan: 2, children: "Commands" }) }), commands.map(([desc, key]) => (_jsxs("tr", { children: [_jsx("th", { scope: "row", children: desc }), _jsx("td", { children: _jsx("input", { onBlur: onBlur, readOnly: true, onKeyDown: identifyKey, className: "shortcut", name: key, type: "text", value: fmtSeq(state[key]) }) })] }, key)))] }) }), _jsx("h3", { children: "Configuration" }), props.plugins.map((plugin) => {
+                        const classNames = ["recorder-plugin-icon"];
+                        if (activePlugins.current[plugin.key])
+                            classNames.push("active");
+                        const styles = {};
+                        const enabled = typeof plugin.enabled === "undefined" || plugin.enabled();
+                        if (!enabled) {
+                            styles.opacity = 0.3;
+                        }
+                        return (_jsxs("div", { className: "recorder-plugin", title: plugin.title, style: styles, children: [_jsxs("svg", { className: classNames.join(" "), height: "36", width: "36", viewBox: "0 0 100 100", "data-plugin": plugin.key, ...(enabled ? setActive : {}), children: [_jsx("rect", { height: "100", width: "100", fill: activePlugins.current[plugin.key] ? "red" : "#222" }), plugin.icon] }), _jsx("span", { className: "recorder-plugin-name", children: plugin.name })] }, plugin.key));
+                    }), _jsx("h3", { children: "Saved data" }), _jsx("ol", { className: "recordings", children: recordings.map((recording, i) => (_jsx(RecordingRow, { data: recording, pluginsByKey: pluginsByKey }, i))) })] }), _jsx("svg", { height: "36", width: "36", viewBox: "-50 -50 100 100", ...togglePane, children: _jsx("circle", { cx: "0", cy: "0", r: "35", stroke: "white", strokeWidth: "5", fill: manager.current?.active
+                        ? manager.current?.paused
+                            ? "yellow"
+                            : "red"
+                        : "#666" }) })] }));
+}
+/** Format key sequences with special characters on Mac */
+function fmtSeq(str) {
+    if (!isMac())
+        return str;
+    if (str === void 0)
+        return str;
+    return str
+        .split("+")
+        .map((k) => {
+        if (k === "Ctrl")
+            return "^";
+        else if (k === "Alt")
+            return "⌥";
+        if (k === "Shift")
+            return "⇧";
+        if (k === "Meta")
+            return "⌘";
+        return k;
+    })
+        .join("");
+}
+function isMac() {
+    return (typeof globalThis.navigator !== "undefined" &&
+        navigator.platform === "MacIntel");
+}
+
+;// ./node_modules/@liqvid/recording/dist/esm/recorders/replay-data-recorder.mjs
+
+class ReplayDataRecorder extends Recorder {
+    constructor() {
+        super();
+        this.duration = 0;
+    }
+    beginRecording() {
+        this.duration = 0;
+    }
+    finalizeRecording(data) {
+        // for (let sum = 0, i = 0; i < data.length && sum < startDelay; ++i) {
+        //   const dur = data[i][0];
+        //   if (dur === 0) {
+        //     continue;
+        //   }
+        //   if (sum + dur >= startDelay) {
+        //     data[i][0] -= startDelay - sum;
+        //     break;
+        //   }
+        //   sum += dur;
+        //   // data.splice(i, 1);
+        //   --i;
+        // }
+        // console.log(JSON.stringify(data, null, 2));
+        return compress(data);
+    }
+    capture(time = this.manager.getTime(), data) {
+        if (time - this.duration < 0) {
+            // console.error(time, this.duration, data);
+        }
+        this.push([time - this.duration, data]);
+        this.duration = time;
+    }
+}
+/**
+ * Truncate numerical precision to reduce filesize.
+ * @param o Data to compress.
+ * @param precision Number of decimal points to include.
+ */
+function compress(o, precision = 2) {
+    switch (typeof o) {
+        case "object":
+            if (o instanceof Array) {
+                return o.map((val) => compress(val, precision));
+            }
+            if (o === null) {
+                return o;
+            }
+            return Object.fromEntries(Object.keys(o).map((key) => [
+                key,
+                compress(o[key], precision),
+            ]));
+        case "number":
+            return parseFloat(o.toFixed(precision));
+        default:
+            return o;
+    }
+}
+
+;// ./node_modules/@liqvid/recording/dist/esm/recorders/video-recording.mjs
+
+
+
+const video_recording_icon = ((0,jsx_runtime.jsx)("path", { fill: "#FFF", d: "M35.113 14.703a4.558 4.558 0 0 0-4.568 4.568v2.338h-11.29A13.146 13.146 0 0 0 6.082 34.787v37.018a13.142 13.142 0 0 0 13.173 13.172H80.74a13.147 13.147 0 0 0 13.178-13.172V34.787A13.146 13.146 0 0 0 80.74 21.61H69.455v-2.338a4.558 4.558 0 0 0-4.568-4.568H35.113ZM50 31.196c12.18 0 22.103 9.917 22.103 22.097 0 12.18-9.923 22.103-22.103 22.103-12.181 0-22.103-9.923-22.103-22.103 0-12.18 9.922-22.097 22.103-22.097Zm-30.073.835a4.59 4.59 0 0 1 4.59 4.59h.006a4.59 4.59 0 1 1-4.595-4.59ZM50 35.536a17.721 17.721 0 0 0-17.757 17.757A17.722 17.722 0 0 0 50 71.05a17.723 17.723 0 0 0 17.757-17.757A17.722 17.722 0 0 0 50 35.536Z" }));
+class VideoRecorder extends Recorder {
+    constructor() {
+        super(...arguments);
+        this.requested = false;
+        this.intransigent = true;
+    }
+    beginRecording() {
+        if (!this.stream)
+            throw new Error("Navigator stream not available");
+        this.promise = new Promise(async (resolve) => {
+            // record the video
+            this.mediaRecorder = new MediaRecorder(this.stream, {
+                mimeType: "video/webm",
+            });
+            // subscribe to events
+            this.mediaRecorder.addEventListener("dataavailable", (e) => {
+                this.push(e.data);
+            });
+            let startDelay;
+            this.mediaRecorder.addEventListener("start", () => {
+                startDelay = this.manager.getTime();
+            });
+            this.mediaRecorder.addEventListener("stop", () => {
+                resolve([startDelay, this.manager.getTime()]);
+            });
+            this.mediaRecorder.start();
+        });
+    }
+    pauseRecording() {
+        this.mediaRecorder.pause();
+    }
+    resumeRecording() {
+        this.mediaRecorder.resume();
+    }
+    async endRecording() {
+        this.mediaRecorder.stop();
+        return this.promise;
+    }
+    finalizeRecording(chunks) {
+        return new Blob(chunks, { type: "video/webm" });
+    }
+    requestRecording(constraints = { audio: true, video: true }) {
+        // be idempotent
+        if (this.requested)
+            return;
+        const request = async () => {
+            // Only need to do this once...
+            window.removeEventListener("click", request);
+            try {
+                this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+            }
+            catch (e) {
+                // User said no or browser rejected request due to insecure context
+                console.log("no recording allowed");
+            }
+        };
+        // Need user interaction to request media
+        window.addEventListener("click", request);
+        this.requested = true;
+    }
+}
+function VideoSaveComponent(props) {
+    return ((0,jsx_runtime.jsx)(jsx_runtime.Fragment, { children: props.data ? ((0,jsx_runtime.jsx)("a", { download: "video.webm", href: URL.createObjectURL(props.data), children: "Download Video" })) : ("Video not yet available") }));
+}
+const video_recording_recorder = new VideoRecorder();
+const VideoRecording = {
+    enabled: () => {
+        if (typeof video_recording_recorder.stream === "undefined") {
+            if (ssr_isClient)
+                video_recording_recorder.requestRecording();
+            return false;
+        }
+        return true;
+    },
+    icon: video_recording_icon,
+    key: "video",
+    name: "Video",
+    recorder: video_recording_recorder,
+    saveComponent: VideoSaveComponent,
+    title: "Record video",
+};
+
+;// ./node_modules/@liqvid/recording/dist/esm/index.mjs
+
+
+
+
+
+
+
+
+;// ./node_modules/@lqv/codemirror/dist/esm/icon.mjs
+
+const icon_icon = ((0,jsx_runtime.jsx)("g", { transform: "scale(0.5333333333)", children: (0,jsx_runtime.jsxs)("g", { transform: "translate(-138.61 -857.23)", children: [(0,jsx_runtime.jsx)("rect", { style: {
+                    strokeLinejoin: "round",
+                    stroke: "#FFF",
+                    strokeLinecap: "round",
+                    strokeWidth: 3.8521,
+                    fill: "#FFF",
+                }, rx: "9.4681", ry: "14.97", height: "58.455", width: "121.82", y: "931.93", x: "171.45" }), (0,jsx_runtime.jsx)("path", { style: {
+                    stroke: "#000",
+                    strokeDasharray: "4.9175124 4.9175124",
+                    strokeWidth: 4.9175,
+                    fill: "none",
+                }, d: "m184.06 947.36h94.08" }), (0,jsx_runtime.jsx)("path", { style: {
+                    stroke: "#000",
+                    strokeDasharray: "4.9175124 4.9175124",
+                    strokeWidth: 4.9175,
+                    fill: "none",
+                }, d: "m184.06 957.05h94.08" }), (0,jsx_runtime.jsx)("path", { style: {
+                    stroke: "#000",
+                    strokeDasharray: "4.9175124 4.9175124",
+                    strokeWidth: 4.9175,
+                    fill: "none",
+                }, d: "m184.06 966.75h94.08" }), (0,jsx_runtime.jsx)("path", { style: {
+                    stroke: "#FFF",
+                    strokeWidth: 4.9175,
+                    fill: "none",
+                }, d: "m184.06 977.23h94.08" }), (0,jsx_runtime.jsx)("path", { style: {
+                    stroke: "#FFF",
+                    strokeLinecap: "round",
+                    strokeWidth: 4.3986,
+                    fill: "none",
+                }, d: "m278.67 929.84s8.86-13.98-0.31-21.47c-10.76-8.79-20.81 8.66-36.55-3.07" })] }) }));
+
+;// ./node_modules/@lqv/codemirror/dist/esm/recording.mjs
+
+
+
+
+
+
+// the actual thingy that gets exported
+class CodeRecorder extends ReplayDataRecorder {
+    constructor() {
+        super();
+        bind(this, ["extension"]);
+    }
+    /**
+     * Get a CodeMirror extension for recording.
+     * @param specialKeys Map of key sequences to commands, e.g. {"Mod-Enter": "run"}.
+     * @returns CodeMirror extension.
+     */
+    extension(specialKeys = {}) {
+        // legacy
+        if (Array.isArray(specialKeys)) {
+            // biome-ignore lint/style/noParameterAssign: helpful for backwards compatibility
+            specialKeys = Object.fromEntries(specialKeys.map((key) => [key, key]));
+        }
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        const $this = this;
+        const scrollListener = ViewPlugin.fromClass(class {
+            constructor(view) {
+                view.scrollDOM.addEventListener("scroll", () => {
+                    if (!$this.manager || $this.manager.paused || !$this.manager.active)
+                        return;
+                    const time = $this.manager.getTime();
+                    const fontSize = Number.parseFloat(getComputedStyle(view.scrollDOM).getPropertyValue("font-size"));
+                    // vertical scroll is more common so we put it first and omit
+                    // horizontal scroll if it's zero
+                    const action = [
+                        scrollCmd,
+                        view.scrollDOM.scrollTop / fontSize,
+                        view.scrollDOM.scrollLeft / fontSize,
+                    ];
+                    if (action[2] === 0) {
+                        action.pop();
+                    }
+                    $this.capture(time, action);
+                });
+            }
+        });
+        // record document changes
+        const updateListener = EditorView.updateListener.of((update) => {
+            if (!this.manager || this.manager.paused || !this.manager.active)
+                return;
+            // get selection change (if any)
+            const transactions = update.transactions
+                .map((t) => {
+                if (!t.selection)
+                    return null;
+                const range = t.selection.ranges[0];
+                return [range.anchor, range.head];
+            })
+                .filter(Boolean)
+                .slice(-1);
+            // empty events can break replay
+            if (update.changes.empty && transactions.length === 0)
+                return;
+            this.capture(this.manager.getTime(), [
+                update.changes.toJSON(),
+                ...transactions,
+                // biome-ignore lint/suspicious/noExplicitAny: TODO
+            ]);
+        });
+        // record special key presses
+        const keyListener = keymap.of(Object.keys(specialKeys).map((key) => ({
+            key,
+            run: () => {
+                if (this.manager?.active && !this.manager.paused) {
+                    this.capture(this.manager.getTime(), specialKeys[key]);
+                }
+                return false;
+            },
+        })));
+        return [scrollListener, updateListener, keyListener];
+    }
+}
+const KeySaveComponent = (props) => {
+    return ((0,jsx_runtime.jsx)(jsx_runtime.Fragment, { children: (0,jsx_runtime.jsx)("textarea", { readOnly: true, value: JSON.stringify(props.data) }) }));
+};
+const recording_CodeRecording = {
+    enabled: () => true,
+    icon: icon_icon,
+    key: "codemirror",
+    name: "Code",
+    recorder: new CodeRecorder(),
+    saveComponent: KeySaveComponent,
+    title: "Record code",
+};
+
+;// ./src/@development/ui.tsx
+
+
+
+
+
+
+const ui_content = `
+      // The main function where the program execution begins
+    int main() {
+    // Create an instance of the Car class
+    Car myCar("Toyota", "Camry", 2023);
+
+    // Use the object's methods
+    myCar.displayInfo();
+    myCar.startEngine();
+    myCar.startEngine(); // Trying to start it again
+    myCar.stopEngine();
+
+    return 0;
+}
+  `;
+function UI() {
+    const extensions = React.useMemo(() => [basicSetup, cpp(), javascript()], []);
+    return (_jsx(CodeBooth, Object.assign({ recorder: CodeRecording.recorder }, { children: _jsx(Record, { extensions: extensions, filename: 'test.ts' }) })));
+}
+/* harmony default export */ const ui = ((/* unused pure expression or super */ null && (UI)));
+
 ;// ./src/@production/ui.tsx
 
 
 
 
+
 console.log('Hi there');
-function UI() {
+function ui_UI() {
     const [data, setData] = (0,react.useState)(null);
     (0,react.useEffect)(() => {
         loadJSON('code')
@@ -31551,7 +32895,7 @@ function UI() {
     }, []);
     if (!data)
         return (0,jsx_runtime.jsx)("div", { children: "Loading replay..." });
-    return ((0,jsx_runtime.jsx)(EditorGroup, Object.assign({ id: 'replay' }, { children: (0,jsx_runtime.jsx)(Replay, { replay: loadJSON('code') }) })));
+    return ((0,jsx_runtime.jsx)(esm_CodeBooth, { children: (0,jsx_runtime.jsx)(Replay, { replay: loadJSON('code'), content: ui_content }) }));
 }
 
 ;// ./src/@production/index.tsx
@@ -31563,7 +32907,7 @@ function UI() {
 
 const playback = new Playback({ duration: 45531.400000002235 });
 function Lesson() {
-    return ((0,jsx_runtime.jsxs)(Player, Object.assign({ playback: playback }, { children: [(0,jsx_runtime.jsxs)(Audio, { children: [(0,jsx_runtime.jsx)("source", { src: audio_namespaceObject, type: 'audio/mp4' }), (0,jsx_runtime.jsx)("source", { src: static_audio_namespaceObject_0, type: 'audio/webm' })] }), (0,jsx_runtime.jsx)(UI, {})] })));
+    return ((0,jsx_runtime.jsxs)(Player, Object.assign({ playback: playback }, { children: [(0,jsx_runtime.jsxs)(Audio, { children: [(0,jsx_runtime.jsx)("source", { src: audio_namespaceObject, type: 'audio/mp4' }), (0,jsx_runtime.jsx)("source", { src: static_audio_namespaceObject_0, type: 'audio/webm' })] }), (0,jsx_runtime.jsx)(ui_UI, {})] })));
 }
 (0,client/* createRoot */.H)(document.querySelector('main')).render((0,jsx_runtime.jsx)(Lesson, {}));
 

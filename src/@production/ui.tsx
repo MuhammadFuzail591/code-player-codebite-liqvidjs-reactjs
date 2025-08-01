@@ -3,6 +3,7 @@ import { loadJSON } from '@liqvid/utils/json'
 import { CodeBooth, Replay } from '@lqv/codebooth'
 import { cmReplay } from '@lqv/codemirror'
 import { content } from '../@development/ui'
+import ReplayCode from '../components/ReplayCode'
 
 declare module '@liqvid/utils/json' {
   interface GetJSONMap {
@@ -30,9 +31,5 @@ export function UI () {
 
   if (!data) return <div>Loading replay...</div>
 
-  return (
-    <CodeBooth>
-      <Replay replay={loadJSON('code')} />
-    </CodeBooth>
-  )
+  return <ReplayCode replay={loadJSON('code')} language_id={63} />
 }

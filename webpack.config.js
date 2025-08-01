@@ -4,7 +4,7 @@ const path = require('path')
 const env = process.env.NODE_ENV || 'development'
 
 module.exports = {
-  entry: `./src/@production/index.tsx`,
+  entry: `./src/@development/index.tsx`,
   output: {
     filename: 'bundle.js',
     path: path.join(__dirname, 'static')

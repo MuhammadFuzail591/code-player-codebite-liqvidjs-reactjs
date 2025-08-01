@@ -17,7 +17,6 @@ const controls = [
 const playback = new Playback({ duration: 30000 }) // doesn't matter what duration we use when recording
 
 function Lesson () {
-  
   const extensions = React.useMemo(() => [basicSetup, cpp(), javascript()], [])
 
   return (

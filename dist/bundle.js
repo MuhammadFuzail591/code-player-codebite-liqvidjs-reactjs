@@ -1,10 +1,440 @@
 /******/ (() => { // webpackBootstrap
-/******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
+
+/***/ 16:
+/***/ (() => {
+
+/* (ignored) */
+
+/***/ }),
+
+/***/ 56:
+/***/ ((module) => {
+
+"use strict";
+module.exports = /*#__PURE__*/JSON.parse('{"name":"dotenv","version":"17.2.1","description":"Loads environment variables from .env file","main":"lib/main.js","types":"lib/main.d.ts","exports":{".":{"types":"./lib/main.d.ts","require":"./lib/main.js","default":"./lib/main.js"},"./config":"./config.js","./config.js":"./config.js","./lib/env-options":"./lib/env-options.js","./lib/env-options.js":"./lib/env-options.js","./lib/cli-options":"./lib/cli-options.js","./lib/cli-options.js":"./lib/cli-options.js","./package.json":"./package.json"},"scripts":{"dts-check":"tsc --project tests/types/tsconfig.json","lint":"standard","pretest":"npm run lint && npm run dts-check","test":"tap run --allow-empty-coverage --disable-coverage --timeout=60000","test:coverage":"tap run --show-full-coverage --timeout=60000 --coverage-report=text --coverage-report=lcov","prerelease":"npm test","release":"standard-version"},"repository":{"type":"git","url":"git://github.com/motdotla/dotenv.git"},"homepage":"https://github.com/motdotla/dotenv#readme","funding":"https://dotenvx.com","keywords":["dotenv","env",".env","environment","variables","config","settings"],"readmeFilename":"README.md","license":"BSD-2-Clause","devDependencies":{"@types/node":"^18.11.3","decache":"^4.6.2","sinon":"^14.0.1","standard":"^17.0.0","standard-version":"^9.5.0","tap":"^19.2.0","typescript":"^4.8.4"},"engines":{"node":">=12"},"browser":{"fs":false}}');
+
+/***/ }),
+
+/***/ 85:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+var isWindows = process.platform === 'win32';
+var util = __webpack_require__(331);
+function normalizeArray(parts, allowAboveRoot) {
+    var res = [];
+    for (var i = 0; i < parts.length; i++) {
+        var p = parts[i];
+        if (!p || p === '.')
+            continue;
+        if (p === '..') {
+            if (res.length && res[res.length - 1] !== '..') {
+                res.pop();
+            }
+            else if (allowAboveRoot) {
+                res.push('..');
+            }
+        }
+        else {
+            res.push(p);
+        }
+    }
+    return res;
+}
+function trimArray(arr) {
+    var lastIndex = arr.length - 1;
+    var start = 0;
+    for (; start <= lastIndex; start++) {
+        if (arr[start])
+            break;
+    }
+    var end = lastIndex;
+    for (; end >= 0; end--) {
+        if (arr[end])
+            break;
+    }
+    if (start === 0 && end === lastIndex)
+        return arr;
+    if (start > end)
+        return [];
+    return arr.slice(start, end + 1);
+}
+var splitDeviceRe = /^([a-zA-Z]:|[\\\/]{2}[^\\\/]+[\\\/]+[^\\\/]+)?([\\\/])?([\s\S]*?)$/;
+var splitTailRe = /^([\s\S]*?)((?:\.{1,2}|[^\\\/]+?|)(\.[^.\/\\]*|))(?:[\\\/]*)$/;
+var win32 = {};
+function win32SplitPath(filename) {
+    var result = splitDeviceRe.exec(filename), device = (result[1] || '') + (result[2] || ''), tail = result[3] || '';
+    var result2 = splitTailRe.exec(tail), dir = result2[1], basename = result2[2], ext = result2[3];
+    return [device, dir, basename, ext];
+}
+function win32StatPath(path) {
+    var result = splitDeviceRe.exec(path), device = result[1] || '', isUnc = !!device && device[1] !== ':';
+    return {
+        device: device,
+        isUnc: isUnc,
+        isAbsolute: isUnc || !!result[2],
+        tail: result[3]
+    };
+}
+function normalizeUNCRoot(device) {
+    return '\\\\' + device.replace(/^[\\\/]+/, '').replace(/[\\\/]+/g, '\\');
+}
+win32.resolve = function () {
+    var resolvedDevice = '', resolvedTail = '', resolvedAbsolute = false;
+    for (var i = arguments.length - 1; i >= -1; i--) {
+        var path;
+        if (i >= 0) {
+            path = arguments[i];
+        }
+        else if (!resolvedDevice) {
+            path = process.cwd();
+        }
+        else {
+            path = process.env['=' + resolvedDevice];
+            if (!path || path.substr(0, 3).toLowerCase() !==
+                resolvedDevice.toLowerCase() + '\\') {
+                path = resolvedDevice + '\\';
+            }
+        }
+        if (!util.isString(path)) {
+            throw new TypeError('Arguments to path.resolve must be strings');
+        }
+        else if (!path) {
+            continue;
+        }
+        var result = win32StatPath(path), device = result.device, isUnc = result.isUnc, isAbsolute = result.isAbsolute, tail = result.tail;
+        if (device &&
+            resolvedDevice &&
+            device.toLowerCase() !== resolvedDevice.toLowerCase()) {
+            continue;
+        }
+        if (!resolvedDevice) {
+            resolvedDevice = device;
+        }
+        if (!resolvedAbsolute) {
+            resolvedTail = tail + '\\' + resolvedTail;
+            resolvedAbsolute = isAbsolute;
+        }
+        if (resolvedDevice && resolvedAbsolute) {
+            break;
+        }
+    }
+    if (isUnc) {
+        resolvedDevice = normalizeUNCRoot(resolvedDevice);
+    }
+    resolvedTail = normalizeArray(resolvedTail.split(/[\\\/]+/), !resolvedAbsolute).join('\\');
+    return (resolvedDevice + (resolvedAbsolute ? '\\' : '') + resolvedTail) ||
+        '.';
+};
+win32.normalize = function (path) {
+    var result = win32StatPath(path), device = result.device, isUnc = result.isUnc, isAbsolute = result.isAbsolute, tail = result.tail, trailingSlash = /[\\\/]$/.test(tail);
+    tail = normalizeArray(tail.split(/[\\\/]+/), !isAbsolute).join('\\');
+    if (!tail && !isAbsolute) {
+        tail = '.';
+    }
+    if (tail && trailingSlash) {
+        tail += '\\';
+    }
+    if (isUnc) {
+        device = normalizeUNCRoot(device);
+    }
+    return device + (isAbsolute ? '\\' : '') + tail;
+};
+win32.isAbsolute = function (path) {
+    return win32StatPath(path).isAbsolute;
+};
+win32.join = function () {
+    var paths = [];
+    for (var i = 0; i < arguments.length; i++) {
+        var arg = arguments[i];
+        if (!util.isString(arg)) {
+            throw new TypeError('Arguments to path.join must be strings');
+        }
+        if (arg) {
+            paths.push(arg);
+        }
+    }
+    var joined = paths.join('\\');
+    if (!/^[\\\/]{2}[^\\\/]/.test(paths[0])) {
+        joined = joined.replace(/^[\\\/]{2,}/, '\\');
+    }
+    return win32.normalize(joined);
+};
+win32.relative = function (from, to) {
+    from = win32.resolve(from);
+    to = win32.resolve(to);
+    var lowerFrom = from.toLowerCase();
+    var lowerTo = to.toLowerCase();
+    var toParts = trimArray(to.split('\\'));
+    var lowerFromParts = trimArray(lowerFrom.split('\\'));
+    var lowerToParts = trimArray(lowerTo.split('\\'));
+    var length = Math.min(lowerFromParts.length, lowerToParts.length);
+    var samePartsLength = length;
+    for (var i = 0; i < length; i++) {
+        if (lowerFromParts[i] !== lowerToParts[i]) {
+            samePartsLength = i;
+            break;
+        }
+    }
+    if (samePartsLength == 0) {
+        return to;
+    }
+    var outputParts = [];
+    for (var i = samePartsLength; i < lowerFromParts.length; i++) {
+        outputParts.push('..');
+    }
+    outputParts = outputParts.concat(toParts.slice(samePartsLength));
+    return outputParts.join('\\');
+};
+win32._makeLong = function (path) {
+    if (!util.isString(path))
+        return path;
+    if (!path) {
+        return '';
+    }
+    var resolvedPath = win32.resolve(path);
+    if (/^[a-zA-Z]\:\\/.test(resolvedPath)) {
+        return '\\\\?\\' + resolvedPath;
+    }
+    else if (/^\\\\[^?.]/.test(resolvedPath)) {
+        return '\\\\?\\UNC\\' + resolvedPath.substring(2);
+    }
+    return path;
+};
+win32.dirname = function (path) {
+    var result = win32SplitPath(path), root = result[0], dir = result[1];
+    if (!root && !dir) {
+        return '.';
+    }
+    if (dir) {
+        dir = dir.substr(0, dir.length - 1);
+    }
+    return root + dir;
+};
+win32.basename = function (path, ext) {
+    var f = win32SplitPath(path)[2];
+    if (ext && f.substr(-1 * ext.length) === ext) {
+        f = f.substr(0, f.length - ext.length);
+    }
+    return f;
+};
+win32.extname = function (path) {
+    return win32SplitPath(path)[3];
+};
+win32.format = function (pathObject) {
+    if (!util.isObject(pathObject)) {
+        throw new TypeError("Parameter 'pathObject' must be an object, not " + typeof pathObject);
+    }
+    var root = pathObject.root || '';
+    if (!util.isString(root)) {
+        throw new TypeError("'pathObject.root' must be a string or undefined, not " +
+            typeof pathObject.root);
+    }
+    var dir = pathObject.dir;
+    var base = pathObject.base || '';
+    if (!dir) {
+        return base;
+    }
+    if (dir[dir.length - 1] === win32.sep) {
+        return dir + base;
+    }
+    return dir + win32.sep + base;
+};
+win32.parse = function (pathString) {
+    if (!util.isString(pathString)) {
+        throw new TypeError("Parameter 'pathString' must be a string, not " + typeof pathString);
+    }
+    var allParts = win32SplitPath(pathString);
+    if (!allParts || allParts.length !== 4) {
+        throw new TypeError("Invalid path '" + pathString + "'");
+    }
+    return {
+        root: allParts[0],
+        dir: allParts[0] + allParts[1].slice(0, -1),
+        base: allParts[2],
+        ext: allParts[3],
+        name: allParts[2].slice(0, allParts[2].length - allParts[3].length)
+    };
+};
+win32.sep = '\\';
+win32.delimiter = ';';
+var splitPathRe = /^(\/?|)([\s\S]*?)((?:\.{1,2}|[^\/]+?|)(\.[^.\/]*|))(?:[\/]*)$/;
+var posix = {};
+function posixSplitPath(filename) {
+    return splitPathRe.exec(filename).slice(1);
+}
+posix.resolve = function () {
+    var resolvedPath = '', resolvedAbsolute = false;
+    for (var i = arguments.length - 1; i >= -1 && !resolvedAbsolute; i--) {
+        var path = (i >= 0) ? arguments[i] : process.cwd();
+        if (!util.isString(path)) {
+            throw new TypeError('Arguments to path.resolve must be strings');
+        }
+        else if (!path) {
+            continue;
+        }
+        resolvedPath = path + '/' + resolvedPath;
+        resolvedAbsolute = path[0] === '/';
+    }
+    resolvedPath = normalizeArray(resolvedPath.split('/'), !resolvedAbsolute).join('/');
+    return ((resolvedAbsolute ? '/' : '') + resolvedPath) || '.';
+};
+posix.normalize = function (path) {
+    var isAbsolute = posix.isAbsolute(path), trailingSlash = path && path[path.length - 1] === '/';
+    path = normalizeArray(path.split('/'), !isAbsolute).join('/');
+    if (!path && !isAbsolute) {
+        path = '.';
+    }
+    if (path && trailingSlash) {
+        path += '/';
+    }
+    return (isAbsolute ? '/' : '') + path;
+};
+posix.isAbsolute = function (path) {
+    return path.charAt(0) === '/';
+};
+posix.join = function () {
+    var path = '';
+    for (var i = 0; i < arguments.length; i++) {
+        var segment = arguments[i];
+        if (!util.isString(segment)) {
+            throw new TypeError('Arguments to path.join must be strings');
+        }
+        if (segment) {
+            if (!path) {
+                path += segment;
+            }
+            else {
+                path += '/' + segment;
+            }
+        }
+    }
+    return posix.normalize(path);
+};
+posix.relative = function (from, to) {
+    from = posix.resolve(from).substr(1);
+    to = posix.resolve(to).substr(1);
+    var fromParts = trimArray(from.split('/'));
+    var toParts = trimArray(to.split('/'));
+    var length = Math.min(fromParts.length, toParts.length);
+    var samePartsLength = length;
+    for (var i = 0; i < length; i++) {
+        if (fromParts[i] !== toParts[i]) {
+            samePartsLength = i;
+            break;
+        }
+    }
+    var outputParts = [];
+    for (var i = samePartsLength; i < fromParts.length; i++) {
+        outputParts.push('..');
+    }
+    outputParts = outputParts.concat(toParts.slice(samePartsLength));
+    return outputParts.join('/');
+};
+posix._makeLong = function (path) {
+    return path;
+};
+posix.dirname = function (path) {
+    var result = posixSplitPath(path), root = result[0], dir = result[1];
+    if (!root && !dir) {
+        return '.';
+    }
+    if (dir) {
+        dir = dir.substr(0, dir.length - 1);
+    }
+    return root + dir;
+};
+posix.basename = function (path, ext) {
+    var f = posixSplitPath(path)[2];
+    if (ext && f.substr(-1 * ext.length) === ext) {
+        f = f.substr(0, f.length - ext.length);
+    }
+    return f;
+};
+posix.extname = function (path) {
+    return posixSplitPath(path)[3];
+};
+posix.format = function (pathObject) {
+    if (!util.isObject(pathObject)) {
+        throw new TypeError("Parameter 'pathObject' must be an object, not " + typeof pathObject);
+    }
+    var root = pathObject.root || '';
+    if (!util.isString(root)) {
+        throw new TypeError("'pathObject.root' must be a string or undefined, not " +
+            typeof pathObject.root);
+    }
+    var dir = pathObject.dir ? pathObject.dir + posix.sep : '';
+    var base = pathObject.base || '';
+    return dir + base;
+};
+posix.parse = function (pathString) {
+    if (!util.isString(pathString)) {
+        throw new TypeError("Parameter 'pathString' must be a string, not " + typeof pathString);
+    }
+    var allParts = posixSplitPath(pathString);
+    if (!allParts || allParts.length !== 4) {
+        throw new TypeError("Invalid path '" + pathString + "'");
+    }
+    allParts[1] = allParts[1] || '';
+    allParts[2] = allParts[2] || '';
+    allParts[3] = allParts[3] || '';
+    return {
+        root: allParts[0],
+        dir: allParts[0] + allParts[1].slice(0, -1),
+        base: allParts[2],
+        ext: allParts[3],
+        name: allParts[2].slice(0, allParts[2].length - allParts[3].length)
+    };
+};
+posix.sep = '/';
+posix.delimiter = ':';
+if (isWindows)
+    module.exports = win32;
+else
+    module.exports = posix;
+module.exports.posix = posix;
+module.exports.win32 = win32;
+
+
+/***/ }),
+
+/***/ 112:
+/***/ ((module) => {
+
+"use strict";
+
+if (typeof Object.create === 'function') {
+    module.exports = function inherits(ctor, superCtor) {
+        ctor.super_ = superCtor;
+        ctor.prototype = Object.create(superCtor.prototype, {
+            constructor: {
+                value: ctor,
+                enumerable: false,
+                writable: true,
+                configurable: true
+            }
+        });
+    };
+}
+else {
+    module.exports = function inherits(ctor, superCtor) {
+        ctor.super_ = superCtor;
+        var TempCtor = function () { };
+        TempCtor.prototype = superCtor.prototype;
+        ctor.prototype = new TempCtor();
+        ctor.prototype.constructor = ctor;
+    };
+}
+
+
+/***/ }),
 
 /***/ 125:
 /***/ ((__unused_webpack_module, exports) => {
 
+"use strict";
 
 var l = Symbol.for("react.element"), n = Symbol.for("react.portal"), p = Symbol.for("react.fragment"), q = Symbol.for("react.strict_mode"), r = Symbol.for("react.profiler"), t = Symbol.for("react.provider"), u = Symbol.for("react.context"), v = Symbol.for("react.forward_ref"), w = Symbol.for("react.suspense"), x = Symbol.for("react.memo"), y = Symbol.for("react.lazy"), z = Symbol.iterator;
 function A(a) { if (null === a || "object" !== typeof a)
@@ -159,6 +589,7 @@ exports.version = "18.3.1";
 /***/ 253:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
+"use strict";
 
 var aa = __webpack_require__(466), ca = __webpack_require__(888);
 function p(a) { for (var b = "https://reactjs.org/docs/error-decoder.html?invariant=" + a, c = 1; c < arguments.length; c++)
@@ -5277,9 +5708,473 @@ exports.version = "18.3.1-next-f1338f8080-20240426";
 
 /***/ }),
 
+/***/ 331:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+var formatRegExp = /%[sdj%]/g;
+exports.format = function (f) {
+    if (!isString(f)) {
+        var objects = [];
+        for (var i = 0; i < arguments.length; i++) {
+            objects.push(inspect(arguments[i]));
+        }
+        return objects.join(' ');
+    }
+    var i = 1;
+    var args = arguments;
+    var len = args.length;
+    var str = String(f).replace(formatRegExp, function (x) {
+        if (x === '%%')
+            return '%';
+        if (i >= len)
+            return x;
+        switch (x) {
+            case '%s': return String(args[i++]);
+            case '%d': return Number(args[i++]);
+            case '%j':
+                try {
+                    return JSON.stringify(args[i++]);
+                }
+                catch (_) {
+                    return '[Circular]';
+                }
+            default:
+                return x;
+        }
+    });
+    for (var x = args[i]; i < len; x = args[++i]) {
+        if (isNull(x) || !isObject(x)) {
+            str += ' ' + x;
+        }
+        else {
+            str += ' ' + inspect(x);
+        }
+    }
+    return str;
+};
+exports.deprecate = function (fn, msg) {
+    if (isUndefined(__webpack_require__.g.process)) {
+        return function () {
+            return exports.deprecate(fn, msg).apply(this, arguments);
+        };
+    }
+    if (process.noDeprecation === true) {
+        return fn;
+    }
+    var warned = false;
+    function deprecated() {
+        if (!warned) {
+            if (process.throwDeprecation) {
+                throw new Error(msg);
+            }
+            else if (process.traceDeprecation) {
+                console.trace(msg);
+            }
+            else {
+                console.error(msg);
+            }
+            warned = true;
+        }
+        return fn.apply(this, arguments);
+    }
+    return deprecated;
+};
+var debugs = {};
+var debugEnviron;
+exports.debuglog = function (set) {
+    if (isUndefined(debugEnviron))
+        debugEnviron = process.env.NODE_DEBUG || '';
+    set = set.toUpperCase();
+    if (!debugs[set]) {
+        if (new RegExp('\\b' + set + '\\b', 'i').test(debugEnviron)) {
+            var pid = process.pid;
+            debugs[set] = function () {
+                var msg = exports.format.apply(exports, arguments);
+                console.error('%s %d: %s', set, pid, msg);
+            };
+        }
+        else {
+            debugs[set] = function () { };
+        }
+    }
+    return debugs[set];
+};
+function inspect(obj, opts) {
+    var ctx = {
+        seen: [],
+        stylize: stylizeNoColor
+    };
+    if (arguments.length >= 3)
+        ctx.depth = arguments[2];
+    if (arguments.length >= 4)
+        ctx.colors = arguments[3];
+    if (isBoolean(opts)) {
+        ctx.showHidden = opts;
+    }
+    else if (opts) {
+        exports._extend(ctx, opts);
+    }
+    if (isUndefined(ctx.showHidden))
+        ctx.showHidden = false;
+    if (isUndefined(ctx.depth))
+        ctx.depth = 2;
+    if (isUndefined(ctx.colors))
+        ctx.colors = false;
+    if (isUndefined(ctx.customInspect))
+        ctx.customInspect = true;
+    if (ctx.colors)
+        ctx.stylize = stylizeWithColor;
+    return formatValue(ctx, obj, ctx.depth);
+}
+exports.inspect = inspect;
+inspect.colors = {
+    'bold': [1, 22],
+    'italic': [3, 23],
+    'underline': [4, 24],
+    'inverse': [7, 27],
+    'white': [37, 39],
+    'grey': [90, 39],
+    'black': [30, 39],
+    'blue': [34, 39],
+    'cyan': [36, 39],
+    'green': [32, 39],
+    'magenta': [35, 39],
+    'red': [31, 39],
+    'yellow': [33, 39]
+};
+inspect.styles = {
+    'special': 'cyan',
+    'number': 'yellow',
+    'boolean': 'yellow',
+    'undefined': 'grey',
+    'null': 'bold',
+    'string': 'green',
+    'date': 'magenta',
+    'regexp': 'red'
+};
+function stylizeWithColor(str, styleType) {
+    var style = inspect.styles[styleType];
+    if (style) {
+        return '\u001b[' + inspect.colors[style][0] + 'm' + str +
+            '\u001b[' + inspect.colors[style][1] + 'm';
+    }
+    else {
+        return str;
+    }
+}
+function stylizeNoColor(str, styleType) {
+    return str;
+}
+function arrayToHash(array) {
+    var hash = {};
+    array.forEach(function (val, idx) {
+        hash[val] = true;
+    });
+    return hash;
+}
+function formatValue(ctx, value, recurseTimes) {
+    if (ctx.customInspect &&
+        value &&
+        isFunction(value.inspect) &&
+        value.inspect !== exports.inspect &&
+        !(value.constructor && value.constructor.prototype === value)) {
+        var ret = value.inspect(recurseTimes, ctx);
+        if (!isString(ret)) {
+            ret = formatValue(ctx, ret, recurseTimes);
+        }
+        return ret;
+    }
+    var primitive = formatPrimitive(ctx, value);
+    if (primitive) {
+        return primitive;
+    }
+    var keys = Object.keys(value);
+    var visibleKeys = arrayToHash(keys);
+    if (ctx.showHidden) {
+        keys = Object.getOwnPropertyNames(value);
+    }
+    if (isError(value)
+        && (keys.indexOf('message') >= 0 || keys.indexOf('description') >= 0)) {
+        return formatError(value);
+    }
+    if (keys.length === 0) {
+        if (isFunction(value)) {
+            var name = value.name ? ': ' + value.name : '';
+            return ctx.stylize('[Function' + name + ']', 'special');
+        }
+        if (isRegExp(value)) {
+            return ctx.stylize(RegExp.prototype.toString.call(value), 'regexp');
+        }
+        if (isDate(value)) {
+            return ctx.stylize(Date.prototype.toString.call(value), 'date');
+        }
+        if (isError(value)) {
+            return formatError(value);
+        }
+    }
+    var base = '', array = false, braces = ['{', '}'];
+    if (isArray(value)) {
+        array = true;
+        braces = ['[', ']'];
+    }
+    if (isFunction(value)) {
+        var n = value.name ? ': ' + value.name : '';
+        base = ' [Function' + n + ']';
+    }
+    if (isRegExp(value)) {
+        base = ' ' + RegExp.prototype.toString.call(value);
+    }
+    if (isDate(value)) {
+        base = ' ' + Date.prototype.toUTCString.call(value);
+    }
+    if (isError(value)) {
+        base = ' ' + formatError(value);
+    }
+    if (keys.length === 0 && (!array || value.length == 0)) {
+        return braces[0] + base + braces[1];
+    }
+    if (recurseTimes < 0) {
+        if (isRegExp(value)) {
+            return ctx.stylize(RegExp.prototype.toString.call(value), 'regexp');
+        }
+        else {
+            return ctx.stylize('[Object]', 'special');
+        }
+    }
+    ctx.seen.push(value);
+    var output;
+    if (array) {
+        output = formatArray(ctx, value, recurseTimes, visibleKeys, keys);
+    }
+    else {
+        output = keys.map(function (key) {
+            return formatProperty(ctx, value, recurseTimes, visibleKeys, key, array);
+        });
+    }
+    ctx.seen.pop();
+    return reduceToSingleString(output, base, braces);
+}
+function formatPrimitive(ctx, value) {
+    if (isUndefined(value))
+        return ctx.stylize('undefined', 'undefined');
+    if (isString(value)) {
+        var simple = '\'' + JSON.stringify(value).replace(/^"|"$/g, '')
+            .replace(/'/g, "\\'")
+            .replace(/\\"/g, '"') + '\'';
+        return ctx.stylize(simple, 'string');
+    }
+    if (isNumber(value))
+        return ctx.stylize('' + value, 'number');
+    if (isBoolean(value))
+        return ctx.stylize('' + value, 'boolean');
+    if (isNull(value))
+        return ctx.stylize('null', 'null');
+}
+function formatError(value) {
+    return '[' + Error.prototype.toString.call(value) + ']';
+}
+function formatArray(ctx, value, recurseTimes, visibleKeys, keys) {
+    var output = [];
+    for (var i = 0, l = value.length; i < l; ++i) {
+        if (hasOwnProperty(value, String(i))) {
+            output.push(formatProperty(ctx, value, recurseTimes, visibleKeys, String(i), true));
+        }
+        else {
+            output.push('');
+        }
+    }
+    keys.forEach(function (key) {
+        if (!key.match(/^\d+$/)) {
+            output.push(formatProperty(ctx, value, recurseTimes, visibleKeys, key, true));
+        }
+    });
+    return output;
+}
+function formatProperty(ctx, value, recurseTimes, visibleKeys, key, array) {
+    var name, str, desc;
+    desc = Object.getOwnPropertyDescriptor(value, key) || { value: value[key] };
+    if (desc.get) {
+        if (desc.set) {
+            str = ctx.stylize('[Getter/Setter]', 'special');
+        }
+        else {
+            str = ctx.stylize('[Getter]', 'special');
+        }
+    }
+    else {
+        if (desc.set) {
+            str = ctx.stylize('[Setter]', 'special');
+        }
+    }
+    if (!hasOwnProperty(visibleKeys, key)) {
+        name = '[' + key + ']';
+    }
+    if (!str) {
+        if (ctx.seen.indexOf(desc.value) < 0) {
+            if (isNull(recurseTimes)) {
+                str = formatValue(ctx, desc.value, null);
+            }
+            else {
+                str = formatValue(ctx, desc.value, recurseTimes - 1);
+            }
+            if (str.indexOf('\n') > -1) {
+                if (array) {
+                    str = str.split('\n').map(function (line) {
+                        return '  ' + line;
+                    }).join('\n').substr(2);
+                }
+                else {
+                    str = '\n' + str.split('\n').map(function (line) {
+                        return '   ' + line;
+                    }).join('\n');
+                }
+            }
+        }
+        else {
+            str = ctx.stylize('[Circular]', 'special');
+        }
+    }
+    if (isUndefined(name)) {
+        if (array && key.match(/^\d+$/)) {
+            return str;
+        }
+        name = JSON.stringify('' + key);
+        if (name.match(/^"([a-zA-Z_][a-zA-Z_0-9]*)"$/)) {
+            name = name.substr(1, name.length - 2);
+            name = ctx.stylize(name, 'name');
+        }
+        else {
+            name = name.replace(/'/g, "\\'")
+                .replace(/\\"/g, '"')
+                .replace(/(^"|"$)/g, "'");
+            name = ctx.stylize(name, 'string');
+        }
+    }
+    return name + ': ' + str;
+}
+function reduceToSingleString(output, base, braces) {
+    var numLinesEst = 0;
+    var length = output.reduce(function (prev, cur) {
+        numLinesEst++;
+        if (cur.indexOf('\n') >= 0)
+            numLinesEst++;
+        return prev + cur.replace(/\u001b\[\d\d?m/g, '').length + 1;
+    }, 0);
+    if (length > 60) {
+        return braces[0] +
+            (base === '' ? '' : base + '\n ') +
+            ' ' +
+            output.join(',\n  ') +
+            ' ' +
+            braces[1];
+    }
+    return braces[0] + base + ' ' + output.join(', ') + ' ' + braces[1];
+}
+function isArray(ar) {
+    return Array.isArray(ar);
+}
+exports.isArray = isArray;
+function isBoolean(arg) {
+    return typeof arg === 'boolean';
+}
+exports.isBoolean = isBoolean;
+function isNull(arg) {
+    return arg === null;
+}
+exports.isNull = isNull;
+function isNullOrUndefined(arg) {
+    return arg == null;
+}
+exports.isNullOrUndefined = isNullOrUndefined;
+function isNumber(arg) {
+    return typeof arg === 'number';
+}
+exports.isNumber = isNumber;
+function isString(arg) {
+    return typeof arg === 'string';
+}
+exports.isString = isString;
+function isSymbol(arg) {
+    return typeof arg === 'symbol';
+}
+exports.isSymbol = isSymbol;
+function isUndefined(arg) {
+    return arg === void 0;
+}
+exports.isUndefined = isUndefined;
+function isRegExp(re) {
+    return isObject(re) && objectToString(re) === '[object RegExp]';
+}
+exports.isRegExp = isRegExp;
+function isObject(arg) {
+    return typeof arg === 'object' && arg !== null;
+}
+exports.isObject = isObject;
+function isDate(d) {
+    return isObject(d) && objectToString(d) === '[object Date]';
+}
+exports.isDate = isDate;
+function isError(e) {
+    return isObject(e) &&
+        (objectToString(e) === '[object Error]' || e instanceof Error);
+}
+exports.isError = isError;
+function isFunction(arg) {
+    return typeof arg === 'function';
+}
+exports.isFunction = isFunction;
+function isPrimitive(arg) {
+    return arg === null ||
+        typeof arg === 'boolean' ||
+        typeof arg === 'number' ||
+        typeof arg === 'string' ||
+        typeof arg === 'symbol' ||
+        typeof arg === 'undefined';
+}
+exports.isPrimitive = isPrimitive;
+exports.isBuffer = __webpack_require__(697);
+function objectToString(o) {
+    return Object.prototype.toString.call(o);
+}
+function pad(n) {
+    return n < 10 ? '0' + n.toString(10) : n.toString(10);
+}
+var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
+    'Oct', 'Nov', 'Dec'];
+function timestamp() {
+    var d = new Date();
+    var time = [pad(d.getHours()),
+        pad(d.getMinutes()),
+        pad(d.getSeconds())].join(':');
+    return [d.getDate(), months[d.getMonth()], time].join(' ');
+}
+exports.log = function () {
+    console.log('%s - %s', timestamp(), exports.format.apply(exports, arguments));
+};
+exports.inherits = __webpack_require__(112);
+exports._extend = function (origin, add) {
+    if (!add || !isObject(add))
+        return origin;
+    var keys = Object.keys(add);
+    var i = keys.length;
+    while (i--) {
+        origin[keys[i]] = add[keys[i]];
+    }
+    return origin;
+};
+function hasOwnProperty(obj, prop) {
+    return Object.prototype.hasOwnProperty.call(obj, prop);
+}
+
+
+/***/ }),
+
 /***/ 458:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
+"use strict";
 
 var f = __webpack_require__(466), k = Symbol.for("react.element"), l = Symbol.for("react.fragment"), m = Object.prototype.hasOwnProperty, n = f.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentOwner, p = { key: !0, ref: !0, __self: !0, __source: !0 };
 function q(c, a, g) { var b, d = {}, e = null, h = null; void 0 !== g && (e = "" + g); void 0 !== a.key && (e = "" + a.key); void 0 !== a.ref && (h = a.ref); for (b in a)
@@ -5296,6 +6191,7 @@ exports.jsxs = q;
 /***/ 466:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
+"use strict";
 
 if (true) {
     module.exports = __webpack_require__(125);
@@ -5309,6 +6205,7 @@ else // removed by dead control flow
 /***/ 572:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
+"use strict";
 var __webpack_unused_export__;
 
 var m = __webpack_require__(635);
@@ -5322,9 +6219,353 @@ else // removed by dead control flow
 
 /***/ }),
 
+/***/ 608:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+const fs = __webpack_require__(16);
+const path = __webpack_require__(85);
+const os = __webpack_require__(Object(function webpackMissingModule() { var e = new Error("Cannot find module 'os'"); e.code = 'MODULE_NOT_FOUND'; throw e; }()));
+const crypto = __webpack_require__(Object(function webpackMissingModule() { var e = new Error("Cannot find module 'crypto'"); e.code = 'MODULE_NOT_FOUND'; throw e; }()));
+const packageJson = __webpack_require__(56);
+const version = packageJson.version;
+const TIPS = [
+    '🔐 encrypt with Dotenvx: https://dotenvx.com',
+    '🔐 prevent committing .env to code: https://dotenvx.com/precommit',
+    '🔐 prevent building .env in docker: https://dotenvx.com/prebuild',
+    '📡 observe env with Radar: https://dotenvx.com/radar',
+    '📡 auto-backup env with Radar: https://dotenvx.com/radar',
+    '📡 version env with Radar: https://dotenvx.com/radar',
+    '🛠️  run anywhere with `dotenvx run -- yourcommand`',
+    '⚙️  specify custom .env file path with { path: \'/custom/path/.env\' }',
+    '⚙️  enable debug logging with { debug: true }',
+    '⚙️  override existing env vars with { override: true }',
+    '⚙️  suppress all logs with { quiet: true }',
+    '⚙️  write to custom object with { processEnv: myObject }',
+    '⚙️  load multiple .env files with { path: [\'.env.local\', \'.env\'] }'
+];
+function _getRandomTip() {
+    return TIPS[Math.floor(Math.random() * TIPS.length)];
+}
+function parseBoolean(value) {
+    if (typeof value === 'string') {
+        return !['false', '0', 'no', 'off', ''].includes(value.toLowerCase());
+    }
+    return Boolean(value);
+}
+function supportsAnsi() {
+    return process.stdout.isTTY;
+}
+function dim(text) {
+    return supportsAnsi() ? `\x1b[2m${text}\x1b[0m` : text;
+}
+const LINE = /(?:^|^)\s*(?:export\s+)?([\w.-]+)(?:\s*=\s*?|:\s+?)(\s*'(?:\\'|[^'])*'|\s*"(?:\\"|[^"])*"|\s*`(?:\\`|[^`])*`|[^#\r\n]+)?\s*(?:#.*)?(?:$|$)/mg;
+function parse(src) {
+    const obj = {};
+    let lines = src.toString();
+    lines = lines.replace(/\r\n?/mg, '\n');
+    let match;
+    while ((match = LINE.exec(lines)) != null) {
+        const key = match[1];
+        let value = (match[2] || '');
+        value = value.trim();
+        const maybeQuote = value[0];
+        value = value.replace(/^(['"`])([\s\S]*)\1$/mg, '$2');
+        if (maybeQuote === '"') {
+            value = value.replace(/\\n/g, '\n');
+            value = value.replace(/\\r/g, '\r');
+        }
+        obj[key] = value;
+    }
+    return obj;
+}
+function _parseVault(options) {
+    options = options || {};
+    const vaultPath = _vaultPath(options);
+    options.path = vaultPath;
+    const result = DotenvModule.configDotenv(options);
+    if (!result.parsed) {
+        const err = new Error(`MISSING_DATA: Cannot parse ${vaultPath} for an unknown reason`);
+        err.code = 'MISSING_DATA';
+        throw err;
+    }
+    const keys = _dotenvKey(options).split(',');
+    const length = keys.length;
+    let decrypted;
+    for (let i = 0; i < length; i++) {
+        try {
+            const key = keys[i].trim();
+            const attrs = _instructions(result, key);
+            decrypted = DotenvModule.decrypt(attrs.ciphertext, attrs.key);
+            break;
+        }
+        catch (error) {
+            if (i + 1 >= length) {
+                throw error;
+            }
+        }
+    }
+    return DotenvModule.parse(decrypted);
+}
+function _warn(message) {
+    console.error(`[dotenv@${version}][WARN] ${message}`);
+}
+function _debug(message) {
+    console.log(`[dotenv@${version}][DEBUG] ${message}`);
+}
+function _log(message) {
+    console.log(`[dotenv@${version}] ${message}`);
+}
+function _dotenvKey(options) {
+    if (options && options.DOTENV_KEY && options.DOTENV_KEY.length > 0) {
+        return options.DOTENV_KEY;
+    }
+    if (process.env.DOTENV_KEY && process.env.DOTENV_KEY.length > 0) {
+        return process.env.DOTENV_KEY;
+    }
+    return '';
+}
+function _instructions(result, dotenvKey) {
+    let uri;
+    try {
+        uri = new URL(dotenvKey);
+    }
+    catch (error) {
+        if (error.code === 'ERR_INVALID_URL') {
+            const err = new Error('INVALID_DOTENV_KEY: Wrong format. Must be in valid uri format like dotenv://:key_1234@dotenvx.com/vault/.env.vault?environment=development');
+            err.code = 'INVALID_DOTENV_KEY';
+            throw err;
+        }
+        throw error;
+    }
+    const key = uri.password;
+    if (!key) {
+        const err = new Error('INVALID_DOTENV_KEY: Missing key part');
+        err.code = 'INVALID_DOTENV_KEY';
+        throw err;
+    }
+    const environment = uri.searchParams.get('environment');
+    if (!environment) {
+        const err = new Error('INVALID_DOTENV_KEY: Missing environment part');
+        err.code = 'INVALID_DOTENV_KEY';
+        throw err;
+    }
+    const environmentKey = `DOTENV_VAULT_${environment.toUpperCase()}`;
+    const ciphertext = result.parsed[environmentKey];
+    if (!ciphertext) {
+        const err = new Error(`NOT_FOUND_DOTENV_ENVIRONMENT: Cannot locate environment ${environmentKey} in your .env.vault file.`);
+        err.code = 'NOT_FOUND_DOTENV_ENVIRONMENT';
+        throw err;
+    }
+    return { ciphertext, key };
+}
+function _vaultPath(options) {
+    let possibleVaultPath = null;
+    if (options && options.path && options.path.length > 0) {
+        if (Array.isArray(options.path)) {
+            for (const filepath of options.path) {
+                if (fs.existsSync(filepath)) {
+                    possibleVaultPath = filepath.endsWith('.vault') ? filepath : `${filepath}.vault`;
+                }
+            }
+        }
+        else {
+            possibleVaultPath = options.path.endsWith('.vault') ? options.path : `${options.path}.vault`;
+        }
+    }
+    else {
+        possibleVaultPath = path.resolve(process.cwd(), '.env.vault');
+    }
+    if (fs.existsSync(possibleVaultPath)) {
+        return possibleVaultPath;
+    }
+    return null;
+}
+function _resolveHome(envPath) {
+    return envPath[0] === '~' ? path.join(os.homedir(), envPath.slice(1)) : envPath;
+}
+function _configVault(options) {
+    const debug = parseBoolean(process.env.DOTENV_CONFIG_DEBUG || (options && options.debug));
+    const quiet = parseBoolean(process.env.DOTENV_CONFIG_QUIET || (options && options.quiet));
+    if (debug || !quiet) {
+        _log('Loading env from encrypted .env.vault');
+    }
+    const parsed = DotenvModule._parseVault(options);
+    let processEnv = process.env;
+    if (options && options.processEnv != null) {
+        processEnv = options.processEnv;
+    }
+    DotenvModule.populate(processEnv, parsed, options);
+    return { parsed };
+}
+function configDotenv(options) {
+    const dotenvPath = path.resolve(process.cwd(), '.env');
+    let encoding = 'utf8';
+    let processEnv = process.env;
+    if (options && options.processEnv != null) {
+        processEnv = options.processEnv;
+    }
+    let debug = parseBoolean(processEnv.DOTENV_CONFIG_DEBUG || (options && options.debug));
+    let quiet = parseBoolean(processEnv.DOTENV_CONFIG_QUIET || (options && options.quiet));
+    if (options && options.encoding) {
+        encoding = options.encoding;
+    }
+    else {
+        if (debug) {
+            _debug('No encoding is specified. UTF-8 is used by default');
+        }
+    }
+    let optionPaths = [dotenvPath];
+    if (options && options.path) {
+        if (!Array.isArray(options.path)) {
+            optionPaths = [_resolveHome(options.path)];
+        }
+        else {
+            optionPaths = [];
+            for (const filepath of options.path) {
+                optionPaths.push(_resolveHome(filepath));
+            }
+        }
+    }
+    let lastError;
+    const parsedAll = {};
+    for (const path of optionPaths) {
+        try {
+            const parsed = DotenvModule.parse(fs.readFileSync(path, { encoding }));
+            DotenvModule.populate(parsedAll, parsed, options);
+        }
+        catch (e) {
+            if (debug) {
+                _debug(`Failed to load ${path} ${e.message}`);
+            }
+            lastError = e;
+        }
+    }
+    const populated = DotenvModule.populate(processEnv, parsedAll, options);
+    debug = parseBoolean(processEnv.DOTENV_CONFIG_DEBUG || debug);
+    quiet = parseBoolean(processEnv.DOTENV_CONFIG_QUIET || quiet);
+    if (debug || !quiet) {
+        const keysCount = Object.keys(populated).length;
+        const shortPaths = [];
+        for (const filePath of optionPaths) {
+            try {
+                const relative = path.relative(process.cwd(), filePath);
+                shortPaths.push(relative);
+            }
+            catch (e) {
+                if (debug) {
+                    _debug(`Failed to load ${filePath} ${e.message}`);
+                }
+                lastError = e;
+            }
+        }
+        _log(`injecting env (${keysCount}) from ${shortPaths.join(',')} ${dim(`-- tip: ${_getRandomTip()}`)}`);
+    }
+    if (lastError) {
+        return { parsed: parsedAll, error: lastError };
+    }
+    else {
+        return { parsed: parsedAll };
+    }
+}
+function config(options) {
+    if (_dotenvKey(options).length === 0) {
+        return DotenvModule.configDotenv(options);
+    }
+    const vaultPath = _vaultPath(options);
+    if (!vaultPath) {
+        _warn(`You set DOTENV_KEY but you are missing a .env.vault file at ${vaultPath}. Did you forget to build it?`);
+        return DotenvModule.configDotenv(options);
+    }
+    return DotenvModule._configVault(options);
+}
+function decrypt(encrypted, keyStr) {
+    const key = Buffer.from(keyStr.slice(-64), 'hex');
+    let ciphertext = Buffer.from(encrypted, 'base64');
+    const nonce = ciphertext.subarray(0, 12);
+    const authTag = ciphertext.subarray(-16);
+    ciphertext = ciphertext.subarray(12, -16);
+    try {
+        const aesgcm = crypto.createDecipheriv('aes-256-gcm', key, nonce);
+        aesgcm.setAuthTag(authTag);
+        return `${aesgcm.update(ciphertext)}${aesgcm.final()}`;
+    }
+    catch (error) {
+        const isRange = error instanceof RangeError;
+        const invalidKeyLength = error.message === 'Invalid key length';
+        const decryptionFailed = error.message === 'Unsupported state or unable to authenticate data';
+        if (isRange || invalidKeyLength) {
+            const err = new Error('INVALID_DOTENV_KEY: It must be 64 characters long (or more)');
+            err.code = 'INVALID_DOTENV_KEY';
+            throw err;
+        }
+        else if (decryptionFailed) {
+            const err = new Error('DECRYPTION_FAILED: Please check your DOTENV_KEY');
+            err.code = 'DECRYPTION_FAILED';
+            throw err;
+        }
+        else {
+            throw error;
+        }
+    }
+}
+function populate(processEnv, parsed, options = {}) {
+    const debug = Boolean(options && options.debug);
+    const override = Boolean(options && options.override);
+    const populated = {};
+    if (typeof parsed !== 'object') {
+        const err = new Error('OBJECT_REQUIRED: Please check the processEnv argument being passed to populate');
+        err.code = 'OBJECT_REQUIRED';
+        throw err;
+    }
+    for (const key of Object.keys(parsed)) {
+        if (Object.prototype.hasOwnProperty.call(processEnv, key)) {
+            if (override === true) {
+                processEnv[key] = parsed[key];
+                populated[key] = parsed[key];
+            }
+            if (debug) {
+                if (override === true) {
+                    _debug(`"${key}" is already defined and WAS overwritten`);
+                }
+                else {
+                    _debug(`"${key}" is already defined and was NOT overwritten`);
+                }
+            }
+        }
+        else {
+            processEnv[key] = parsed[key];
+            populated[key] = parsed[key];
+        }
+    }
+    return populated;
+}
+const DotenvModule = {
+    configDotenv,
+    _configVault,
+    _parseVault,
+    config,
+    decrypt,
+    parse,
+    populate
+};
+module.exports.configDotenv = DotenvModule.configDotenv;
+module.exports._configVault = DotenvModule._configVault;
+module.exports._parseVault = DotenvModule._parseVault;
+module.exports.config = DotenvModule.config;
+module.exports.decrypt = DotenvModule.decrypt;
+module.exports.parse = DotenvModule.parse;
+module.exports.populate = DotenvModule.populate;
+module.exports = DotenvModule;
+
+
+/***/ }),
+
 /***/ 635:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
+"use strict";
 
 function checkDCE() {
     if (typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ === 'undefined' ||
@@ -5353,6 +6594,7 @@ else // removed by dead control flow
 /***/ 682:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
+"use strict";
 
 if (true) {
     module.exports = __webpack_require__(458);
@@ -5363,9 +6605,25 @@ else // removed by dead control flow
 
 /***/ }),
 
+/***/ 697:
+/***/ ((module) => {
+
+"use strict";
+
+module.exports = function isBuffer(arg) {
+    return arg && typeof arg === 'object'
+        && typeof arg.copy === 'function'
+        && typeof arg.fill === 'function'
+        && typeof arg.readUInt8 === 'function';
+};
+
+
+/***/ }),
+
 /***/ 749:
 /***/ ((__unused_webpack_module, exports) => {
 
+"use strict";
 
 function f(a, b) { var c = a.length; a.push(b); a: for (; 0 < c;) {
     var d = c - 1 >>> 1, e = a[d];
@@ -5538,6 +6796,7 @@ finally {
 /***/ 761:
 /***/ ((module) => {
 
+"use strict";
 
 var R = typeof Reflect === 'object' ? Reflect : null;
 var ReflectApply = R && typeof R.apply === 'function'
@@ -5935,6 +7194,7 @@ function eventTargetAgnosticAddListener(emitter, name, listener, flags) {
 /***/ 872:
 /***/ ((module, exports) => {
 
+"use strict";
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;
 /*!
     Copyright (c) 2018 Jed Watson.
@@ -6004,6 +7264,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;
 /***/ 888:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
+"use strict";
 
 if (true) {
     module.exports = __webpack_require__(749);
@@ -6041,6 +7302,18 @@ else // removed by dead control flow
 /******/ 	}
 /******/ 	
 /************************************************************************/
+/******/ 	/* webpack/runtime/define property getters */
+/******/ 	(() => {
+/******/ 		// define getter functions for harmony exports
+/******/ 		__webpack_require__.d = (exports, definition) => {
+/******/ 			for(var key in definition) {
+/******/ 				if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 	})();
+/******/ 	
 /******/ 	/* webpack/runtime/global */
 /******/ 	(() => {
 /******/ 		__webpack_require__.g = (function() {
@@ -6053,59 +7326,161 @@ else // removed by dead control flow
 /******/ 		})();
 /******/ 	})();
 /******/ 	
-/******/ 	/* webpack/runtime/publicPath */
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
 /******/ 	(() => {
-/******/ 		var scriptUrl;
-/******/ 		if (__webpack_require__.g.importScripts) scriptUrl = __webpack_require__.g.location + "";
-/******/ 		var document = __webpack_require__.g.document;
-/******/ 		if (!scriptUrl && document) {
-/******/ 			if (document.currentScript && document.currentScript.tagName.toUpperCase() === 'SCRIPT')
-/******/ 				scriptUrl = document.currentScript.src;
-/******/ 			if (!scriptUrl) {
-/******/ 				var scripts = document.getElementsByTagName("script");
-/******/ 				if(scripts.length) {
-/******/ 					var i = scripts.length - 1;
-/******/ 					while (i > -1 && (!scriptUrl || !/^http(s?):/.test(scriptUrl))) scriptUrl = scripts[i--].src;
-/******/ 				}
+/******/ 		__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/make namespace object */
+/******/ 	(() => {
+/******/ 		// define __esModule on exports
+/******/ 		__webpack_require__.r = (exports) => {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
 /******/ 			}
-/******/ 		}
-/******/ 		// When supporting browsers where an automatic publicPath is not supported you must specify an output.publicPath manually via configuration
-/******/ 		// or pass an empty string ("") and set the __webpack_public_path__ variable from your code to use your own logic.
-/******/ 		if (!scriptUrl) throw new Error("Automatic publicPath is not supported in this browser");
-/******/ 		scriptUrl = scriptUrl.replace(/^blob:/, "").replace(/#.*$/, "").replace(/\?.*$/, "").replace(/\/[^\/]+$/, "/");
-/******/ 		__webpack_require__.p = scriptUrl;
+/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 		};
 /******/ 	})();
 /******/ 	
 /************************************************************************/
 var __webpack_exports__ = {};
+// This entry needs to be wrapped in an IIFE because it needs to be in strict mode.
+(() => {
+"use strict";
+
+// NAMESPACE OBJECT: ./node_modules/axios/lib/platform/common/utils.js
+var common_utils_namespaceObject = {};
+__webpack_require__.r(common_utils_namespaceObject);
+__webpack_require__.d(common_utils_namespaceObject, {
+  hasBrowserEnv: () => (hasBrowserEnv),
+  hasStandardBrowserEnv: () => (hasStandardBrowserEnv),
+  hasStandardBrowserWebWorkerEnv: () => (hasStandardBrowserWebWorkerEnv),
+  navigator: () => (_navigator),
+  origin: () => (origin)
+});
 
 // EXTERNAL MODULE: ./node_modules/react/jsx-runtime.js
 var jsx_runtime = __webpack_require__(682);
-// EXTERNAL MODULE: ./node_modules/react/index.js
-var react = __webpack_require__(466);
-;// ./node_modules/liqvid/dist/esm/utils/media.mjs
-/** Promisifed version of [canplay](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplay_event) event */
-function awaitMediaCanPlay(media) {
-    return new Promise((resolve) => {
-        if (media.readyState === media.HAVE_FUTURE_DATA) {
-            return resolve();
-        }
-        else {
-            media.addEventListener("canplay", () => resolve());
-        }
-    });
+;// ./node_modules/@liqvid/utils/dist/esm/ssr.mjs
+const isClient = typeof globalThis.window !== "undefined";
+
+;// ./node_modules/@liqvid/recording/dist/esm/recorder.mjs
+/**
+ * Abstract class for recording interactions.
+ */
+class Recorder {
+    constructor() {
+        /**
+         * A recorder is intransigent if it cannot be started immediately (e.g. AudioRecorder).
+         */
+        this.intransigent = false;
+    }
+    /** Begin recording. */
+    beginRecording() { }
+    /** Pause recording. */
+    pauseRecording() { }
+    /** Resume recording from paused. */
+    resumeRecording() { }
+    /** End recording. */
+    endRecording() { }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    finalizeRecording(data, startDelay = 0, stopDelay = 0) {
+        return data;
+    }
+    provide({ push, manager, }) {
+        this.push = push;
+        this.manager = manager;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    getUpdate(data, lastDuration) { }
 }
-/** Promisified version of [`canplaythrough`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplaythrough_event) event. */
-function awaitMediaCanPlayThrough(media) {
-    return new Promise((resolve) => {
-        if (media.readyState === media.HAVE_ENOUGH_DATA) {
-            return resolve();
-        }
-        else {
-            media.addEventListener("canplaythrough", () => resolve());
-        }
-    });
+
+;// ./node_modules/@liqvid/recording/dist/esm/recorders/audio-recording.mjs
+
+
+
+const icon = ((0,jsx_runtime.jsx)("g", { transform: "scale(0.126261032057) translate(164.575)", children: (0,jsx_runtime.jsxs)("g", { stroke: "#FFF", transform: "translate(-140.62 -173.21)", children: [(0,jsx_runtime.jsx)("path", { d: "m568.57 620.93c0 116.77-94.66 211.43-211.43 211.43s-211.43-94.66-211.43-211.43v-0.00001", fillOpacity: "0", transform: "translate(14.904)", strokeLinecap: "round", strokeWidth: "20" }), (0,jsx_runtime.jsx)("path", { d: "m568.57 620.93c0 116.77-94.66 211.43-211.43 211.43s-211.43-94.66-211.43-211.43v-0.00001", fillOpacity: "0", transform: "translate(14.904)", strokeLinecap: "round", strokeWidth: "40" }), (0,jsx_runtime.jsx)("path", { d: "m372.05 832.36v114.29", strokeWidth: "30", fill: "none" }), (0,jsx_runtime.jsx)("path", { fill: "#FFF", d: "m197.14 920.93c0.00001-18.935 59.482-34.286 132.86-34.286 73.375 0 132.86 15.35 132.86 34.286z", transform: "translate(42.047 34.286)", strokeLinecap: "round", strokeWidth: "20" }), (0,jsx_runtime.jsx)("path", { fill: "#FFF", strokeWidth: "21.455", strokeLinecap: "round", d: "m372.06 183.94c-77.019-0.00001-139.47 62.45-139.47 139.47v289.62c0 77.019 62.45 139.47 139.47 139.47 77.019 0 139.44-62.45 139.44-139.47v-289.62c0-77.02-62.42-139.47-139.44-139.47z" })] }) }));
+class AudioRecorder extends Recorder {
+    constructor() {
+        super(...arguments);
+        this.requested = false;
+        this.intransigent = true;
+    }
+    beginRecording() {
+        if (!this.stream)
+            throw new Error("Navigator stream not available");
+        this.promise = new Promise(async (resolve) => {
+            // record the audio
+            this.mediaRecorder = new MediaRecorder(this.stream, {
+                mimeType: "audio/webm",
+            });
+            // subscribe to events
+            this.mediaRecorder.addEventListener("dataavailable", (e) => {
+                this.push(e.data);
+            });
+            let startDelay;
+            this.mediaRecorder.addEventListener("start", () => {
+                startDelay = this.manager.getTime();
+            });
+            this.mediaRecorder.addEventListener("stop", () => {
+                resolve([startDelay, this.manager.getTime()]);
+            });
+            this.mediaRecorder.start();
+        });
+    }
+    pauseRecording() {
+        this.mediaRecorder.pause();
+    }
+    resumeRecording() {
+        this.mediaRecorder.resume();
+    }
+    async endRecording() {
+        this.mediaRecorder.stop();
+        return this.promise;
+    }
+    finalizeRecording(chunks) {
+        return new Blob(chunks, { type: "audio/webm" });
+    }
+    requestRecording(constraints = { audio: true }) {
+        // be idempotent
+        if (this.requested)
+            return;
+        const request = async () => {
+            // Only need to do this once...
+            window.removeEventListener("click", request);
+            try {
+                this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+            }
+            catch (e) {
+                // User said no or browser rejected request due to insecure context
+                console.log("no recording allowed");
+            }
+        };
+        // Need user interaction to request media
+        window.addEventListener("click", request);
+        this.requested = true;
+    }
 }
+function AudioSaveComponent(props) {
+    return ((0,jsx_runtime.jsx)(jsx_runtime.Fragment, { children: props.data ? ((0,jsx_runtime.jsx)("a", { download: "audio.webm", href: URL.createObjectURL(props.data), children: "Download Audio" })) : ("Audio not yet available") }));
+}
+const recorder = new AudioRecorder();
+const AudioRecording = {
+    enabled: () => {
+        if (typeof recorder.stream === "undefined") {
+            if (isClient)
+                recorder.requestRecording();
+            return false;
+        }
+        return true;
+    },
+    icon,
+    key: "audio",
+    name: "Audio",
+    recorder,
+    saveComponent: AudioSaveComponent,
+    title: "Record audio",
+};
 
 ;// ./node_modules/@liqvid/utils/dist/esm/misc.mjs
 /** Equivalent to `(min <= val) && (val < max)`. */
@@ -6177,73 +7552,170 @@ function waitFor(callback, interval = 10) {
     });
 }
 
-// EXTERNAL MODULE: ./node_modules/events/events.js
-var events = __webpack_require__(761);
-;// ./node_modules/@liqvid/playback/dist/esm/react.mjs
-
-const symbol = Symbol.for("@lqv/playback");
-if (!(symbol in globalThis)) {
-    globalThis[symbol] = (0,react.createContext)(null);
+;// ./node_modules/@liqvid/utils/dist/esm/time.mjs
+/* time constants */
+const SECONDS = 1000;
+const MINUTES = 60 * SECONDS;
+const HOURS = 60 * MINUTES;
+const DAYS = 24 * HOURS;
+// nice minus sign
+const MINUS_SIGN = "\u2212";
+/**
+ * Regular expression used to match times
+ */
+const timeRegexp = new RegExp("^" + "(?:(\\d+):)?".repeat(3) + "(\\d+)(?:\\.(\\d+))?$");
+/**
+ * Parse a time string like "3:43" into milliseconds
+ * @param str String to parse
+ * @returns Time in milliseconds
+ */
+function parseTime(str) {
+    if (str[0] === MINUS_SIGN || str[0] === "-") {
+        return -parseTime(str.slice(1));
+    }
+    // d, h, m, s
+    const parts = str.split(":").map((x) => parseInt(x, 10));
+    while (parts.length < 4) {
+        parts.unshift(0);
+    }
+    // ms
+    const $_ = str.match(/\.(\d{0,3})/);
+    if ($_) {
+        parts.push(parseInt($_[1].padEnd(3, "0")));
+    }
+    else {
+        parts.push(0);
+    }
+    const [days, hours, minutes, seconds, milliseconds] = parts;
+    return (milliseconds + 1000 * (seconds + 60 * (minutes + 60 * (hours + 24 * days))));
 }
 /**
- * {@link React.Context} used to access ambient {@link Playback}
+ * Format a duration as a {@link https://html.spec.whatwg.org/multipage/common-microsyntaxes.html#valid-duration-string time duration string}
+ * for use as a {@link https://html.spec.whatwg.org/multipage/text-level-semantics.html#attr-time-datetime datetime} attribute.
+ * @param time Duration in milliseconds.
+ * @returns A duration string such as "PT4H18M3S".
+ * @since 1.7.0
  */
-const PlaybackContext = globalThis[symbol];
-/** Access the ambient {@link Playback} */
-function react_usePlayback() {
-    return (0,react.useContext)(PlaybackContext);
+function formatTimeDuration(time) {
+    const parts = ["P"];
+    const timeParts = [];
+    const days = Math.floor(time / DAYS), hours = Math.floor((time / HOURS) % 24), minutes = Math.floor((time / MINUTES) % 60), seconds = (time / SECONDS) % 60;
+    if (days > 0) {
+        parts.push(`${days}D`);
+    }
+    if (hours > 0) {
+        timeParts.push(`${hours}H`);
+    }
+    if (minutes > 0) {
+        timeParts.push(`${minutes}M`);
+    }
+    if (seconds > 0) {
+        timeParts.push(`${seconds.toFixed(3).replace(/\.?0+$/, "")}S`);
+    }
+    if (timeParts.length > 0) {
+        parts.push("T", ...timeParts);
+    }
+    return parts.join("");
 }
-function useTime(callback, transform, deps) {
-    const playback = react_usePlayback();
-    const prev = useRef();
-    useEffect(() => {
-        const listener = typeof transform === "function"
-            ? (t) => {
-                const value = transform(t);
-                if (value !== prev.current)
-                    callback(value);
-                prev.current = value;
+/**
+ * Format a time as "mm:ss"
+ * @param time Time in milliseconds
+ * @returns Formatted time
+ */
+function formatTime(time) {
+    if (time < 0) {
+        return MINUS_SIGN + formatTime(-time);
+    }
+    const days = Math.floor(time / DAYS), hours = Math.floor((time / HOURS) % 24), minutes = Math.floor((time / MINUTES) % 60), seconds = Math.floor((time / SECONDS) % 60);
+    let firstNonzero = true;
+    let str = "";
+    for (const part of [days, hours, minutes]) {
+        if (firstNonzero) {
+            if (part !== 0) {
+                firstNonzero = false;
+                str += part.toString() + ":";
             }
-            : (t) => {
-                if (t !== prev.current)
-                    callback(t);
-                prev.current = t;
-            };
-        // subscriptions
-        playback.on("seek", listener);
-        playback.on("timeupdate", listener);
-        // initial call
-        listener(playback.currentTime);
-        // unsubscriptions
-        return () => {
-            playback.off("seek", listener);
-            playback.off("timeupdate", listener);
-        };
-    }, typeof transform === "function" ? deps : transform);
+        }
+        else {
+            str += part.toString().padStart(2, "0") + ":";
+        }
+    }
+    // display 0:ss
+    if (firstNonzero) {
+        str += "0:";
+    }
+    str += seconds.toString().padStart(2, "0");
+    return str;
+}
+/**
+ * Format a time as "mm:ss.ms"
+ * @param time Time in milliseconds
+ * @returns Formatted time
+ */
+function formatTimeMs(time) {
+    if (time < 0) {
+        return MINUS_SIGN + formatTimeMs(-time);
+    }
+    const milliseconds = Math.floor(time % 1000);
+    if (milliseconds === 0) {
+        return formatTime(time);
+    }
+    return (formatTime(time) +
+        "." +
+        String(milliseconds).padStart(3, "0").replace(/0+$/, ""));
 }
 
-;// ./node_modules/liqvid/dist/esm/CaptionsDisplay.mjs
+;// ./node_modules/@liqvid/recording/dist/esm/recorders/marker-recording.mjs
 
 
 
-function Captions() {
-    const playback = react_usePlayback();
-    const domElement = (0,react.useRef)();
-    (0,react.useEffect)(() => {
-        const updateCaptions = () => {
-            domElement.current.innerHTML = "";
-            for (const cue of playback.captions) {
-                domElement.current.appendChild(cue);
-            }
-        };
-        playback.on("cuechange", updateCaptions);
-        return () => {
-            playback.off("cuechange", updateCaptions);
-        };
-    }, [playback]);
-    return react.createElement("div", { className: "lv-captions-display", ref: domElement });
+
+const marker_recording_icon = ((0,jsx_runtime.jsx)("text", { fill: "#FFF", fontFamily: "Helvetica", fontSize: "75", textAnchor: "middle", x: "50", y: "75", children: "M" }));
+class MarkerRecorder extends Recorder {
+    constructor() {
+        super();
+        bind(this, ["onMarkerUpdate"]);
+    }
+    beginRecording() {
+        this.lastTime = 0;
+        this.script.on("markerupdate", this.onMarkerUpdate);
+    }
+    endRecording() {
+        this.script.off("markerupdate", this.onMarkerUpdate);
+        this.captureMarker(this.script.markerName);
+    }
+    finalizeRecording(data, startDelay, stopDelay) {
+        data[0][1] -= startDelay;
+        data[data.length - 1][1] += stopDelay;
+        return data.map((cue) => [cue[0], formatTimeMs(cue[1])]);
+    }
+    onMarkerUpdate(prevIndex) {
+        if (this.manager.paused)
+            return;
+        this.captureMarker(this.script.markers[prevIndex][0]);
+    }
+    captureMarker(markerName) {
+        const t = this.manager.getTime();
+        this.push([markerName, t - this.lastTime]);
+        this.lastTime = t;
+    }
+}
+function MarkerSaveComponent(props) {
+    return ((0,jsx_runtime.jsx)(jsx_runtime.Fragment, { children: (0,jsx_runtime.jsx)("textarea", { readOnly: true, value: format(props.data) }) }));
+}
+const MarkerRecording = {
+    icon: marker_recording_icon,
+    key: "markers",
+    name: "Markers",
+    recorder: new MarkerRecorder(),
+    saveComponent: MarkerSaveComponent,
+};
+function format(data) {
+    return JSON.stringify(data, null, 2).replace(/\[\s+"(.+?)",\s+"(.+?)"\s+\]/g, '["$1", "$2"]');
 }
 
+// EXTERNAL MODULE: ./node_modules/react/index.js
+var react = __webpack_require__(466);
 ;// ./node_modules/@liqvid/keymap/dist/esm/mixedCaseVals.mjs
 const mixedCaseVals = [
     "AltGraph",
@@ -6434,7 +7906,7 @@ for (const key of mixedCaseVals) {
 const modifierOrder = Object.keys(modifierMap).map((k) => modifierMap[k]);
 const useCode = ["Backspace", "Enter", "Space", "Tab"];
 /** Maps keyboard shortcuts to actions */
-class esm_Keymap {
+class Keymap {
     constructor() {
         this.__bindings = {};
     }
@@ -6505,7 +7977,7 @@ class esm_Keymap {
             }
             return;
         }
-        seq = esm_Keymap.normalize(seq);
+        seq = Keymap.normalize(seq);
         if (!this.__bindings.hasOwnProperty(seq)) {
             this.__bindings[seq] = [];
         }
@@ -6523,7 +7995,7 @@ class esm_Keymap {
             }
             return;
         }
-        seq = esm_Keymap.normalize(seq);
+        seq = Keymap.normalize(seq);
         if (!this.__bindings.hasOwnProperty(seq)) {
             return;
         }
@@ -6548,7 +8020,7 @@ class esm_Keymap {
     }
     /** Dispatches all handlers matching the given event. */
     handle(e) {
-        const seq = esm_Keymap.identify(e);
+        const seq = Keymap.identify(e);
         if (!this.__bindings[seq] && !this.__bindings["*"])
             return;
         if (this.__bindings[seq]) {
@@ -6578,17 +8050,17 @@ function cmp(a, b) {
 ;// ./node_modules/@liqvid/keymap/dist/esm/react.mjs
 "use client";
 
-const react_symbol = Symbol.for("@lqv/keymap");
-if (!(react_symbol in globalThis)) {
-    globalThis[react_symbol] = (0,react.createContext)(null);
+const symbol = Symbol.for("@lqv/keymap");
+if (!(symbol in globalThis)) {
+    globalThis[symbol] = (0,react.createContext)(null);
 }
 /**
  * {@link React.Context} used to access ambient Keymap
  */
-const KeymapContext = globalThis[react_symbol];
+const KeymapContext = globalThis[symbol];
 KeymapContext.displayName = "Keymap";
 /** Access the ambient {@link Keymap} */
-function react_useKeymap() {
+function useKeymap() {
     return (0,react.useContext)(KeymapContext);
 }
 /** Register a keyboard shortcut for the duration of the component. */
@@ -6597,195 +8069,11 @@ function useKeyboardShortcut(
 seq, 
 /** Callback to handle the shortcut */
 callback) {
-    const keymap = react_useKeymap();
+    const keymap = useKeymap();
     useEffect(() => {
         keymap.bind(seq, callback);
         return () => keymap.unbind(seq, callback);
     }, [callback, keymap, seq]);
-}
-
-;// ./node_modules/liqvid/dist/esm/hooks.mjs
-
-
-
-
-
-/** Access the ambient {@link Player} */
-function usePlayer() {
-    return (0,react.useContext)(Player.Context);
-}
-/** Register a callback for when the marker changes */
-function useMarkerUpdate(callback, deps) {
-    const script = useScript();
-    useEffect(() => {
-        script.on("markerupdate", callback);
-        return () => {
-            script.off("markerupdate", callback);
-        };
-    }, [callback, script, ...deps]);
-}
-/** Access the ambient {@link Script} */
-function useScript() {
-    return usePlayer().script;
-}
-/** Register a callback for when the time changes */
-function useTimeUpdate(callback, deps) {
-    const playback = usePlayback();
-    useEffect(() => {
-        playback.on("seek", callback);
-        playback.on("timeupdate", callback);
-        return () => {
-            playback.off("seek", callback);
-            playback.off("timeupdate", callback);
-        };
-    }, [callback, playback, ...deps]);
-}
-
-;// ./node_modules/@liqvid/utils/dist/esm/time.mjs
-/* time constants */
-const SECONDS = 1000;
-const MINUTES = 60 * SECONDS;
-const HOURS = 60 * MINUTES;
-const DAYS = 24 * HOURS;
-// nice minus sign
-const MINUS_SIGN = "\u2212";
-/**
- * Regular expression used to match times
- */
-const timeRegexp = new RegExp("^" + "(?:(\\d+):)?".repeat(3) + "(\\d+)(?:\\.(\\d+))?$");
-/**
- * Parse a time string like "3:43" into milliseconds
- * @param str String to parse
- * @returns Time in milliseconds
- */
-function parseTime(str) {
-    if (str[0] === MINUS_SIGN || str[0] === "-") {
-        return -parseTime(str.slice(1));
-    }
-    // d, h, m, s
-    const parts = str.split(":").map((x) => parseInt(x, 10));
-    while (parts.length < 4) {
-        parts.unshift(0);
-    }
-    // ms
-    const $_ = str.match(/\.(\d{0,3})/);
-    if ($_) {
-        parts.push(parseInt($_[1].padEnd(3, "0")));
-    }
-    else {
-        parts.push(0);
-    }
-    const [days, hours, minutes, seconds, milliseconds] = parts;
-    return (milliseconds + 1000 * (seconds + 60 * (minutes + 60 * (hours + 24 * days))));
-}
-/**
- * Format a duration as a {@link https://html.spec.whatwg.org/multipage/common-microsyntaxes.html#valid-duration-string time duration string}
- * for use as a {@link https://html.spec.whatwg.org/multipage/text-level-semantics.html#attr-time-datetime datetime} attribute.
- * @param time Duration in milliseconds.
- * @returns A duration string such as "PT4H18M3S".
- * @since 1.7.0
- */
-function formatTimeDuration(time) {
-    const parts = ["P"];
-    const timeParts = [];
-    const days = Math.floor(time / DAYS), hours = Math.floor((time / HOURS) % 24), minutes = Math.floor((time / MINUTES) % 60), seconds = (time / SECONDS) % 60;
-    if (days > 0) {
-        parts.push(`${days}D`);
-    }
-    if (hours > 0) {
-        timeParts.push(`${hours}H`);
-    }
-    if (minutes > 0) {
-        timeParts.push(`${minutes}M`);
-    }
-    if (seconds > 0) {
-        timeParts.push(`${seconds.toFixed(3).replace(/\.?0+$/, "")}S`);
-    }
-    if (timeParts.length > 0) {
-        parts.push("T", ...timeParts);
-    }
-    return parts.join("");
-}
-/**
- * Format a time as "mm:ss"
- * @param time Time in milliseconds
- * @returns Formatted time
- */
-function formatTime(time) {
-    if (time < 0) {
-        return MINUS_SIGN + formatTime(-time);
-    }
-    const days = Math.floor(time / DAYS), hours = Math.floor((time / HOURS) % 24), minutes = Math.floor((time / MINUTES) % 60), seconds = Math.floor((time / SECONDS) % 60);
-    let firstNonzero = true;
-    let str = "";
-    for (const part of [days, hours, minutes]) {
-        if (firstNonzero) {
-            if (part !== 0) {
-                firstNonzero = false;
-                str += part.toString() + ":";
-            }
-        }
-        else {
-            str += part.toString().padStart(2, "0") + ":";
-        }
-    }
-    // display 0:ss
-    if (firstNonzero) {
-        str += "0:";
-    }
-    str += seconds.toString().padStart(2, "0");
-    return str;
-}
-/**
- * Format a time as "mm:ss.ms"
- * @param time Time in milliseconds
- * @returns Formatted time
- */
-function time_formatTimeMs(time) {
-    if (time < 0) {
-        return MINUS_SIGN + time_formatTimeMs(-time);
-    }
-    const milliseconds = Math.floor(time % 1000);
-    if (milliseconds === 0) {
-        return formatTime(time);
-    }
-    return (formatTime(time) +
-        "." +
-        String(milliseconds).padStart(3, "0").replace(/0+$/, ""));
-}
-
-;// ./node_modules/liqvid/dist/esm/controls/ThumbnailBox.mjs
-
-
-
-
-function ThumbnailBox(props) {
-    const player = usePlayer(), { playback } = player;
-    const { cols = 5, rows = 5, frequency = 4, path, progress, show, title, height = 100, width = 160, } = props;
-    const count = cols * rows;
-    (0,react.useEffect)(() => {
-        // preload thumbs (once more important loading has taken place)
-        const maxSlide = Math.floor(playback.duration / frequency / 1000), maxSheet = Math.floor(maxSlide / count);
-        player.hub.on("canplay", () => {
-            for (let sheetNum = 0; sheetNum <= maxSheet; ++sheetNum) {
-                const img = new Image();
-                img.src = path.replace("%s", sheetNum.toString());
-            }
-        });
-    }, [count, frequency, path, playback.duration, player]);
-    const time = (progress * playback.duration) / 1000, markerNum = Math.floor(time / frequency), sheetNum = Math.floor(markerNum / count), markerNumOnSheet = markerNum % count, row = Math.floor(markerNumOnSheet / rows), col = markerNumOnSheet % rows;
-    const sheetName = path.replace("%s", sheetNum.toString());
-    return (react.createElement("div", { className: "lv-controls-thumbnail", style: {
-            display: show ? "block" : "none",
-            left: `calc(${progress * 100}%)`,
-        } },
-        title && react.createElement("span", { className: "lv-thumbnail-title" }, title),
-        react.createElement("div", { className: "lv-thumbnail-box" },
-            react.createElement("img", { src: sheetName, style: {
-                    left: `-${col * width}px`,
-                    top: `-${row * height}px`,
-                } }),
-            react.createElement("span", { className: "lv-thumbnail-time" }, formatTime(time * 1000)))));
 }
 
 ;// ./node_modules/@liqvid/utils/dist/esm/interaction.mjs
@@ -7024,7 +8312,7 @@ function react_onClick(callback) {
  * @returns An object of event handlers which should be added to a React element with {...}
  */
 function react_onDrag(move, down, up) {
-    const listener = htmlOnDrag(move, down, up);
+    const listener = onDrag(move, down, up);
     return {
         "data-affords": "click",
         onMouseDown: (e) => listener(e.nativeEvent),
@@ -7055,7 +8343,7 @@ function recursiveMap(children, fn) {
  * Get a function to force the component to update
  * @returns A forceUpdate() function
  */
-function react_useForceUpdate() {
+function useForceUpdate() {
     return (0,react.useReducer)((c) => c + 1, 0)[1];
 }
 /**
@@ -7073,1898 +8361,524 @@ function usePromise(deps = []) {
     return [promise, resolve.current, reject.current];
 }
 
-;// ./node_modules/liqvid/dist/esm/controls/ScrubberBar.mjs
-
-
-
-
-
-
-
-function ScrubberBar(props) {
-    const keymap = react_useKeymap();
-    const playback = react_usePlayback();
-    const script = useScript();
-    const [progress, setProgress] = (0,react.useState)({
-        scrubber: playback.currentTime / playback.duration,
-        thumb: playback.currentTime / playback.duration,
-    });
-    const [showThumb, setShowThumb] = (0,react.useState)(false);
-    // refs
-    const scrubberBar = (0,react.useRef)();
-    /* Event handlers */
-    const seek = (0,react.useCallback)(() => {
-        if (playback.seeking)
-            return;
-        const progress = playback.currentTime / playback.duration;
-        setProgress({ scrubber: progress, thumb: progress });
-    }, [playback]);
-    const seeked = (0,react.useCallback)(() => {
-        const progress = playback.currentTime / playback.duration;
-        setProgress((prev) => ({ scrubber: progress, thumb: prev.thumb }));
-    }, [playback]);
-    const timeupdate = (0,react.useCallback)(() => {
-        const progress = playback.currentTime / playback.duration;
-        setProgress((prev) => ({ scrubber: progress, thumb: prev.thumb }));
-    }, [playback]);
-    const back5 = (0,react.useCallback)(() => playback.seek(playback.currentTime - 5000), [playback]);
-    const fwd5 = (0,react.useCallback)(() => playback.seek(playback.currentTime + 5000), [playback]);
-    const back10 = (0,react.useCallback)(() => playback.seek(playback.currentTime - 10000), [playback]);
-    const fwd10 = (0,react.useCallback)(() => playback.seek(playback.currentTime + 10000), [playback]);
-    const seekPercent = (0,react.useCallback)((e) => {
-        const num = parseInt(e.key, 10);
-        if (!isNaN(num)) {
-            playback.seek((playback.duration * num) / 10);
-        }
-    }, [playback]);
-    (0,react.useEffect)(() => {
-        /* playback listeners */
-        playback.on("seek", seek);
-        playback.on("seeked", seeked);
-        playback.on("timeupdate", timeupdate);
-        /* keyboard shortcuts */
-        // seek 5
-        keymap.bind("ArrowLeft", back5);
-        keymap.bind("ArrowRight", fwd5);
-        // seek 10
-        keymap.bind("J", back10);
-        keymap.bind("L", fwd10);
-        // percentage seeking
-        keymap.bind("0,1,2,3,4,5,6,7,8,9", seekPercent);
-        // seek by marker
-        if (script) {
-            keymap.bind("W", script.back);
-            keymap.bind("E", script.forward);
-        }
-        return () => {
-            playback.off("seek", seek);
-            playback.off("seeked", seeked);
-            playback.off("timeupdate", timeupdate);
-            keymap.unbind("ArrowLeft", back5);
-            keymap.unbind("ArrowRight", fwd5);
-            keymap.unbind("J", back10);
-            keymap.unbind("L", fwd10);
-            keymap.unbind("0,1,2,3,4,5,6,7,8,9", seekPercent);
-            if (script) {
-                keymap.unbind("W", script.back);
-                keymap.unbind("E", script.forward);
-            }
-        };
-    }, [
-        back10,
-        back5,
-        fwd10,
-        fwd5,
-        keymap,
-        playback,
-        script,
-        seek,
-        seekPercent,
-        seeked,
-        timeupdate,
-    ]);
-    // event handlers
-    const divEvents = (0,react.useMemo)(() => {
-        if (!anyHover)
-            return {};
-        const listener = onDrag(
-        // move
-        (e, { x }) => {
-            const rect = scrubberBar.current.getBoundingClientRect(), progress = clamp(0, (x - rect.left) / rect.width, 1);
-            setProgress({ scrubber: progress, thumb: progress });
-            playback.seek(progress * playback.duration);
-        }, 
-        // down
-        (e) => {
-            playback.seeking = true;
-            const rect = scrubberBar.current.getBoundingClientRect(), progress = clamp(0, (e.clientX - rect.left) / rect.width, 1);
-            setProgress({ scrubber: progress, thumb: progress });
-            playback.seek(progress * playback.duration);
-        }, 
-        // up
-        () => (playback.seeking = false));
-        return {
-            onMouseDown: (e) => listener(e.nativeEvent),
-        };
-    }, [playback]);
-    // events to attach on the wrapper
-    const wrapEvents = (0,react.useMemo)(() => {
-        const props = {};
-        if (anyHover) {
-            Object.assign(props, {
-                // show thumb preview on hover
-                onMouseOver: () => setShowThumb(true),
-                onMouseMove: (e) => {
-                    const rect = scrubberBar.current.getBoundingClientRect(), progress = clamp(0, (e.clientX - rect.left) / rect.width, 1);
-                    setProgress((prev) => ({ scrubber: prev.scrubber, thumb: progress }));
-                },
-                onMouseOut: () => setShowThumb(false),
-            });
-        }
-        const listener = onDrag(
-        // move
-        (e, { x }) => {
-            const rect = scrubberBar.current.getBoundingClientRect(), progress = clamp(0, (x - rect.left) / rect.width, 1);
-            setProgress({ scrubber: progress, thumb: progress });
-        }, 
-        // start
-        (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            playback.seeking = true;
-            setShowThumb(true);
-        }, 
-        // end
-        (e, { x }) => {
-            e.preventDefault();
-            const rect = scrubberBar.current.getBoundingClientRect(), progress = clamp(0, (x - rect.left) / rect.width, 1);
-            setShowThumb(false);
-            playback.seeking = false;
-            playback.seek(progress * playback.duration);
-        });
-        props.ref = captureRef((ref) => {
-            ref.addEventListener("touchstart", listener, { passive: false });
-        });
-        return props;
-    }, [playback]);
-    // events to be attached to the scrubber
-    const scrubberEvents = (0,react.useMemo)(() => {
-        // if (anyHover) return {};
-        const listener = onDrag(
-        // move
-        (e, { x }) => {
-            const rect = scrubberBar.current.getBoundingClientRect(), progress = clamp(0, (x - rect.left) / rect.width, 1);
-            setProgress({ scrubber: progress, thumb: progress });
-        }, 
-        // start
-        (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            playback.seeking = true;
-            setShowThumb(true);
-        }, 
-        // end
-        (e, { x }) => {
-            e.preventDefault();
-            const rect = scrubberBar.current.getBoundingClientRect(), progress = clamp(0, (x - rect.left) / rect.width, 1);
-            setShowThumb(false);
-            playback.seeking = false;
-            playback.seek(progress * playback.duration);
-        });
-        return {
-            ref: captureRef((ref) => {
-                ref.addEventListener("touchstart", listener, { passive: false });
-            }),
-        };
-    }, [playback]);
-    const highlights = (props.thumbs && props.thumbs.highlights) || [];
-    const activeHighlight = highlights.find((_) => between(_.time / playback.duration, progress.thumb, _.time / playback.duration + 0.01));
-    const thumbTitle = activeHighlight ? activeHighlight.title : null;
-    return (react.createElement("div", { className: "lv-controls-scrub", ref: scrubberBar, ...divEvents },
-        props.thumbs && (react.createElement(ThumbnailBox, { ...props.thumbs, progress: progress.thumb, show: showThumb, title: thumbTitle })),
-        react.createElement("div", { className: "lv-controls-scrub-wrap", ...wrapEvents },
-            react.createElement("svg", { className: "lv-controls-scrub-progress", preserveAspectRatio: "none", viewBox: "0 0 100 10" },
-                react.createElement("rect", { className: "lv-progress-elapsed", x: "0", y: "0", height: "10", width: progress.scrubber * 100 }),
-                react.createElement("rect", { className: "lv-progress-remaining", x: progress.scrubber * 100, y: "0", height: "10", width: (1 - progress.scrubber) * 100 }),
-                highlights.map(({ time }) => (react.createElement("rect", { key: time, className: ["lv-thumb-highlight"]
-                        .concat(time <= playback.currentTime ? "past" : [])
-                        .join(" "), x: (time / playback.duration) * 100, y: "0", width: "1", height: "10" })))),
-            react.createElement("svg", { className: "lv-scrubber", style: { left: `calc(${progress.scrubber * 100}% - 6px)` }, viewBox: "0 0 100 100", ...scrubberEvents },
-                react.createElement("circle", { cx: "50", cy: "50", r: "50", stroke: "none" })))));
-}
-
-;// ./node_modules/liqvid/dist/esm/Controls.mjs
-
-
-
-
-
-
-// hiding timeout
-const TIMEOUT = 3000;
-function Controls(props) {
-    const keymap = react_useKeymap();
-    const playback = react_usePlayback();
-    const [visible, setVisible] = (0,react.useState)(true);
-    const timer = (0,react.useRef)(0);
-    // reset the hiding timer
-    const resetTimer = (0,react.useCallback)(() => {
-        if (playback.paused)
-            return;
-        if (timer.current !== undefined)
-            clearTimeout(timer.current);
-        timer.current = window.setTimeout(() => setVisible(false), TIMEOUT);
-        setVisible(true);
-    }, [playback]);
-    // mount subscriptions
-    (0,react.useEffect)(() => {
-        // hide on keyboard input
-        keymap.bind("*", resetTimer);
-        // show/hiding
-        document.body.addEventListener("touchstart", resetTimer);
-        document.body.addEventListener("mousemove", resetTimer);
-        playback.on("play", resetTimer);
-        playback.on("pause", () => {
-            clearTimeout(timer.current);
-            setVisible(true);
-        });
-        playback.on("stop", () => {
-            clearTimeout(timer.current);
-            setVisible(true);
-        });
-        document.body.addEventListener("mouseleave", () => {
-            if (playback.paused)
-                return;
-            setVisible(false);
-        });
-    }, [keymap, playback, resetTimer]);
-    const classNames = ["rp-controls", "lv-controls"];
-    if (!visible)
-        classNames.push("hidden");
-    return (react.createElement("div", { className: classNames.join(" ") },
-        react.createElement(ScrubberBar, { thumbs: props.thumbs }),
-        react.createElement("div", { className: "lv-controls-buttons" }, props.controls instanceof Array ? (react.createElement(react.Fragment, null,
-            Player.defaultControlsLeft,
-            react.createElement("div", { className: "lv-controls-right" },
-                ...props.controls,
-                Player.defaultControlsRight))) : (props.controls))));
-}
-
-;// ./node_modules/liqvid/dist/esm/controls/Captions.mjs
-
-
-
-
-/** Captions control. */
-function Captions_Captions() {
-    const player = usePlayer();
-    const keymap = react_useKeymap();
-    const [visible, setVisible] = (0,react.useState)(false);
-    const toggleCaptions = (0,react.useCallback)((e) => {
-        player.canvas.parentElement.classList.toggle("lv-captions");
-        // blur or keyboard controls will get snagged
-        if (e.currentTarget instanceof HTMLButtonElement)
-            e.currentTarget.blur();
-    }, 
-    // note that player.canvas may not have loaded yet
-    [player.canvas]);
-    (0,react.useEffect)(() => {
-        // visibility
-        setVisible(!!player.canvas.querySelector("track"));
-        // keyboard shortcut
-        keymap.bind("C", toggleCaptions);
-        return () => {
-            keymap.unbind("C", toggleCaptions);
-        };
-    }, [keymap, player.canvas, toggleCaptions]);
-    const events = (0,react.useMemo)(() => react_onClick(toggleCaptions), [toggleCaptions]);
-    const style = (0,react.useMemo)(() => (visible ? {} : { display: "none" }), [visible]);
-    return (react.createElement("button", { className: "lv-controls-captions", ...events, style, title: "Captions (c)" },
-        react.createElement("svg", { viewBox: "0 0 36 36" },
-            react.createElement("path", { d: "M 6.00014 8.00002 C 4.33815 8.00002 2.99981 8.8919 2.99981 9.99989 L 2.99981 25.9999 C 2.99981 27.1079 4.33815 27.9998 6.00014 27.9998 L 30.0002 27.9998 C 31.6622 27.9998 33 27.1079 33 25.9999 L 33 9.99989 C 33 8.8919 31.6622 8.00002 30.0002 8.00002 L 6.00014 8.00002 Z M 14.4032 14.0389 C 15.33 14.0389 16.0827 14.3128 16.6615 14.8606 C 17.006 15.1844 17.2644 15.6495 17.4366 16.2558 L 15.9225 16.6176 C 15.833 16.2248 15.6452 15.9148 15.3592 15.6874 C 15.0768 15.46 14.7322 15.3463 14.3257 15.3463 C 13.7642 15.3463 13.3077 15.5479 12.9563 15.9509 C 12.6083 16.354 12.4344 17.0069 12.4344 17.9095 C 12.4344 18.8672 12.6066 19.5493 12.9511 19.9559 C 13.2956 20.3624 13.7435 20.5656 14.2947 20.5656 C 14.7012 20.5656 15.0509 20.4365 15.3437 20.1781 C 15.6366 19.9197 15.8467 19.5132 15.9742 18.9585 L 17.4573 19.4288 C 17.2299 20.2556 16.851 20.8705 16.3204 21.2736 C 15.7933 21.6732 15.1233 21.8731 14.3102 21.8731 C 13.3043 21.8731 12.4774 21.5303 11.8298 20.8447 C 11.1821 20.1557 10.8582 19.2152 10.8582 18.0232 C 10.8582 16.7623 11.1838 15.7839 11.8349 15.0879 C 12.486 14.3886 13.3422 14.0389 14.4032 14.0389 Z M 22.0462 14.0389 C 22.9729 14.0389 23.7257 14.3128 24.3044 14.8606 C 24.6489 15.1844 24.9073 15.6495 25.0796 16.2558 L 23.5655 16.6176 C 23.4759 16.2248 23.2881 15.9148 23.0022 15.6874 C 22.7197 15.46 22.3752 15.3463 21.9687 15.3463 C 21.4071 15.3463 20.9506 15.5479 20.5992 15.9509 C 20.2513 16.354 20.0773 17.0069 20.0773 17.9095 C 20.0773 18.8672 20.2496 19.5493 20.5941 19.9559 C 20.9386 20.3624 21.3864 20.5656 21.9377 20.5656 C 22.3442 20.5656 22.6938 20.4365 22.9867 20.1781 C 23.2795 19.9197 23.4897 19.5132 23.6171 18.9585 L 25.1002 19.4288 C 24.8729 20.2556 24.4939 20.8705 23.9634 21.2736 C 23.4363 21.6732 22.7662 21.8731 21.9532 21.8731 C 20.9472 21.8731 20.1204 21.5303 19.4727 20.8447 C 18.825 20.1557 18.5012 19.2152 18.5012 18.0232 C 18.5012 16.7623 18.8267 15.7839 19.4779 15.0879 C 20.129 14.3886 20.9851 14.0389 22.0462 14.0389 Z" }))));
-}
-
-;// ./node_modules/liqvid/dist/esm/utils/rsc.mjs
-// work with Next.js
-const isClient = typeof globalThis.document !== "undefined";
-
-;// ./node_modules/liqvid/dist/esm/polyfills.mjs
-
-const id = (_) => _;
-const fullscreenEnabled = isClient
-    ? [
-        "fullscreenEnabled",
-        "webkitFullscreenEnabled",
-        "mozFullScreenEnabled",
-        "msFullscreenEnabled",
-    ]
-        // biome-ignore lint/suspicious/noExplicitAny: vendor-specific
-        .map((_) => document[_])
-        .concat(false)
-        .find((_) => _ !== undefined)
-    : false;
-const requestFullScreen = isClient
-    ? [
-        "requestFullscreen",
-        "webkitRequestFullscreen",
-        "mozRequestFullScreen",
-        "msRequestFullscreen",
-    ]
-        // biome-ignore lint/suspicious/noExplicitAny: vendor-specific
-        .map((_) => document.body[_])
-        .concat(() => { })
-        .find(id)
-        .bind(document.body)
-    : async () => { };
-const exitFullScreen = isClient
-    ? [
-        "exitFullscreen",
-        "webkitExitFullscreen",
-        "mozCancelFullScreen",
-        "msExitFullscreen",
-    ]
-        // biome-ignore lint/suspicious/noExplicitAny: vendor-specific
-        .map((_) => document[_])
-        .concat(async () => { })
-        .find(id)
-        .bind(document)
-    : async () => { };
-const isFullScreen = () => ["fullscreen", "webkitIsFullScreen", "mozFullScreen"]
-    // biome-ignore lint/suspicious/noExplicitAny: vendor-specific
-    .map((_) => document[_])
-    .find((_) => _ !== undefined);
-function onFullScreenChange(callback) {
-    for (const event of [
-        "fullscreenchange",
-        "webkitfullscreenchange",
-        "mozfullscreenchange",
-        "MSFullscreenChange",
-    ])
-        document.addEventListener(event, callback);
-}
-
-;// ./node_modules/liqvid/dist/esm/fake-fullscreen.mjs
-
-let __isFullScreen = false;
-const __callbacks = [];
-const fake_fullscreen_requestFullScreen = fullscreenEnabled
-    ? requestFullScreen
-    : () => {
-        window.parent.postMessage({ type: "fake-fullscreen", value: true }, window.parent.origin);
-        if (!__isFullScreen) {
-            __isFullScreen = true;
-            for (const _ of __callbacks)
-                _();
-        }
-    };
-const fake_fullscreen_exitFullScreen = fullscreenEnabled
-    ? exitFullScreen
-    : () => {
-        window.parent.postMessage({ type: "fake-fullscreen", value: false }, window.parent.origin);
-        if (__isFullScreen) {
-            __isFullScreen = false;
-            for (const _ of __callbacks)
-                _();
-        }
-    };
-const fake_fullscreen_isFullScreen = fullscreenEnabled
-    ? isFullScreen
-    : () => {
-        return __isFullScreen;
-    };
-const fake_fullscreen_onFullScreenChange = fullscreenEnabled
-    ? onFullScreenChange
-    : (callback) => {
-        __callbacks.push(callback);
-    };
-
-;// ./node_modules/liqvid/dist/esm/i18n.mjs
-const strings = {
-    EXIT_FULL_SCREEN: "Exit full screen",
-    ENTER_FULL_SCREEN: "Full screen",
-    MUTE: "Mute",
-    UNMUTE: "Unmute",
-    PAUSE: "Pause",
-    PLAY: "Play",
-};
-
-;// ./node_modules/liqvid/dist/esm/controls/FullScreen.mjs
-
-
-
-
-
-
-const toggleFullScreen = () => fake_fullscreen_isFullScreen() ? fake_fullscreen_exitFullScreen() : fake_fullscreen_requestFullScreen();
-const FullScreen_events = react_onClick(toggleFullScreen);
-/** Fullscreen control */
-function FullScreen() {
-    const keymap = react_useKeymap();
-    const forceUpdate = react_useForceUpdate();
-    (0,react.useEffect)(() => {
-        // listener
-        fake_fullscreen_onFullScreenChange(forceUpdate);
-        // keyboard shortcut
-        keymap.bind("F", toggleFullScreen);
-        return () => {
-            keymap.unbind("F", toggleFullScreen);
-        };
-    }, [forceUpdate, keymap]);
-    const full = fake_fullscreen_isFullScreen();
-    const label = (full ? strings.EXIT_FULL_SCREEN : strings.ENTER_FULL_SCREEN) + " (f)";
-    return (react.createElement("button", { className: "lv-controls-fullscreen", "aria-label": label, title: label, ...FullScreen_events },
-        react.createElement("svg", { viewBox: "0 0 36 36" }, full ? exitFullScreenIcon : enterFullScreenIcon)));
-}
-/** Icon to exit full screen */
-const exitFullScreenIcon = (react.createElement(react.Fragment, null,
-    react.createElement("path", { fill: "white", d: "M 14 14 h -4 v 2 h 6 v -6 h -2 v 4 z" }),
-    react.createElement("path", { fill: "white", d: "M 22 14 v -4 h -2 v 6 h 6 v -2 h -4 z" }),
-    react.createElement("path", { fill: "white", d: "M 20 26 h 2 v -4 h 4 v -2 h -6 v 6 z" }),
-    react.createElement("path", { fill: "white", d: "M 10 22 h 4 v 4 h 2 v -6 h -6 v 2 z" })));
-/** Icon to enter full screen */
-const enterFullScreenIcon = (react.createElement(react.Fragment, null,
-    react.createElement("path", { fill: "white", d: "M 10 16 h 2 v -4 h 4 v -2 h -6 v 6 z" }),
-    react.createElement("path", { fill: "white", d: "M 20 10 v 2 h 4 v 4 h 2 v -6 h -6 z" }),
-    react.createElement("path", { fill: "white", d: "M 24 24 h -4 v 2 h 6 v -6 h -2 v 4 z" }),
-    react.createElement("path", { fill: "white", d: "M 12 20 h -2 v 6 h 6 v -2 h -4 v -4 z" })));
-
-;// ./node_modules/liqvid/dist/esm/controls/PlayPause.mjs
-
-
-
-
-
-
-/** Control for playing/pausing */
-function PlayPause() {
-    const keymap = react_useKeymap();
-    const playback = react_usePlayback();
-    const forceUpdate = react_useForceUpdate();
-    (0,react.useEffect)(() => {
-        // subscribe to events
-        const events = ["pause", "play", "seeking", "seeked", "stop"];
-        for (const e of events)
-            playback.on(e, () => {
-                forceUpdate();
-            });
-        // keyboard controls
-        const toggle = () => playback[playback.paused ? "play" : "pause"]();
-        keymap.bind("K", toggle);
-        keymap.bind("Space", () => {
-            toggle();
-        });
-        return () => {
-            // unbind playback listeners
-            for (const e of events)
-                playback.off(e, forceUpdate);
-            // unbind keyboard controls
-            keymap.unbind("K", toggle);
-            keymap.unbind("Space", toggle);
-        };
-    }, [forceUpdate, keymap, playback]);
-    // event handler
-    const events = (0,react.useMemo)(() => react_onClick(() => (playback.paused ? playback.play() : playback.pause())), [playback]);
-    const label = (playback.paused || playback.seeking ? strings.PLAY : strings.PAUSE) +
-        " (k)";
-    return (react.createElement("button", { className: "lv-controls-playpause", "aria-label": label, title: label, ...events },
-        react.createElement("svg", { viewBox: "0 0 36 36" }, playback.paused || playback.seeking ? playIcon : pauseIcon)));
-}
-/** Play icon */
-const playIcon = (react.createElement("path", { d: "M 12,26 18.5,22 18.5,14 12,10 z M 18.5,22 25,18 25,18 18.5,14 z", fill: "white" }));
-/** Pause icon */
-const pauseIcon = (react.createElement("path", { d: "M 12 26 h 4 v -16 h -4 z M 21 26 h 4 v -16 h -4 z", fill: "white" }));
-
-;// ./node_modules/liqvid/dist/esm/controls/Settings.mjs
-
-
-
-
-
-const PLAYBACK_RATES = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
-var Dialogs;
-(function (Dialogs) {
-    Dialogs[Dialogs["None"] = 0] = "None";
-    Dialogs[Dialogs["Main"] = 1] = "Main";
-    Dialogs[Dialogs["Speed"] = 2] = "Speed";
-    Dialogs[Dialogs["Captions"] = 3] = "Captions";
-})(Dialogs || (Dialogs = {}));
-/** Settings menu */
-function Settings() {
-    const player = usePlayer(), { keymap, playback } = player;
-    const [dialog, setDialog] = (0,react.useState)(Dialogs.None);
-    const [currentRate, setRate] = (0,react.useState)(playback.playbackRate);
-    const forceUpdate = react_useForceUpdate();
-    (0,react.useEffect)(() => {
-        const ratechange = () => setRate(playback.playbackRate);
-        const canvasClick = () => setDialog(Dialogs.None);
-        const slowDown = () => (playback.playbackRate = get(PLAYBACK_RATES, PLAYBACK_RATES.indexOf(playback.playbackRate) - 1));
-        const speedUp = () => (playback.playbackRate = get(PLAYBACK_RATES, PLAYBACK_RATES.indexOf(playback.playbackRate) + 1));
-        // subscribe
-        playback.on("ratechange", ratechange);
-        player.hub.on("canvasClick", canvasClick);
-        // keyboard shortcuts
-        keymap.bind("Shift+<", slowDown);
-        keymap.bind("Shift+>", speedUp);
-        return () => {
-            playback.off("ratechange", ratechange);
-            player.hub.off("canvasClick", canvasClick);
-            keymap.unbind("Shift+<", slowDown);
-            keymap.unbind("Shift+>", speedUp);
-        };
-    }, [keymap, playback, player.hub]);
-    /* handlers */
-    const setSpeed = (0,react.useMemo)(() => {
-        // biome-ignore lint/suspicious/noExplicitAny: ReturnType<typeof onClick> not working for some reason
-        const map = {};
-        for (const rate of PLAYBACK_RATES) {
-            map[rate] = react_onClick(() => {
-                playback.playbackRate = rate;
-                setDialog(Dialogs.Main);
-            });
-        }
-        return map;
-    }, [playback]);
-    const toggle = (0,react.useMemo)(() => react_onClick(() => setDialog((prev) => prev === Dialogs.None ? Dialogs.Main : Dialogs.None)), []);
-    // const toggleSubtitles = useMemo(() => onClick(() => {
-    //   document.body.classList.toggle("lv-captions");
-    //   forceUpdate();
-    // }), []);
-    // event handlers
-    const openMain = react_onClick(() => setDialog(Dialogs.Main));
-    const openSpeed = react_onClick(() => setDialog(Dialogs.Speed));
-    const openCaptions = react_onClick(() => setDialog(Dialogs.Captions));
-    // styles
-    const dialogStyle = (0,react.useMemo)(() => ({
-        display: dialog === Dialogs.Main ? "block" : "none",
-    }), [dialog]);
-    const speedDialogStyle = (0,react.useMemo)(() => ({
-        display: dialog === Dialogs.Speed ? "block" : "none",
-    }), [dialog]);
-    const captionDialogStyle = (0,react.useMemo)(() => ({
-        display: dialog === Dialogs.Captions ? "block" : "none",
-    }), [dialog]);
-    // captions, ugh
-    const mainAudio = (0,react.useRef)();
-    (0,react.useEffect)(() => {
-        mainAudio.current = getMainAudio(player.canvas);
-        if (mainAudio.current) {
-            tracks.current = captionsAndSubtitles(mainAudio.current);
-        }
-    }, [player.canvas]);
-    const tracks = (0,react.useRef)([]);
-    const selectedTrack = tracks.current.find((t) => t.mode === "showing");
-    const setTrack = (0,react.useMemo)(() => react_onClick((e) => {
-        // get index, this is kind of ugly
-        let i = -1;
-        let temp = e.currentTarget;
-        while ((temp = temp.previousElementSibling))
-            i++;
-        // hide old tracks
-        for (let j = 0; j < tracks.current.length; ++j) {
-            if (j !== i) {
-                // this is absurd but necessary to dispatch cuechange???
-                tracks.current[j].mode = "disabled";
-                tracks.current[j].mode = "hidden";
-                tracks.current[j].mode = "disabled";
-            }
-        }
-        // activate new track
-        if (i >= 0)
-            tracks.current[i].mode = "showing";
-        // refresh
-        forceUpdate();
-    }), [forceUpdate]);
-    return (react.createElement("div", { className: "lv-controls-settings" },
-        react.createElement("div", { className: "lv-settings-speed-dialog", style: speedDialogStyle },
-            react.createElement("span", { className: "lv-dialog-subtitle", ...openMain }, "< Speed"),
-            react.createElement("ul", null, PLAYBACK_RATES.map((rate) => (react.createElement("li", { className: rate === currentRate ? "selected" : "", key: rate, ...setSpeed[rate] }, rate === 1 ? "Normal" : rate.toString()))))),
-        react.createElement("div", { className: "lv-settings-captions-dialog", style: captionDialogStyle },
-            react.createElement("span", { className: "lv-dialog-subtitle", ...openMain }, "< Captions"),
-            react.createElement("ul", null,
-                react.createElement("li", { className: selectedTrack ? "" : "selected", ...setTrack }, "Off"),
-                tracks.current.map((track) => (react.createElement("li", { className: track === selectedTrack ? "selected" : "", key: track.id || track.label || track.language, ...setTrack }, trackLabel(track)))))),
-        react.createElement("div", { className: "lv-settings-dialog", style: dialogStyle },
-            react.createElement("table", null,
-                react.createElement("tbody", null,
-                    react.createElement("tr", { ...openSpeed },
-                        react.createElement("th", { scope: "row" }, "Speed"),
-                        react.createElement("td", null,
-                            currentRate === 1 ? "Normal" : currentRate,
-                            " >")),
-                    tracks.current.length > 0 && (react.createElement("tr", { ...openCaptions },
-                        react.createElement("th", { scope: "row" },
-                            "Subtitles (",
-                            tracks.current.length,
-                            ")"),
-                        react.createElement("td", null,
-                            trackLabel(selectedTrack),
-                            " >")))))),
-        react.createElement("svg", { ...toggle, viewBox: "0 0 48 48" },
-            react.createElement("path", { fill: "#FFF", d: "m24.04 0.14285c-1.376 0-2.7263 0.12375-4.0386 0.34741l-0.64 6.7853c-1.3572 0.37831-2.6417 0.90728-3.8432 1.585l-5.244-4.3317c-2.2152 1.5679-4.1541 3.4955-5.7217 5.7101l4.3426 5.2437c-0.67695 1.2001-1.2177 2.4878-1.5959 3.8432l-6.7745 0.64053c-0.22379 1.3127-0.34741 2.6622-0.34741 4.0386 0 1.3788 0.12285 2.7238 0.34741 4.0386l6.7745 0.64056c0.37825 1.3554 0.91896 2.6431 1.5959 3.8432l-4.3317 5.2437c1.5648 2.2089 3.4908 4.1457 5.6997 5.7105l5.2545-4.3426c1.2023 0.67835 2.485 1.2174 3.8432 1.5959l0.64053 6.7853c1.3123 0.22368 2.6626 0.33658 4.0386 0.33658s2.7155-0.11289 4.0278-0.33658l0.64053-6.7853c1.3582-0.37847 2.6409-0.91755 3.8432-1.5959l5.2545 4.3426c2.2088-1.5649 4.1348-3.5017 5.6997-5.7105l-4.3317-5.2437c0.67695-1.2001 1.2177-2.4878 1.5959-3.8432l6.7744-0.64056c0.22456-1.3148 0.34741-2.6598 0.34741-4.0386 0-1.3765-0.12361-2.726-0.34741-4.0386l-6.7744-0.64053c-0.37825-1.3554-0.91896-2.6431-1.5959-3.8432l4.3426-5.2437c-1.568-2.2146-3.507-4.1422-5.722-5.7101l-5.2437 4.3317c-1.2015-0.67776-2.486-1.2067-3.8432-1.585l-0.641-6.7853c-1.3123-0.22366-2.6518-0.34741-4.0278-0.34741zm0 14.776c5.0178 0 9.076 4.0691 9.076 9.0869s-4.0582 9.0869-9.076 9.0869-9.0869-4.0691-9.0869-9.0869 4.0691-9.0869 9.0869-9.0869z" }))));
-}
-function getMainAudio(elt) {
-    for (const audio of Array.from(elt.querySelectorAll("audio"))) {
-        if (captionsAndSubtitles(audio).length > 0)
-            return audio;
-    }
-}
-function trackLabel(track) {
-    if (track === undefined)
-        return "Off";
-    return track.label || track.language;
-}
-function captionsAndSubtitles(audio) {
-    return Array.from(audio.textTracks).filter((t) => ["captions", "subtitles"].includes(t.kind));
-}
-function get(arr, i) {
-    return arr[clamp(0, i, arr.length - 1)];
-}
-
-;// ./node_modules/liqvid/dist/esm/controls/TimeDisplay.mjs
-
-
-
-
-
-function TimeDisplay() {
-    const playback = react_usePlayback();
-    const forceUpdate = react_useForceUpdate();
-    (0,react.useEffect)(() => {
-        playback.on("durationchange", forceUpdate);
-        playback.on("seek", forceUpdate);
-        playback.on("timeupdate", forceUpdate);
-        return () => {
-            playback.off("durationchange", forceUpdate);
-            playback.off("seek", forceUpdate);
-            playback.off("timeupdate", forceUpdate);
-        };
-    }, [forceUpdate, playback]);
-    return (react.createElement("span", { className: "lv-controls-time" },
-        react.createElement("span", { className: "lv-current-time" }, formatTime(playback.currentTime)),
-        react.createElement("span", { className: "lv-time-separator" }, "/"),
-        react.createElement("span", { className: "lv-total-time" }, formatTime(playback.duration))));
-}
-
-;// ./node_modules/liqvid/dist/esm/controls/Volume.mjs
-
-
-
-
-
-/** Volume control */
-function Volume() {
-    const keymap = react_useKeymap();
-    const playback = react_usePlayback();
-    const forceUpdate = react_useForceUpdate();
-    // keyboard controls
-    const incrementVolume = (0,react.useCallback)(() => (playback.volume = playback.volume + 0.05), [playback]);
-    const decrementVolume = (0,react.useCallback)(() => (playback.volume = playback.volume - 0.05), [playback]);
-    const toggleMute = (0,react.useCallback)(() => (playback.muted = !playback.muted), [playback]);
-    (0,react.useEffect)(() => {
-        playback.on("volumechange", forceUpdate);
-        keymap.bind("ArrowUp", incrementVolume);
-        keymap.bind("ArrowDown", decrementVolume);
-        keymap.bind("M", toggleMute);
-        return () => {
-            playback.off("volumechange", forceUpdate);
-            keymap.unbind("ArrowUp", incrementVolume);
-            keymap.unbind("ArrowDown", decrementVolume);
-            keymap.unbind("M", toggleMute);
-        };
-    }, [
-        decrementVolume,
-        forceUpdate,
-        incrementVolume,
-        keymap,
-        playback,
-        toggleMute,
-    ]);
-    // input
-    const onChange = (0,react.useCallback)((e) => {
-        playback.volume = parseFloat(e.target.value) / 100;
-    }, [playback]);
-    const events = (0,react.useMemo)(() => react_onClick(() => (playback.muted = !playback.muted)), [playback]);
-    const label = (playback.muted ? strings.UNMUTE : strings.MUTE) + " (m)";
-    const volumeText = new Intl.NumberFormat(undefined, { style: "percent" }).format(playback.volume) + " volume";
-    return (react.createElement("div", { className: "lv-controls-volume" },
-        react.createElement("button", { "aria-label": label, title: label },
-            react.createElement("svg", { ...events, viewBox: "0 0 100 100" },
-                speakerIcon,
-                playback.muted ? (mutedIcon) : (react.createElement("g", null,
-                    playback.volume > 0 && waveIcon1,
-                    playback.volume >= 0.5 && waveIcon2)))),
-        react.createElement("input", { "aria-valuetext": volumeText, min: "0", max: "100", onChange: onChange, type: "range", value: playback.muted ? 0 : playback.volume * 100 })));
-}
-const speakerIcon = (react.createElement("path", { d: "M 10 35 h 20 l 25 -20 v 65 l -25 -20 h -20 z", fill: "white", stroke: "none" }));
-const mutedIcon = (react.createElement("path", { d: "M 63 55 l 20 20 m 0 -20 l -20 20", stroke: "white", strokeWidth: "7" }));
-const waveIcon1 = (react.createElement("path", { d: "M 62 32.5 a 1,1 0 0,1 0,30", fill: "white", stroke: "none" }));
-const waveIcon2 = (react.createElement("path", { d: "M 62 15 a 1,1 0 0,1 0,65 v -10 a 10,10 0 0,0 0,-45 v -10 z", fill: "white", stroke: "none" }));
-
-;// ./node_modules/liqvid/dist/esm/Player.mjs
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const allowScroll = Symbol();
-const ignoreCanvasClick = Symbol();
-class Player extends react.PureComponent {
-    /**
-     * Liqvid analogue of the [`canplay`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplay_event) event.
-     * This can be used to wait for Audio or Video files to load. You can also use {@link obstruct} to add custom loaders.
-     */
-    canPlay;
-    /**
-     * Liqvid analogue of the [`canplaythrough`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplaythrough_event) event.
-     * This can be used to wait for Audio or Video files to load. You can also use {@link obstruct} to add custom loaders.
-     */
-    canPlayThrough;
-    /** The {@link HTMLDivElement `<div>`} where content is attached (separate from controls). */
-    canvas;
-    /** Whether keyboard controls are currently being handled. */
-    captureKeys;
-    hub;
-    /** {@link Keymap} attached to the player */
-    keymap;
-    /** {@link Playback} attached to the player */
-    playback;
-    /** {@link Script} attached to the player */
-    script;
-    buffers;
-    __canPlayTasks;
-    __canPlayThroughTasks;
-    dag;
-    /** {@link React.Context} used to access ambient Player */
-    static Context = createUniqueContext("@liqvid/player", null);
-    /**
-     * Symbol to access the {@link Player} instance attached to a DOM element
-     *
-     * `player.canvas.parentElement[Player.symbol] === player`
-     */
-    static symbol = Symbol.for("@liqvid/player/element");
-    /** Default controls appearing on the left */
-    static defaultControlsLeft = (react.createElement(react.Fragment, null,
-        react.createElement(PlayPause, null),
-        react.createElement(Volume, null),
-        react.createElement(TimeDisplay, null)));
-    /** Default controls appearing on the right */
-    static defaultControlsRight = (react.createElement(react.Fragment, null,
-        react.createElement(Captions_Captions, null),
-        react.createElement(Settings, null),
-        react.createElement(FullScreen, null)));
-    static defaultProps = {
-        controls: (react.createElement(react.Fragment, null,
-            Player.defaultControlsLeft,
-            react.createElement("div", { className: "lv-controls-right" }, Player.defaultControlsRight))),
-        style: {},
-    };
-    constructor(props) {
-        super(props);
-        this.hub = new events.EventEmitter();
-        this.__canPlayTasks = [];
-        this.__canPlayThroughTasks = [];
-        this.keymap = new esm_Keymap();
-        this.captureKeys = true;
-        if (props.script) {
-            this.script = props.script;
-            this.playback = this.script.playback;
-        }
-        else {
-            this.playback = props.playback;
-        }
-        this.buffers = new Map();
-        bind(this, [
-            "onMouseUp",
-            "suspendKeyCapture",
-            "resumeKeyCapture",
-            "reparseTree",
-        ]);
-        this.updateTree = this.updateTree.bind(this);
-    }
-    componentDidMount() {
-        const element = this.canvas.parentElement;
-        // biome-ignore lint/suspicious/noExplicitAny: symbol
-        element[Player.symbol] = this;
-        // inline or frame?
-        // const client =
-        //   element.parentElement.nodeName.toLowerCase() === "main" &&
-        //   element.parentElement.parentElement === document.body &&
-        //   element.parentElement.childNodes.length === 1;
-        // document.documentElement.classList.toggle("lv-frame", client);
-        // element.classList.toggle("lv-frame", client);
-        // keyboard events
-        document.body.addEventListener("keydown", (e) => {
-            if (!this.captureKeys || document.activeElement !== document.body)
-                return;
-            this.keymap.handle(e);
-        });
-        // prevent scroll on mobile
-        // document.addEventListener("touchmove", e => {
-        //   if (e[allowScroll]) return;
-        //   e.preventDefault();
-        // }, {passive: false});
-        // document.addEventListener("touchforcechange", e => e.preventDefault(), {passive: false});
-        // canPlay events --- mostly unused
-        this.canPlay = Promise.all(this.__canPlayTasks).then(() => {
-            this.hub.emit("canplay");
-        });
-        this.canPlayThrough = Promise.all(this.__canPlayThroughTasks).then(() => {
-            this.hub.emit("canplaythrough");
-        });
-        // hiding stuff
-        if (this.script) {
-            this.dag = toposort(this.canvas, this.script.markerNumberOf);
-            this.script.on("markerupdate", this.updateTree);
-            this.updateTree();
-        }
-    }
-    updateTree() {
-        const { script } = this;
-        recurse(this.dag);
-        /** Hide element */
-        function hide(leaf) {
-            leaf.element.style.opacity = "0";
-            leaf.element.style.pointerEvents = "none";
-            leaf.element.setAttribute("aria-hidden", "true");
-        }
-        /** Show element */
-        function show(leaf) {
-            leaf.element.style.removeProperty("opacity");
-            leaf.element.style.removeProperty("pointer-events");
-            leaf.element.removeAttribute("aria-hidden");
-            return leaf.children.forEach(recurse);
-        }
-        /** Recurse through DAG */
-        function recurse(leaf) {
-            if (typeof leaf.first !== "undefined") {
-                if (leaf.first <= script.markerIndex &&
-                    (!leaf.last || script.markerIndex < leaf.last)) {
-                    return show(leaf);
-                }
-                hide(leaf);
-            }
-            else if (typeof leaf.during !== "undefined") {
-                if (script.markerName.startsWith(leaf.during)) {
-                    return show(leaf);
-                }
-                return hide(leaf);
-            }
-            else {
-                return leaf.children.forEach(recurse);
-            }
-        }
-    }
-    canvasClick() {
-        const allow = this.hub.listeners("canvasClick").every((_) => _() ?? true);
-        if (allow) {
-            this.playback.paused ? this.playback.play() : this.playback.pause();
-        }
-        this.hub.emit("canvasClick");
-    }
-    onMouseUp(e) {
-        // ignore clicks on input tags
-        if (["a", "area", "button", "input", "option", "select", "textarea"].includes(e.target.nodeName.toLowerCase()))
-            return;
-        // data-affords markup
-        if (e.target?.closest(`*[data-affords~="click"]`)) {
-            return;
-        }
-        // the reason for this escape hatch is that this gets called in between an element's onMouseUp
-        // listener and the listener added by dragHelper, so you can't call stopPropagation() in the
-        // onMouseUp or else the dragging won't release.
-        // biome-ignore lint/suspicious/noExplicitAny: symbol
-        if (e.nativeEvent[ignoreCanvasClick])
-            return;
-        this.canvasClick();
-    }
-    static allowScroll(e) {
-        // biome-ignore lint/suspicious/noExplicitAny: symbol
-        ("nativeEvent" in e ? e.nativeEvent : e)[allowScroll] = true;
-    }
-    /**
-     * Prevent canvas clicks from pausing the video.
-     * @param e Click event on video canvas
-     * @deprecated Use data-affords="click" instead
-     */
-    static preventCanvasClick(e) {
-        // biome-ignore lint/suspicious/noExplicitAny: symbol
-        ("nativeEvent" in e ? e.nativeEvent : e)[ignoreCanvasClick] = true;
-    }
-    /** Suspends keyboard controls so that components can receive keyboard input. */
-    suspendKeyCapture() {
-        this.captureKeys = false;
-    }
-    /** Resumes keyboard controls. */
-    resumeKeyCapture() {
-        this.captureKeys = true;
-    }
-    /** @deprecated */
-    ready() {
-        console.info(".ready() is a noop in v2.1");
-    }
-    /**
-     * Reparse a section of the document for `during()` and `from()`
-     * @param node Element to reparse
-     */
-    reparseTree(node) {
-        const root = findClosest(node, this.dag);
-        if (!root) {
-            throw new Error("Could not find node in tree");
-        }
-        root.children = toposort(root.element, this.script.markerNumberOf).children;
-        this.updateTree();
-    }
-    registerBuffer(elt) {
-        this.buffers.set(elt, []);
-    }
-    unregisterBuffer(elt) {
-        this.buffers.delete(elt);
-    }
-    updateBuffer(elt, buffers) {
-        this.buffers.set(elt, buffers);
-        this.playback.emit("bufferupdate");
-    }
-    /**
-     * Obstruct {@link canPlay} or {@link canPlayThrough} events
-     * @param event Which event type to obstruct
-     * @param task Promise to append
-     */
-    obstruct(event, task) {
-        if (event === "canplay") {
-            this.__canPlayTasks.push(task);
-        }
-        else {
-            this.__canPlayThroughTasks.push(task);
-        }
-    }
-    render() {
-        const attrs = {
-            style: this.props.style,
-        };
-        const canvasAttrs = anyHover ? { onMouseUp: this.onMouseUp } : {};
-        const classNames = ["lv-player", "ractive-player"];
-        return (react.createElement(Player.Context.Provider, { value: this },
-            react.createElement(PlaybackContext.Provider, { value: this.playback },
-                react.createElement(KeymapContext.Provider, { value: this.keymap },
-                    react.createElement("div", { className: classNames.join(" "), ...attrs },
-                        react.createElement("div", { className: "rp-canvas lv-canvas", ...canvasAttrs, ref: (canvas) => (this.canvas = canvas) }, this.props.children),
-                        react.createElement(Captions, null),
-                        react.createElement(Controls, { controls: this.props.controls, thumbs: this.props.thumbs }))))));
-    }
-}
-/* topological sort */
-function toposort(root, mn) {
-    const nodes = Array.from(root.querySelectorAll("*[data-from-first], *[data-during]"));
-    const dag = { children: [], element: root };
-    const path = [dag];
-    for (const node of nodes) {
-        // get first and last marker
-        let firstMarkerName, lastMarkerName, during;
-        if (node.dataset.fromFirst) {
-            firstMarkerName = node.dataset.fromFirst;
-            lastMarkerName = node.dataset.fromLast;
-        }
-        else if (node.dataset.during) {
-            during = node.dataset.during;
-        }
-        // CSS hides this initially, take over now
-        node.style.opacity = "0";
-        node.style.pointerEvents = "none";
-        // node.removeAttribute("data-from-first");
-        // node.removeAttribute("data-from-last");
-        // node.removeAttribute("data-from-during");
-        // build the leaf
-        const leaf = {
-            children: [],
-            element: node,
-        };
-        if (during)
-            leaf.during = during;
-        if (firstMarkerName)
-            leaf.first = mn(firstMarkerName);
-        if (lastMarkerName)
-            leaf.last = mn(lastMarkerName);
-        // figure out where to graft it
-        let current = path[path.length - 1];
-        while (!current.element.contains(node)) {
-            path.pop();
-            current = path[path.length - 1];
-        }
-        current.children.push(leaf);
-        path.push(leaf);
-    }
-    return dag;
-}
-/**
- * Find element's closest ancestor in DAG
- * @param needle Element to find
- * @param haystack DAG leaf to search
- * @returns Closest ancestor
- */
-function findClosest(needle, haystack) {
-    if (!haystack.element.contains(needle)) {
-        return null;
-    }
-    for (let i = 0; i < haystack.children.length; ++i) {
-        if (haystack.children[i].element.contains(needle)) {
-            return findClosest(needle, haystack.children[i]) ?? haystack;
-        }
-    }
-    return haystack;
-}
-
-;// ./node_modules/liqvid/dist/esm/Media.mjs
-
-
-
-
-class Media_Media extends react.PureComponent {
-    playback;
-    player;
-    domElement;
-    /** When the media element should start playing. */
-    start;
-    static defaultProps = {
-        obstructCanPlay: false,
-        obstructCanPlayThrough: false,
-    };
-    static contextType = Player.Context;
-    constructor(props, context) {
-        super(props, context);
-        this.player = context;
-        this.playback = context.playback;
-        // get the time right
-        this.start = this.props.start ?? 0;
-        bind(this, [
-            "pause",
-            "play",
-            "onPlay",
-            "onRateChange",
-            "onSeek",
-            "onTimeUpdate",
-            "onVolumeChange",
-            "onDomPlay",
-            "onDomPause",
-        ]);
-    }
-    componentDidMount() {
-        // attach event listeners
-        this.playback.on("pause", this.pause);
-        this.playback.on("play", this.onPlay);
-        this.playback.on("ratechange", this.onRateChange);
-        this.playback.on("seek", this.onSeek);
-        this.playback.on("seeking", this.pause);
-        this.playback.on("timeupdate", this.onTimeUpdate);
-        this.playback.on("volumechange", this.onVolumeChange);
-        this.domElement.addEventListener("play", this.onDomPlay);
-        this.domElement.addEventListener("pause", this.onDomPause);
-        // canplay/canplaythrough events
-        if (this.props.obstructCanPlay) {
-            this.player.obstruct("canplay", awaitMediaCanPlay(this.domElement));
-        }
-        if (this.props.obstructCanPlayThrough) {
-            this.player.obstruct("canplaythrough", awaitMediaCanPlayThrough(this.domElement));
-        }
-        // need to call this once initially
-        this.onVolumeChange();
-        // progress updater?
-        /*const getBuffers = () => {
-          const ranges = this.domElement.buffered;
-    
-          const buffers: [number, number][] = [];
-          for (let i = 0; i < ranges.length; ++i) {
-            if (ranges.end(i) === Infinity) continue;
-            buffers.push([ranges.start(i) * 1000 + this.start, ranges.end(i) * 1000 + this.start]);
-          }
-    
-          return buffers;
-        };
-    
-        const updateBuffers = () => {
-          this.player.updateBuffer(this.domElement, getBuffers());
-        };
-    
-        this.player.registerBuffer(this.domElement);
-        updateBuffers();
-        this.domElement.addEventListener("progress", updateBuffers);
-        // setInterval(updateBuffers, 1000);
-        // this.domElement.addEventListener('load', updateBuffers);
-        */
-    }
-    componentWillUnmount() {
-        this.playback.off("pause", this.pause);
-        this.playback.off("play", this.onPlay);
-        this.playback.off("ratechange", this.onRateChange);
-        this.playback.off("seek", this.onSeek);
-        this.playback.off("seeking", this.pause);
-        this.playback.off("timeupdate", this.onTimeUpdate);
-        this.playback.off("volumechange", this.onVolumeChange);
-        this.domElement.removeEventListener("pause", this.onDomPause);
-        this.domElement.removeEventListener("play", this.onDomPlay);
-        // this.player.unregisterBuffer(this.domElement);
-    }
-    // getter
-    get end() {
-        return this.start + this.domElement.duration * 1000;
-    }
-    pause() {
-        if (!this.domElement.ended) {
-            this.domElement.removeEventListener("pause", this.onDomPause);
-            this.domElement.pause();
-            this.domElement.addEventListener("pause", this.onDomPause);
-        }
-    }
-    play() {
-        this.domElement.removeEventListener("play", this.onDomPlay);
-        const promise = this.domElement.play();
-        this.domElement.addEventListener("play", this.onDomPlay);
-        return promise;
-    }
-    onPlay() {
-        this.onTimeUpdate(this.playback.currentTime);
-    }
-    onRateChange() {
-        this.domElement.playbackRate = this.playback.playbackRate;
-    }
-    onSeek(t) {
-        this.domElement.currentTime = (t - this.start) / 1000;
-        if (between(this.start, t, this.end)) {
-            if (this.domElement.paused &&
-                !this.playback.paused &&
-                !this.playback.seeking) {
-                this.play().catch(this.playback.pause);
-            }
-        }
-        else {
-            if (!this.domElement.paused)
-                this.pause();
-        }
-    }
-    onTimeUpdate(t) {
-        if (between(this.start, t, this.end)) {
-            if (!this.domElement.paused)
-                return;
-            this.domElement.currentTime = (t - this.start) / 1000;
-            this.play().catch(this.playback.pause);
-        }
-        else {
-            if (!this.domElement.paused)
-                this.pause();
-            this.domElement.currentTime = (t - this.start) / 1000;
-        }
-    }
-    onVolumeChange() {
-        this.domElement.volume = this.playback.volume;
-        this.domElement.muted = this.playback.muted;
-    }
-    onDomPlay() {
-        if (this.playback.paused) {
-            this.playback.off("play", this.onPlay);
-            this.playback.play();
-            this.playback.on("play", this.onPlay);
-        }
-    }
-    onDomPause() {
-        if (!this.playback.seeking &&
-            !this.playback.paused &&
-            !hasEnded(this.domElement)) {
-            this.playback.off("pause", this.pause);
-            this.playback.pause();
-            this.playback.on("pause", this.pause);
-        }
-    }
-}
-/**
- * Guess whether a media element has ended.
- * (`paused` fires before `ended`, and `currentTime` may be >100ms
- * behind `duration` when this happens).
- * @param media Media element to check.
- * @param threshold How far from the end of the media should be considered "ended".
- * @returns Whether the media element has reached its end.
- */
-function hasEnded(media, threshold = 0.5) {
-    return media.ended || media.duration - media.currentTime < threshold;
-}
-
-;// ./node_modules/liqvid/dist/esm/utils/dom.mjs
-function fragmentFromHTML(str) {
-    const t = document.createElement("template");
-    t.innerHTML = str;
-    return t.content.cloneNode(true);
-}
-
-;// ./node_modules/liqvid/dist/esm/Audio.mjs
-
-
-
-/** Liqvid equivalent of {@link HTMLAudioElement `<audio>`}. */
-class Audio extends Media_Media {
-    componentDidMount() {
-        super.componentDidMount();
-        // tracks
-        for (const track of Array.from(this.domElement.textTracks)) {
-            if (!["captions", "subtitles"].includes(track.kind))
-                continue;
-            let mode = track.mode;
-            track.addEventListener("cuechange", () => {
-                if (track.mode !== "showing") {
-                    if (mode === "showing")
-                        this.playback.captions = [];
-                    mode = track.mode;
-                    return;
-                }
-                mode = track.mode;
-                const captions = [];
-                for (const cue of Array.from(track.activeCues)) {
-                    // @ts-expect-error check this I guess
-                    const html = cue.text.replace(/\n/g, "<br/>");
-                    captions.push(fragmentFromHTML(html));
-                }
-                this.playback.captions = captions;
-            });
-        }
-    }
-    // render method
-    render() {
-        const { start, obstructCanPlay, obstructCanPlayThrough, children, ...attrs } = this.props;
-        return (react.createElement("audio", { preload: "auto", ref: (node) => (this.domElement = node), ...attrs }, children));
-    }
-}
-
-;// ./node_modules/liqvid/dist/esm/IdMap.mjs
-
+// EXTERNAL MODULE: ./node_modules/events/events.js
+var events = __webpack_require__(761);
+;// ./node_modules/@liqvid/recording/dist/esm/RecordingManager.mjs
 
 
 /**
- * This class gives a way to automagically attach data loaded from a file as attributes on elements.
- * This is provided to facilitate the development of—and provide a standard interface for—GUI tools.
+ * Class for managing recording sessions.
  */
-class IdMap extends react.PureComponent {
-    static Context = react.createContext([]);
-    /** IDs found within the IdMap */
-    foundIds;
-    constructor(props) {
-        super(props);
-        bind(this, ["renderContent"]);
-        this.foundIds = new Set();
-    }
-    render() {
-        if (this.props.hasOwnProperty("map")) {
-            return (react.createElement(IdMap.Context.Provider, { value: [this.foundIds, this.props.map] }, this.renderContent([this.foundIds, this.props.map])));
-        }
-        else {
-            return (react.createElement(IdMap.Context.Consumer, null, this.renderContent));
-        }
-    }
-    renderContent([foundIds, map]) {
-        return recursiveMap(this.props.children, (node) => {
-            const attrs = {};
-            if (node.props.hasOwnProperty("id")) {
-                const { id } = node.props;
-                foundIds.add(id);
-                // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-                if (map[id] !== undefined)
-                    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-                    Object.assign(attrs, map[id]);
-            }
-            if (Object.keys(attrs).length === 0) {
-                return node;
-            }
-            else {
-                return react.cloneElement(node, attrs);
-            }
-        });
-    }
-}
-
-;// ./node_modules/liqvid/dist/esm/Video.mjs
-
-
-/** Liqvid equivalent of {@link HTMLVideoElement `<video>`}. */
-class Video extends (/* unused pure expression or super */ null && (Media)) {
-    // render method
-    render() {
-        const { start, children, obstructCanPlay, obstructCanPlayThrough, ...attrs } = this.props;
-        return (React.createElement("video", { playsInline: true, preload: "auto", ref: (node) => (this.domElement = node), ...attrs }, children));
-    }
-}
-
-;// ./node_modules/@liqvid/utils/dist/esm/ssr.mjs
-const ssr_isClient = typeof globalThis.window !== "undefined";
-
-;// ./node_modules/@liqvid/playback/dist/esm/core.mjs
-
-
-
-/**
- * Class pretending to be a media element advancing in time.
- *
- * Imitates {@link HTMLMediaElement} to a certain extent, although it does not implement that interface.
- */
-class core_Playback extends events.EventEmitter {
-    constructor(options) {
+class RecordingManager extends events.EventEmitter {
+    constructor() {
         super();
-        /**
-          The current playback time in milliseconds.
-          
-          **Warning:** {@link HTMLMediaElement.currentTime} measures this property in *seconds*.
-        */
-        this.currentTime = 0;
-        /** Flag indicating whether playback is currently paused. */
-        this.paused = true;
-        /* private fields exposed by getters */
-        this.__captions = [];
-        this.__playbackRate = 1;
-        this.__muted = false;
-        this.__seeking = false;
-        this.__volume = 1;
-        this.duration = options.duration;
-        this.__playingFrom = 0;
-        this.__startTime = performance.now();
-        // we will have lots of listeners, turn off warning
+        this.captureData = {};
         this.setMaxListeners(0);
-        // bind methods
-        bind(this, ["pause", "play"]);
-        this.__advance = this.__advance.bind(this);
-        // browser-only
-        if (ssr_isClient) {
-            // audio
-            this.__initAudio();
-            // initiate playback loop
-            requestAnimationFrame(this.__advance);
-        }
-    }
-    /* magic properties */
-    /** Gets or sets the current captions */
-    get captions() {
-        return this.__captions;
-    }
-    /** @emits cuechange */
-    set captions(captions) {
-        this.__captions = captions;
-        this.emit("cuechange");
+        this.paused = false;
+        this.active = false;
+        bind(this, [
+            "beginRecording",
+            "endRecording",
+            "pauseRecording",
+            "resumeRecording",
+            "capture",
+        ]);
     }
     /**
-     * Length of the playback in milliseconds.
+     * Begin recording.
      *
-     * **Warning:** {@link HTMLMediaElement.duration} measures this in *seconds*.
+     * @emits start
      */
-    get duration() {
-        return this.__duration;
-    }
-    /** @emits durationchange */
-    set duration(duration) {
-        if (duration === this.__duration)
-            return;
-        this.__duration = duration;
-        this.emit("durationchange");
-    }
-    /** Gets or sets a flag that indicates whether playback is muted. */
-    get muted() {
-        return this.__muted;
-    }
-    /** @emits volumechange */
-    set muted(val) {
-        if (val === this.__muted)
-            return;
-        this.__muted = val;
-        if (this.audioNode) {
-            if (this.__muted) {
-                this.audioNode.gain.value = 0;
-            }
-            else {
-                this.audioNode.gain.setValueAtTime(this.volume, this.audioContext.currentTime);
+    beginRecording(plugins) {
+        this.plugins = plugins;
+        // initialize
+        this.pauseTime = 0;
+        this.intransigentRecorder = void 0;
+        // dependency injection for plugins
+        for (const key in this.plugins) {
+            const recorder = this.plugins[key];
+            recorder.provide({
+                push: (value) => this.capture(key, value),
+                manager: this,
+            });
+            this.captureData[key] = [];
+            if (recorder.intransigent) {
+                if (this.intransigentRecorder)
+                    throw new Error("At most one intransigent recorder is allowed");
+                this.intransigentRecorder = recorder;
             }
         }
-        this.emit("volumechange");
-    }
-    /** Gets or sets the current rate of speed for the playback. */
-    get playbackRate() {
-        return this.__playbackRate;
-    }
-    /** @emits ratechange */
-    set playbackRate(val) {
-        if (val === this.__playbackRate)
-            return;
-        this.__playbackRate = val;
-        this.__playingFrom = this.currentTime;
-        this.__startTime = performance.now();
-        this.emit("ratechange");
-    }
-    /** Gets or sets a flag that indicates whether the playback is currently moving to a new position. */
-    get seeking() {
-        return this.__seeking;
+        // call this as close as possible to beginRecording() to minimize "lag"
+        this.baseTime = performance.now();
+        for (const key in this.plugins) {
+            this.plugins[key].beginRecording();
+        }
+        this.paused = false;
+        this.active = true;
+        this.emit("start");
     }
     /**
-     * @emits seeking
-     * @emits seeked
+     * Commit a piece of recording data.
+     * @param key Key for recording source.
+     * @param value Data to record.
+     *
+     * @emits capture
      */
-    set seeking(val) {
-        if (val === this.__seeking)
-            return;
-        this.__seeking = val;
-        if (this.__seeking)
-            this.emit("seeking");
-        else
-            this.emit("seeked");
+    capture(key, value) {
+        this.captureData[key].push(value);
+        this.emit("capture", key, value);
     }
     /**
-     * Pause playback.
+     * End recording and collect finalized data from recorders.
+     *
+     * @emits finalize
+     */
+    async endRecording() {
+        const endTime = this.getTime();
+        this.duration = endTime;
+        const recording = {};
+        let startDelay = 0, stopDelay = 0;
+        let promise;
+        // stop intransigentRecorder
+        if (this.intransigentRecorder) {
+            promise =
+                this.intransigentRecorder.endRecording();
+        }
+        // stop other recorders
+        for (const key in this.plugins) {
+            if (this.plugins[key] === this.intransigentRecorder)
+                continue;
+            this.plugins[key].endRecording();
+        }
+        // get start/stop delays from intransigentRecorder
+        if (this.intransigentRecorder) {
+            try {
+                const [startTime, stopTime] = await promise;
+                startDelay = startTime;
+                stopDelay = stopTime - endTime;
+                this.duration = this.duration + stopDelay - startDelay;
+            }
+            catch (e) {
+                startDelay = 0;
+                stopDelay = 0;
+                console.error(e);
+            }
+        }
+        // finalize
+        for (const key in this.plugins) {
+            recording[key] = this.plugins[key].finalizeRecording(this.captureData[key], startDelay, stopDelay);
+            this.emit("finalize", key, recording[key]);
+        }
+        this.active = false;
+        this.emit("finalize", undefined, undefined);
+        return recording;
+    }
+    /** Get current recording time. */
+    getTime() {
+        return performance.now() - this.baseTime - this.pauseTime;
+    }
+    /**
+     * Pause recording.
      *
      * @emits pause
      */
-    pause() {
+    pauseRecording() {
+        this.lastPauseTime = performance.now();
+        for (const key in this.plugins) {
+            this.plugins[key].pauseRecording();
+        }
         this.paused = true;
-        this.__playingFrom = this.currentTime;
         this.emit("pause");
     }
     /**
-     * Start or resume playback.
+     * Resume recording from paused state.
      *
-     * @emits play
+     * @emits resume
      */
-    play() {
+    resumeRecording() {
+        this.pauseTime += performance.now() - this.lastPauseTime;
+        for (const key in this.plugins) {
+            this.plugins[key].resumeRecording();
+        }
         this.paused = false;
-        // this is necessary for currentTime to be correct when playing from stop state
-        this.currentTime = this.__playingFrom;
-        this.__startTime = performance.now();
-        this.emit("play");
+        this.emit("resume");
     }
-    /**
-     * Seek playback to a specific time.
-     *
-     * @emits seek
-     */
-    seek(t) {
-        t = constrain(0, t, this.duration);
-        this.currentTime = this.__playingFrom = t;
-        this.__startTime = performance.now();
-        this.emit("seek", t);
-        if (this.currentTime >= this.duration) {
-            this.stop();
+}
+
+;// ./node_modules/@liqvid/recording/dist/esm/RecordingRow.mjs
+
+
+
+function RecordingRow(props) {
+    const [name, setName] = (0,react.useState)("Untitled");
+    const onChange = (0,react.useCallback)((e) => {
+        setName(e.target.value);
+    }, []);
+    const { data, pluginsByKey } = props;
+    return ((0,jsx_runtime.jsxs)("li", { className: "recording-row", children: [(0,jsx_runtime.jsx)("input", { className: "recording-name", onChange: onChange, type: "text", value: name }), (0,jsx_runtime.jsxs)("table", { className: "recording-results", children: [(0,jsx_runtime.jsxs)("caption", { children: ["Duration: ", data.duration, " (", formatTimeMs(data.duration), ")"] }), (0,jsx_runtime.jsx)("tbody", { children: Object.keys(data).map((pluginKey) => {
+                            if (pluginKey === "duration")
+                                return null;
+                            const plugin = pluginsByKey[pluginKey], SaveComponent = plugin.saveComponent;
+                            return ((0,jsx_runtime.jsxs)("tr", { children: [(0,jsx_runtime.jsx)("th", { scope: "row", title: plugin.name, children: (0,jsx_runtime.jsxs)("svg", { className: "recorder-plugin-icon", height: "36", width: "36", viewBox: "0 0 100 100", children: [(0,jsx_runtime.jsx)("rect", { height: "100", width: "100", fill: "#222" }), plugin.icon] }) }, "head"), (0,jsx_runtime.jsx)("td", { children: (0,jsx_runtime.jsx)(SaveComponent, { data: data[pluginKey] }) }, "cell")] }, pluginKey));
+                        }) })] })] }));
+}
+
+;// ./node_modules/@liqvid/recording/dist/esm/Control.mjs
+"use client";
+
+
+
+
+
+
+
+/**
+ * Liqvid recording control.
+ */
+function RecordingControl(props) {
+    const keymap = useKeymap();
+    const [recordings, setRecordings] = (0,react.useState)([]);
+    const forceUpdate = useForceUpdate();
+    // recording manager
+    const manager = (0,react.useRef)();
+    (0,react.useEffect)(() => {
+        manager.current = props.manager ?? new RecordingManager();
+        const eventNames = ["finalize", "start", "pause", "resume"];
+        for (const eventName of eventNames) {
+            manager.current.on(eventName, forceUpdate);
+        }
+        return () => {
+            for (const eventName of eventNames) {
+                manager.current.off(eventName, forceUpdate);
+            }
+        };
+    }, [forceUpdate, props.manager]);
+    // active plugins
+    const activePlugins = (0,react.useRef)(null);
+    if (activePlugins.current === null) {
+        activePlugins.current = {};
+        for (const plugin of props.plugins) {
+            activePlugins.current[plugin.key] = false;
         }
     }
-    /** Gets or sets the volume level for the playback. */
-    get volume() {
-        return this.__volume;
-    }
-    /** @emits volumechange */
-    set volume(volume) {
-        this.muted = false;
-        const prevVolume = this.__volume;
-        this.__volume = constrain(0, volume, 1);
-        if (this.audioNode) {
-            if (prevVolume === 0 || this.__volume === 0) {
-                this.audioNode.gain.setValueAtTime(0, this.audioContext.currentTime);
-            }
-            else {
-                this.audioNode.gain.exponentialRampToValueAtTime(this.__volume, this.audioContext.currentTime + 2);
-            }
+    // plugins dictionary
+    const [pluginsByKey] = (0,react.useState)(() => {
+        const dict = {};
+        for (const plugin of props.plugins) {
+            dict[plugin.key] = plugin;
         }
-        this.emit("volumechange");
-    }
-    /**
-     * Stop playback and reset pointer to start
-     *
-     * @emits stop
-     */
-    stop() {
-        this.paused = true;
-        this.__playingFrom = 0;
-        this.emit("stop");
-    }
-    /* private methods */
-    /**
-     * @emits timeupdate
-     */
-    __advance(t) {
-        // paused
-        if (this.paused || this.__seeking) {
-            this.__startTime = t;
+        return dict;
+    });
+    /* commands */
+    const start = (0,react.useCallback)(() => {
+        const { active, beginRecording, endRecording } = manager.current;
+        if (active) {
+            endRecording().then((recording) => {
+                recording.duration = manager.current.duration;
+                setRecordings((prev) => prev.concat(recording));
+            });
         }
         else {
-            // playing
-            this.currentTime =
-                this.__playingFrom +
-                    Math.max((t - this.__startTime) * this.__playbackRate, 0);
-            if (this.currentTime >= this.duration) {
-                this.currentTime = this.duration;
-                this.stop();
+            const recorders = {};
+            for (const plugin of props.plugins) {
+                if (activePlugins.current[plugin.key]) {
+                    recorders[plugin.key] = plugin.recorder;
+                }
             }
-            this.emit("timeupdate", this.currentTime);
+            beginRecording(recorders);
         }
-        requestAnimationFrame(this.__advance);
-    }
-    /**
-     * Try to initiate audio
-     *
-     * @listens click
-     * @listens keydown
-     * @listens touchstart
-     */
-    __initAudio() {
-        const requestAudioContext = () => {
+    }, [props.plugins]);
+    const pause = (0,react.useCallback)(() => {
+        const { active, paused, pauseRecording, resumeRecording } = manager.current;
+        if (active) {
+            paused ? resumeRecording() : pauseRecording();
+        }
+    }, []);
+    const discard = (0,react.useCallback)(async () => {
+        const { active, endRecording } = manager.current;
+        if (active) {
+            const listeners = manager.current.listeners("finalize");
+            for (const listener of listeners) {
+                manager.current.off("finalize", listener);
+            }
             try {
-                this.audioContext = new (window.AudioContext || webkitAudioContext)();
-                this.audioNode = this.audioContext.createGain();
-                this.audioNode.connect(this.audioContext.destination);
-                window.removeEventListener("click", requestAudioContext);
-                window.removeEventListener("keydown", requestAudioContext);
-                window.removeEventListener("touchstart", requestAudioContext);
+                await endRecording();
             }
             catch (e) {
-                // console.log("Failed to create audio context");
+                console.error(e);
+            }
+            for (const listener of listeners) {
+                manager.current.on("finalize", listener);
+            }
+            forceUpdate();
+        }
+    }, [forceUpdate]);
+    /* keyboard controls */
+    const callbacks = (0,react.useMemo)(() => ({ start, pause, discard }), [discard, pause, start]);
+    const reducer = (0,react.useCallback)((state, action) => {
+        // return new state
+        return {
+            ...state,
+            [action.command]: action.seq,
+        };
+    }, []);
+    const [state, dispatch] = (0,react.useReducer)(reducer, null, () => ({
+        start: isMac() ? "Alt+Meta+2" : "Ctrl+Alt+2",
+        pause: isMac() ? "Alt+Meta+3" : "Ctrl+Alt+3",
+        discard: isMac() ? "Alt+Meta+4" : "Ctrl+Alt+4",
+    }));
+    // bind
+    (0,react.useEffect)(() => {
+        for (const key of Object.keys(state)) {
+            keymap.bind(state[key], callbacks[key]);
+        }
+        return () => {
+            for (const key of Object.keys(state)) {
+                keymap.unbind(state[key], callbacks[key]);
             }
         };
-        window.addEventListener("click", requestAudioContext);
-        window.addEventListener("keydown", requestAudioContext);
-        window.addEventListener("touchstart", requestAudioContext);
-    }
+    }, [callbacks, keymap, state]);
+    // onBlur event, triggers rebind
+    const onBlur = (0,react.useCallback)((e) => {
+        e.preventDefault();
+        const name = e.currentTarget.getAttribute("name");
+        // bind sequence
+        const seq = e.currentTarget.dataset.value;
+        dispatch({ command: name, seq });
+    }, []);
+    // display shortcut sequence
+    const identifyKey = (0,react.useCallback)((e) => {
+        e.preventDefault();
+        const seq = Keymap.identify(e);
+        e.currentTarget.dataset.value = seq;
+        e.currentTarget.value = fmtSeq(seq);
+    }, []);
+    // warn before closing if recordings exist
+    const warn = (0,react.useRef)(false);
+    warn.current = recordings.length > 0;
+    (0,react.useEffect)(() => {
+        window.addEventListener("beforeunload", (e) => {
+            if (warn.current)
+                e.returnValue = "You have recording data";
+        });
+    }, []);
+    // show/hide control pane
+    const [paneOpen, setPaneOpen] = (0,react.useState)(false);
+    const togglePane = (0,react.useMemo)(() => react_onClick(() => {
+        setPaneOpen((prev) => !prev);
+    }), []);
+    const dialogStyle = {
+        display: paneOpen ? "block" : "none",
+    };
+    // toggle plugin
+    const setActive = (0,react.useMemo)(() => react_onClick((e) => {
+        const key = e.currentTarget.dataset.plugin;
+        activePlugins.current[key] = !activePlugins.current[key];
+        forceUpdate();
+    }), [forceUpdate]);
+    /* render */
+    const commands = [
+        ["Start/Stop recording", "start"],
+        ["Pause recording", "pause"],
+        ["Discard recording", "discard"],
+    ];
+    return ((0,jsx_runtime.jsxs)("div", { id: "lv-recording", children: [(0,jsx_runtime.jsxs)("div", { id: "lv-recording-dialog", style: dialogStyle, children: [(0,jsx_runtime.jsx)("table", { id: "lv-recording-configuration", children: (0,jsx_runtime.jsxs)("tbody", { children: [(0,jsx_runtime.jsx)("tr", { children: (0,jsx_runtime.jsx)("th", { colSpan: 2, children: "Commands" }) }), commands.map(([desc, key]) => ((0,jsx_runtime.jsxs)("tr", { children: [(0,jsx_runtime.jsx)("th", { scope: "row", children: desc }), (0,jsx_runtime.jsx)("td", { children: (0,jsx_runtime.jsx)("input", { onBlur: onBlur, readOnly: true, onKeyDown: identifyKey, className: "shortcut", name: key, type: "text", value: fmtSeq(state[key]) }) })] }, key)))] }) }), (0,jsx_runtime.jsx)("h3", { children: "Configuration" }), props.plugins.map((plugin) => {
+                        const classNames = ["recorder-plugin-icon"];
+                        if (activePlugins.current[plugin.key])
+                            classNames.push("active");
+                        const styles = {};
+                        const enabled = typeof plugin.enabled === "undefined" || plugin.enabled();
+                        if (!enabled) {
+                            styles.opacity = 0.3;
+                        }
+                        return ((0,jsx_runtime.jsxs)("div", { className: "recorder-plugin", title: plugin.title, style: styles, children: [(0,jsx_runtime.jsxs)("svg", { className: classNames.join(" "), height: "36", width: "36", viewBox: "0 0 100 100", "data-plugin": plugin.key, ...(enabled ? setActive : {}), children: [(0,jsx_runtime.jsx)("rect", { height: "100", width: "100", fill: activePlugins.current[plugin.key] ? "red" : "#222" }), plugin.icon] }), (0,jsx_runtime.jsx)("span", { className: "recorder-plugin-name", children: plugin.name })] }, plugin.key));
+                    }), (0,jsx_runtime.jsx)("h3", { children: "Saved data" }), (0,jsx_runtime.jsx)("ol", { className: "recordings", children: recordings.map((recording, i) => ((0,jsx_runtime.jsx)(RecordingRow, { data: recording, pluginsByKey: pluginsByKey }, i))) })] }), (0,jsx_runtime.jsx)("svg", { height: "36", width: "36", viewBox: "-50 -50 100 100", ...togglePane, children: (0,jsx_runtime.jsx)("circle", { cx: "0", cy: "0", r: "35", stroke: "white", strokeWidth: "5", fill: manager.current?.active
+                        ? manager.current?.paused
+                            ? "yellow"
+                            : "red"
+                        : "#666" }) })] }));
+}
+/** Format key sequences with special characters on Mac */
+function fmtSeq(str) {
+    if (!isMac())
+        return str;
+    if (str === void 0)
+        return str;
+    return str
+        .split("+")
+        .map((k) => {
+        if (k === "Ctrl")
+            return "^";
+        else if (k === "Alt")
+            return "⌥";
+        if (k === "Shift")
+            return "⇧";
+        if (k === "Meta")
+            return "⌘";
+        return k;
+    })
+        .join("");
+}
+function isMac() {
+    return (typeof globalThis.navigator !== "undefined" &&
+        navigator.platform === "MacIntel");
 }
 
-;// ./node_modules/@liqvid/playback/dist/esm/animation.mjs
+;// ./node_modules/@liqvid/recording/dist/esm/recorders/replay-data-recorder.mjs
 
-
-/** Extended {@link CorePlayback Playback} supporting the Web Animation API */
-class Playback extends core_Playback {
-    constructor(options) {
-        super(options);
-        this.__animations = [];
-        this.__delays = new WeakMap();
-        if (ssr_isClient) {
-            this.__createTimeline();
-        }
-    }
-    /**
-     * Create an {@link Animation} (factory) synced to this playback
-     * @param keyframes A [keyframes object](https://developer.mozilla.org/en-US/docs/Web/API/Web_Animations_API/Keyframe_Formats) or `null`
-     * @param options Either an integer representing the animation's duration (in milliseconds), or {@link KeyframeEffectOptions}
-     * @returns A callback to attach the animation to a target
-     */
-    newAnimation(keyframes, options) {
-        let anim;
-        return (target) => {
-            if (target === null) {
-                anim.cancel();
-                anim = undefined;
-                return;
-            }
-            else if (anim !== undefined) {
-                console.warn("Animations should not be reused as they will not cancel properly. Check animations attached to ", target);
-            }
-            // create animation
-            anim = new Animation(new KeyframeEffect(target, keyframes, options), this.timeline);
-            if (typeof options === "object" &&
-                (options.fill === "forwards" || options.fill === "both")) {
-                anim.persist();
-            }
-            /* adopt animation */
-            const delay = anim.effect.getTiming().delay;
-            this.__delays.set(anim.effect, delay);
-            anim.currentTime = (this.currentTime - delay) / this.playbackRate;
-            anim.startTime = null;
-            anim.pause();
-            if (delay !== 0) {
-                anim.effect.updateTiming({ delay: 0.1 });
-            }
-            this.__animations.push(anim);
-            anim.addEventListener("cancel", () => {
-                this.__animations.splice(this.__animations.indexOf(anim), 1);
-            });
-            // return
-            return anim;
-        };
-    }
-    /**
-     * Create our timeline
-     *
-     * @listens pause
-     * @listens play
-     * @listens ratechange
-     * @listens seek
-     */
-    __createTimeline() {
-        // don't crash old browsers when not polyfilled
-        if (typeof window.DocumentTimeline === "undefined") {
-            return;
-        }
-        this.timeline = new DocumentTimeline();
-        // pause
-        this.on("pause", () => {
-            for (const anim of this.__animations) {
-                anim.pause();
-            }
-        });
-        // play
-        this.on("play", () => {
-            for (const anim of this.__animations) {
-                anim.startTime = null;
-                anim.play();
-                anim.startTime =
-                    this.timeline.currentTime +
-                        (this.__delays.get(anim.effect) - this.currentTime) /
-                            this.playbackRate;
-            }
-        });
-        // ratechange
-        this.on("ratechange", () => {
-            for (const anim of this.__animations) {
-                anim.playbackRate = this.playbackRate;
-            }
-        });
-        // seek
-        this.on("seek", () => {
-            for (const anim of this.__animations) {
-                const offset = (this.__delays.get(anim.effect) - this.currentTime) /
-                    this.playbackRate;
-                if (this.paused) {
-                    // anim.startTime = this.timeline.currentTime + offset
-                    anim.currentTime = -offset;
-                    anim.pause();
-                }
-                else {
-                    anim.startTime = this.timeline.currentTime + offset;
-                }
-            }
-        });
-    }
-}
-
-;// ./node_modules/liqvid/dist/esm/playback.mjs
-
-
-// backwards compatibility
-Object.defineProperty(Playback.prototype, "hub", {
-    get: function () {
-        return this;
-    },
-});
-const seek = Playback.prototype.seek;
-Playback.prototype.seek = function (t) {
-    if (typeof t === "string") {
-        t = parseTime(t);
-    }
-    seek.call(this, t);
-};
-
-
-;// ./node_modules/liqvid/dist/esm/script.mjs
-
-
-
-
-class Script extends events.EventEmitter {
-    /** The underlying {@link Playback} instance. */
-    playback;
-    /** The array of markers, in the form [name, startTime, endTime]. */
-    markers;
-    /** Index of the active marker. */
-    markerIndex;
-    constructor(markers) {
+class ReplayDataRecorder extends Recorder {
+    constructor() {
         super();
-        this.setMaxListeners(0);
-        // bind methods
-        bind(this, [
-            "back",
-            "forward",
-            "markerByName",
-            "markerNumberOf",
-            "parseStart",
-            "parseEnd",
-            "__updateMarker",
-        ]);
-        // parse times
-        let time = 0;
-        this.markers = [];
-        for (const marker of markers) {
-            if (marker.length === 2) {
-                const [, duration] = marker;
-                this.markers.push([
-                    marker[0],
-                    time,
-                    time +
-                        (typeof duration === "string" ? parseTime(duration) : duration),
-                ]);
-            }
-            else {
-                const [, begin, end] = marker;
-                this.markers.push([
-                    marker[0],
-                    typeof begin === "string" ? parseTime(begin) : begin,
-                    typeof end === "string" ? parseTime(end) : end,
-                ]);
-            }
-            time = this.markers[this.markers.length - 1][2];
+        this.duration = 0;
+    }
+    beginRecording() {
+        this.duration = 0;
+    }
+    finalizeRecording(data) {
+        // for (let sum = 0, i = 0; i < data.length && sum < startDelay; ++i) {
+        //   const dur = data[i][0];
+        //   if (dur === 0) {
+        //     continue;
+        //   }
+        //   if (sum + dur >= startDelay) {
+        //     data[i][0] -= startDelay - sum;
+        //     break;
+        //   }
+        //   sum += dur;
+        //   // data.splice(i, 1);
+        //   --i;
+        // }
+        // console.log(JSON.stringify(data, null, 2));
+        return compress(data);
+    }
+    capture(time = this.manager.getTime(), data) {
+        if (time - this.duration < 0) {
+            // console.error(time, this.duration, data);
         }
-        this.markerIndex = 0;
-        // create playback object
-        this.playback = new Playback({
-            duration: this.markers[this.markers.length - 1][2],
+        this.push([time - this.duration, data]);
+        this.duration = time;
+    }
+}
+/**
+ * Truncate numerical precision to reduce filesize.
+ * @param o Data to compress.
+ * @param precision Number of decimal points to include.
+ */
+function compress(o, precision = 2) {
+    switch (typeof o) {
+        case "object":
+            if (o instanceof Array) {
+                return o.map((val) => compress(val, precision));
+            }
+            if (o === null) {
+                return o;
+            }
+            return Object.fromEntries(Object.keys(o).map((key) => [
+                key,
+                compress(o[key], precision),
+            ]));
+        case "number":
+            return parseFloat(o.toFixed(precision));
+        default:
+            return o;
+    }
+}
+
+;// ./node_modules/@liqvid/recording/dist/esm/recorders/video-recording.mjs
+
+
+
+const video_recording_icon = ((0,jsx_runtime.jsx)("path", { fill: "#FFF", d: "M35.113 14.703a4.558 4.558 0 0 0-4.568 4.568v2.338h-11.29A13.146 13.146 0 0 0 6.082 34.787v37.018a13.142 13.142 0 0 0 13.173 13.172H80.74a13.147 13.147 0 0 0 13.178-13.172V34.787A13.146 13.146 0 0 0 80.74 21.61H69.455v-2.338a4.558 4.558 0 0 0-4.568-4.568H35.113ZM50 31.196c12.18 0 22.103 9.917 22.103 22.097 0 12.18-9.923 22.103-22.103 22.103-12.181 0-22.103-9.923-22.103-22.103 0-12.18 9.922-22.097 22.103-22.097Zm-30.073.835a4.59 4.59 0 0 1 4.59 4.59h.006a4.59 4.59 0 1 1-4.595-4.59ZM50 35.536a17.721 17.721 0 0 0-17.757 17.757A17.722 17.722 0 0 0 50 71.05a17.723 17.723 0 0 0 17.757-17.757A17.722 17.722 0 0 0 50 35.536Z" }));
+class VideoRecorder extends Recorder {
+    constructor() {
+        super(...arguments);
+        this.requested = false;
+        this.intransigent = true;
+    }
+    beginRecording() {
+        if (!this.stream)
+            throw new Error("Navigator stream not available");
+        this.promise = new Promise(async (resolve) => {
+            // record the video
+            this.mediaRecorder = new MediaRecorder(this.stream, {
+                mimeType: "video/webm",
+            });
+            // subscribe to events
+            this.mediaRecorder.addEventListener("dataavailable", (e) => {
+                this.push(e.data);
+            });
+            let startDelay;
+            this.mediaRecorder.addEventListener("start", () => {
+                startDelay = this.manager.getTime();
+            });
+            this.mediaRecorder.addEventListener("stop", () => {
+                resolve([startDelay, this.manager.getTime()]);
+            });
+            this.mediaRecorder.start();
         });
-        this.playback.on("seek", this.__updateMarker);
-        this.playback.on("timeupdate", this.__updateMarker);
     }
-    /** @deprecated */
-    get hub() {
-        return this;
+    pauseRecording() {
+        this.mediaRecorder.pause();
     }
-    /** Name of the active marker. */
-    get markerName() {
-        return this.markers[this.markerIndex][0];
+    resumeRecording() {
+        this.mediaRecorder.resume();
     }
-    // public methods
-    /** Seek playback to the previous marker. */
-    back() {
-        this.playback.seek(this.markers[Math.max(0, this.markerIndex - 1)][1]);
+    async endRecording() {
+        this.mediaRecorder.stop();
+        return this.promise;
     }
-    /** Advance playback to the next marker. */
-    forward() {
-        this.playback.seek(this.markers[Math.min(this.markers.length - 1, this.markerIndex + 1)][1]);
+    finalizeRecording(chunks) {
+        return new Blob(chunks, { type: "video/webm" });
     }
-    /**
-     * Returns the first marker with the given name.
-     * @throws {Error} If no marker named `name` exists.
-     */
-    markerByName(name) {
-        return this.markers[this.markerNumberOf(name)];
-    }
-    /**
-     * Returns the first index of a marker named `name`.
-     * @throws {Error} If no marker named `name` exists.
-     */
-    markerNumberOf(name) {
-        for (let i = 0; i < this.markers.length; ++i) {
-            if (this.markers[i][0] === name)
-                return i;
-        }
-        throw new Error(`Marker ${name} does not exist`);
-    }
-    /** If `start` is a string, returns the starting time of the marker with that name. Otherwise, returns `start`. */
-    parseStart(start) {
-        if (typeof start === "string") {
-            if (start.match(timeRegexp))
-                return parseTime(start);
-            else
-                return this.markerByName(start)[1];
-        }
-        else {
-            return start;
-        }
-    }
-    /** If `end` is a string, returns the ending time of the marker with that name. Otherwise, returns `end`. */
-    parseEnd(end) {
-        if (typeof end === "string") {
-            if (end.match(timeRegexp))
-                return parseTime(end);
-            else
-                return this.markerByName(end)[2];
-        }
-        else {
-            return end;
-        }
-    }
-    /** Update marker */
-    __updateMarker(t) {
-        let newIndex;
-        for (let i = 0; i < this.markers.length; ++i) {
-            const [, begin, end] = this.markers[i];
-            if (between(begin, t, end)) {
-                newIndex = i;
-                break;
+    requestRecording(constraints = { audio: true, video: true }) {
+        // be idempotent
+        if (this.requested)
+            return;
+        const request = async () => {
+            // Only need to do this once...
+            window.removeEventListener("click", request);
+            try {
+                this.stream = await navigator.mediaDevices.getUserMedia(constraints);
             }
-        }
-        if (newIndex === undefined)
-            newIndex = this.markers.length - 1;
-        if (newIndex !== this.markerIndex) {
-            const prevIndex = this.markerIndex;
-            this.markerIndex = newIndex;
-            this.emit("markerupdate", prevIndex);
-        }
+            catch (e) {
+                // User said no or browser rejected request due to insecure context
+                console.log("no recording allowed");
+            }
+        };
+        // Need user interaction to request media
+        window.addEventListener("click", request);
+        this.requested = true;
     }
 }
-
-;// ./node_modules/liqvid/dist/esm/index.mjs
-
-
-
-
-
-
-
-
-
-
-// backwards compatibility
-
-
-// controls
-
-
-
-
-
-
-
-const esm_Controls = {
-    Captions: Captions_Captions,
-    FullScreen: FullScreen,
-    PlayPause: PlayPause,
-    ScrubberBar: ScrubberBar,
-    Settings: Settings,
-    TimeDisplay: TimeDisplay,
-    Volume: Volume,
+function VideoSaveComponent(props) {
+    return ((0,jsx_runtime.jsx)(jsx_runtime.Fragment, { children: props.data ? ((0,jsx_runtime.jsx)("a", { download: "video.webm", href: URL.createObjectURL(props.data), children: "Download Video" })) : ("Video not yet available") }));
+}
+const video_recording_recorder = new VideoRecorder();
+const VideoRecording = {
+    enabled: () => {
+        if (typeof video_recording_recorder.stream === "undefined") {
+            if (isClient)
+                video_recording_recorder.requestRecording();
+            return false;
+        }
+        return true;
+    },
+    icon: video_recording_icon,
+    key: "video",
+    name: "Video",
+    recorder: video_recording_recorder,
+    saveComponent: VideoSaveComponent,
+    title: "Record video",
 };
-// alias
 
-if (isClient && !window.hasOwnProperty("RactivePlayer")) {
-    Object.defineProperty(window, "RactivePlayer", {
-        get() {
-            if (typeof window.Liqvid !== "undefined") {
-                return window.Liqvid;
-            }
-        },
-    });
-}
+;// ./node_modules/@liqvid/recording/dist/esm/index.mjs
 
-// EXTERNAL MODULE: ./node_modules/react-dom/client.js
-var client = __webpack_require__(572);
-;// ./static/audio.mp4
-const audio_namespaceObject = __webpack_require__.p + "f6ebd4599cb3dd48ca46.mp4";
-;// ./static/audio.webm
-const static_audio_namespaceObject_0 = __webpack_require__.p + "1b355384e4b03e7991af.webm";
-;// ./node_modules/@liqvid/utils/dist/esm/json.mjs
-const results = {};
-/**
- * Preload all JSON resources.
- */
-function loadAllJSON() {
-    return Promise.all(Array.from(document.querySelectorAll("link[data-name][rel='preload'][type='application/json']")).map((link) => fetch(link.href)
-        .then((res) => res.json())
-        .then((json) => (results[link.dataset.name] = json)))).then();
-}
-/**
- * Load a JSON record asynchronously.
- */
-function loadJSON(key) {
-    return new Promise((resolve, reject) => {
-        // check for cached result
-        if (results[key]) {
-            return resolve(results[key]);
-        }
-        const link = document.querySelector(`link[data-name="${key}"][rel='preload'][type='application/json']`);
-        if (!link) {
-            return reject(`JSON record "${key}" not found`);
-        }
-        return fetch(link.href)
-            .then((res) => res.json())
-            .then((data) => {
-            // cache result
-            results[key] = data;
-            resolve(data);
-        })
-            .catch(reject);
-    });
-}
-/**
- * Access a preloaded JSON record synchronously.
- */
-function getJSON(key) {
-    if (!results[key]) {
-        throw new Error(`JSON record "${key}" not loaded`);
-    }
-    return results[key];
-}
+
+
+
+
+
+
 
 ;// ./node_modules/@marijn/find-cluster-break/src/index.js
 let rangeFrom = [], rangeTo = [];
@@ -9056,7 +8970,7 @@ function codePointSize(code) { return code < 0x10000 ? 1 : 2; }
 
 ;// ./node_modules/@codemirror/state/dist/index.js
 
-class dist_Text {
+class Text {
     lineAt(pos) {
         if (pos < 0 || pos > this.length)
             throw new RangeError(`Invalid position ${pos} in document of length ${this.length}`);
@@ -9129,11 +9043,11 @@ class dist_Text {
         if (text.length == 0)
             throw new RangeError("A document must have at least one line");
         if (text.length == 1 && !text[0])
-            return dist_Text.empty;
+            return Text.empty;
         return text.length <= 32 ? new TextLeaf(text) : TextNode.from(TextLeaf.split(text, []));
     }
 }
-class TextLeaf extends dist_Text {
+class TextLeaf extends Text {
     constructor(text, length = textLength(text)) {
         super();
         this.text = text;
@@ -9212,7 +9126,7 @@ class TextLeaf extends dist_Text {
         return target;
     }
 }
-class TextNode extends dist_Text {
+class TextNode extends Text {
     constructor(children, length) {
         super();
         this.children = children;
@@ -9345,7 +9259,7 @@ class TextNode extends dist_Text {
         return chunked.length == 1 ? chunked[0] : new TextNode(chunked, length);
     }
 }
-dist_Text.empty = new TextLeaf([""], 0);
+Text.empty = new TextLeaf([""], 0);
 function textLength(text) {
     let length = -1;
     for (let line of text)
@@ -9511,7 +9425,7 @@ class LineCursor {
     get lineBreak() { return false; }
 }
 if (typeof Symbol != "undefined") {
-    dist_Text.prototype[Symbol.iterator] = function () { return this.iter(); };
+    Text.prototype[Symbol.iterator] = function () { return this.iter(); };
     RawTextCursor.prototype[Symbol.iterator] = PartialTextCursor.prototype[Symbol.iterator] =
         LineCursor.prototype[Symbol.iterator] = function () { return this; };
 }
@@ -9550,13 +9464,13 @@ function fromCodePoint(code) {
 }
 function dist_codePointSize(code) { return code < 0x10000 ? 1 : 2; }
 const DefaultSplit = /\r\n?|\n/;
-var dist_MapMode = (function (MapMode) {
+var MapMode = (function (MapMode) {
     MapMode[MapMode["Simple"] = 0] = "Simple";
     MapMode[MapMode["TrackDel"] = 1] = "TrackDel";
     MapMode[MapMode["TrackBefore"] = 2] = "TrackBefore";
     MapMode[MapMode["TrackAfter"] = 3] = "TrackAfter";
     return MapMode;
-})(dist_MapMode || (dist_MapMode = {}));
+})(MapMode || (MapMode = {}));
 class ChangeDesc {
     constructor(sections) {
         this.sections = sections;
@@ -9605,7 +9519,7 @@ class ChangeDesc {
     }
     composeDesc(other) { return this.empty ? other : other.empty ? this : composeSets(this, other); }
     mapDesc(other, before = false) { return other.empty ? this : mapSet(this, other, before); }
-    mapPos(pos, assoc = -1, mode = dist_MapMode.Simple) {
+    mapPos(pos, assoc = -1, mode = MapMode.Simple) {
         let posA = 0, posB = 0;
         for (let i = 0; i < this.sections.length;) {
             let len = this.sections[i++], ins = this.sections[i++], endA = posA + len;
@@ -9615,10 +9529,10 @@ class ChangeDesc {
                 posB += len;
             }
             else {
-                if (mode != dist_MapMode.Simple && endA >= pos &&
-                    (mode == dist_MapMode.TrackDel && posA < pos && endA > pos ||
-                        mode == dist_MapMode.TrackBefore && posA < pos ||
-                        mode == dist_MapMode.TrackAfter && endA > pos))
+                if (mode != MapMode.Simple && endA >= pos &&
+                    (mode == MapMode.TrackDel && posA < pos && endA > pos ||
+                        mode == MapMode.TrackBefore && posA < pos ||
+                        mode == MapMode.TrackAfter && endA > pos))
                     return null;
                 if (endA > pos || endA == pos && assoc < 0 && !len)
                     return pos == posA || assoc < 0 ? posB : posB + ins;
@@ -9655,7 +9569,7 @@ class ChangeDesc {
     }
     static create(sections) { return new ChangeDesc(sections); }
 }
-class ChangeSet extends ChangeDesc {
+class dist_ChangeSet extends ChangeDesc {
     constructor(sections, inserted) {
         super(sections);
         this.inserted = inserted;
@@ -9676,12 +9590,12 @@ class ChangeSet extends ChangeDesc {
                 sections[i + 1] = len;
                 let index = i >> 1;
                 while (inserted.length < index)
-                    inserted.push(dist_Text.empty);
-                inserted.push(len ? doc.slice(pos, pos + len) : dist_Text.empty);
+                    inserted.push(Text.empty);
+                inserted.push(len ? doc.slice(pos, pos + len) : Text.empty);
             }
             pos += len;
         }
-        return new ChangeSet(sections, inserted);
+        return new dist_ChangeSet(sections, inserted);
     }
     compose(other) { return this.empty ? other : other.empty ? this : composeSets(this, other, true); }
     map(other, before = false) { return other.empty ? this : mapSet(this, other, before, true); }
@@ -9717,7 +9631,7 @@ class ChangeSet extends ChangeDesc {
                 pos += len;
             }
         }
-        return { changes: new ChangeSet(resultSections, resultInserted),
+        return { changes: new dist_ChangeSet(resultSections, resultInserted),
             filtered: ChangeDesc.create(filteredSections) };
     }
     toJSON() {
@@ -9741,7 +9655,7 @@ class ChangeSet extends ChangeDesc {
                 return;
             if (pos < length)
                 addSection(sections, length - pos, -1);
-            let set = new ChangeSet(sections, inserted);
+            let set = new dist_ChangeSet(sections, inserted);
             total = total ? total.compose(set.map(total)) : set;
             sections = [];
             inserted = [];
@@ -9752,7 +9666,7 @@ class ChangeSet extends ChangeDesc {
                 for (let sub of spec)
                     process(sub);
             }
-            else if (spec instanceof ChangeSet) {
+            else if (spec instanceof dist_ChangeSet) {
                 if (spec.length != length)
                     throw new RangeError(`Mismatched change set length (got ${spec.length}, expected ${length})`);
                 flush();
@@ -9762,7 +9676,7 @@ class ChangeSet extends ChangeDesc {
                 let { from, to = from, insert } = spec;
                 if (from > to || from < 0 || to > length)
                     throw new RangeError(`Invalid change range ${from} to ${to} (in doc of length ${length})`);
-                let insText = !insert ? dist_Text.empty : typeof insert == "string" ? dist_Text.of(insert.split(lineSep || DefaultSplit)) : insert;
+                let insText = !insert ? Text.empty : typeof insert == "string" ? Text.of(insert.split(lineSep || DefaultSplit)) : insert;
                 let insLen = insText.length;
                 if (from == to && insLen == 0)
                     return;
@@ -9780,7 +9694,7 @@ class ChangeSet extends ChangeDesc {
         return total;
     }
     static empty(length) {
-        return new ChangeSet(length ? [length, -1] : [], []);
+        return new dist_ChangeSet(length ? [length, -1] : [], []);
     }
     static fromJSON(json) {
         if (!Array.isArray(json))
@@ -9799,15 +9713,15 @@ class ChangeSet extends ChangeDesc {
             }
             else {
                 while (inserted.length < i)
-                    inserted.push(dist_Text.empty);
-                inserted[i] = dist_Text.of(part.slice(1));
+                    inserted.push(Text.empty);
+                inserted[i] = Text.of(part.slice(1));
                 sections.push(part[0], inserted[i].length);
             }
         }
-        return new ChangeSet(sections, inserted);
+        return new dist_ChangeSet(sections, inserted);
     }
     static createSet(sections, inserted) {
-        return new ChangeSet(sections, inserted);
+        return new dist_ChangeSet(sections, inserted);
     }
 }
 function addSection(sections, len, ins, forceJoin = false) {
@@ -9834,7 +9748,7 @@ function addInsert(values, sections, value) {
     }
     else {
         while (values.length < index)
-            values.push(dist_Text.empty);
+            values.push(Text.empty);
         values.push(value);
     }
 }
@@ -9847,7 +9761,7 @@ function iterChanges(desc, f, individual) {
             posB += len;
         }
         else {
-            let endA = posA, endB = posB, text = dist_Text.empty;
+            let endA = posA, endB = posB, text = Text.empty;
             for (;;) {
                 endA += len;
                 endB += ins;
@@ -9917,7 +9831,7 @@ function mapSet(setA, setB, before, mkSet = false) {
             a.forward(a.len - left);
         }
         else if (a.done && b.done) {
-            return insert ? ChangeSet.createSet(sections, insert) : ChangeDesc.create(sections);
+            return insert ? dist_ChangeSet.createSet(sections, insert) : ChangeDesc.create(sections);
         }
         else {
             throw new Error("Mismatched change set lengths");
@@ -9930,7 +9844,7 @@ function composeSets(setA, setB, mkSet = false) {
     let a = new SectionIter(setA), b = new SectionIter(setB);
     for (let open = false;;) {
         if (a.done && b.done) {
-            return insert ? ChangeSet.createSet(sections, insert) : ChangeDesc.create(sections);
+            return insert ? dist_ChangeSet.createSet(sections, insert) : ChangeDesc.create(sections);
         }
         else if (a.ins == 0) {
             addSection(sections, a.len, 0, open);
@@ -9991,11 +9905,11 @@ class SectionIter {
     get len2() { return this.ins < 0 ? this.len : this.ins; }
     get text() {
         let { inserted } = this.set, index = (this.i - 2) >> 1;
-        return index >= inserted.length ? dist_Text.empty : inserted[index];
+        return index >= inserted.length ? Text.empty : inserted[index];
     }
     textBit(len) {
         let { inserted } = this.set, index = (this.i - 2) >> 1;
-        return index >= inserted.length && !len ? dist_Text.empty
+        return index >= inserted.length && !len ? Text.empty
             : inserted[index].slice(this.off, len == null ? undefined : this.off + len);
     }
     forward(len) {
@@ -10587,7 +10501,7 @@ class dist_StateEffect {
 }
 dist_StateEffect.reconfigure = dist_StateEffect.define();
 dist_StateEffect.appendConfig = dist_StateEffect.define();
-class dist_Transaction {
+class Transaction {
     constructor(startState, changes, selection, effects, annotations, scrollIntoView) {
         this.startState = startState;
         this.changes = changes;
@@ -10599,11 +10513,11 @@ class dist_Transaction {
         this._state = null;
         if (selection)
             checkSelection(selection, changes.newLength);
-        if (!annotations.some((a) => a.type == dist_Transaction.time))
-            this.annotations = annotations.concat(dist_Transaction.time.of(Date.now()));
+        if (!annotations.some((a) => a.type == Transaction.time))
+            this.annotations = annotations.concat(Transaction.time.of(Date.now()));
     }
     static create(startState, changes, selection, effects, annotations, scrollIntoView) {
-        return new dist_Transaction(startState, changes, selection, effects, annotations, scrollIntoView);
+        return new Transaction(startState, changes, selection, effects, annotations, scrollIntoView);
     }
     get newDoc() {
         return this._doc || (this._doc = this.changes.apply(this.startState.doc));
@@ -10625,14 +10539,14 @@ class dist_Transaction {
     get docChanged() { return !this.changes.empty; }
     get reconfigured() { return this.startState.config != this.state.config; }
     isUserEvent(event) {
-        let e = this.annotation(dist_Transaction.userEvent);
+        let e = this.annotation(Transaction.userEvent);
         return !!(e && (e == event || e.length > event.length && e.slice(0, event.length) == event && e[event.length] == "."));
     }
 }
-dist_Transaction.time = Annotation.define();
-dist_Transaction.userEvent = Annotation.define();
-dist_Transaction.addToHistory = Annotation.define();
-dist_Transaction.remote = Annotation.define();
+Transaction.time = Annotation.define();
+Transaction.userEvent = Annotation.define();
+Transaction.addToHistory = Annotation.define();
+Transaction.remote = Annotation.define();
 function joinRanges(a, b) {
     let result = [];
     for (let iA = 0, iB = 0;;) {
@@ -10658,7 +10572,7 @@ function mergeTransaction(a, b, sequential) {
     let mapForA, mapForB, changes;
     if (sequential) {
         mapForA = b.changes;
-        mapForB = ChangeSet.empty(b.changes.length);
+        mapForB = dist_ChangeSet.empty(b.changes.length);
         changes = a.changes.compose(b.changes);
     }
     else {
@@ -10677,10 +10591,10 @@ function mergeTransaction(a, b, sequential) {
 function resolveTransactionInner(state, spec, docSize) {
     let sel = spec.selection, annotations = asArray(spec.annotations);
     if (spec.userEvent)
-        annotations = annotations.concat(dist_Transaction.userEvent.of(spec.userEvent));
+        annotations = annotations.concat(Transaction.userEvent.of(spec.userEvent));
     return {
-        changes: spec.changes instanceof ChangeSet ? spec.changes
-            : ChangeSet.of(spec.changes || [], docSize, state.facet(lineSeparator)),
+        changes: spec.changes instanceof dist_ChangeSet ? spec.changes
+            : dist_ChangeSet.of(spec.changes || [], docSize, state.facet(lineSeparator)),
         selection: sel && (sel instanceof dist_EditorSelection ? sel : dist_EditorSelection.single(sel.anchor, sel.head)),
         effects: asArray(spec.effects),
         annotations,
@@ -10697,7 +10611,7 @@ function resolveTransaction(state, specs, filter) {
         let seq = !!specs[i].sequential;
         s = mergeTransaction(s, resolveTransactionInner(state, specs[i], seq ? s.changes.newLength : state.doc.length), seq);
     }
-    let tr = dist_Transaction.create(state, s.changes, s.selection, s.effects, s.annotations, s.scrollIntoView);
+    let tr = Transaction.create(state, s.changes, s.selection, s.effects, s.annotations, s.scrollIntoView);
     return extendTransaction(filter ? filterTransaction(tr) : tr);
 }
 function filterTransaction(tr) {
@@ -10716,21 +10630,21 @@ function filterTransaction(tr) {
         let changes, back;
         if (result === false) {
             back = tr.changes.invertedDesc;
-            changes = ChangeSet.empty(state.doc.length);
+            changes = dist_ChangeSet.empty(state.doc.length);
         }
         else {
             let filtered = tr.changes.filter(result);
             changes = filtered.changes;
             back = filtered.filtered.mapDesc(filtered.changes).invertedDesc;
         }
-        tr = dist_Transaction.create(state, changes, tr.selection && tr.selection.map(back), dist_StateEffect.mapEffects(tr.effects, back), tr.annotations, tr.scrollIntoView);
+        tr = Transaction.create(state, changes, tr.selection && tr.selection.map(back), dist_StateEffect.mapEffects(tr.effects, back), tr.annotations, tr.scrollIntoView);
     }
     let filters = state.facet(transactionFilter);
     for (let i = filters.length - 1; i >= 0; i--) {
         let filtered = filters[i](tr);
-        if (filtered instanceof dist_Transaction)
+        if (filtered instanceof Transaction)
             tr = filtered;
-        else if (Array.isArray(filtered) && filtered.length == 1 && filtered[0] instanceof dist_Transaction)
+        else if (Array.isArray(filtered) && filtered.length == 1 && filtered[0] instanceof Transaction)
             tr = filtered[0];
         else
             tr = resolveTransaction(state, asArray(filtered), false);
@@ -10744,7 +10658,7 @@ function extendTransaction(tr) {
         if (extension && Object.keys(extension).length)
             spec = mergeTransaction(spec, resolveTransactionInner(state, extension, tr.changes.newLength), true);
     }
-    return spec == tr ? tr : dist_Transaction.create(state, tr.changes, tr.selection, spec.effects, spec.annotations, spec.scrollIntoView);
+    return spec == tr ? tr : Transaction.create(state, tr.changes, tr.selection, spec.effects, spec.annotations, spec.scrollIntoView);
 }
 const none = [];
 function asArray(value) {
@@ -10871,12 +10785,12 @@ class EditorState {
         };
     }
     changes(spec = []) {
-        if (spec instanceof ChangeSet)
+        if (spec instanceof dist_ChangeSet)
             return spec;
-        return ChangeSet.of(spec, this.doc.length, this.facet(EditorState.lineSeparator));
+        return dist_ChangeSet.of(spec, this.doc.length, this.facet(EditorState.lineSeparator));
     }
     toText(string) {
-        return dist_Text.of(string.split(this.facet(EditorState.lineSeparator) || DefaultSplit));
+        return Text.of(string.split(this.facet(EditorState.lineSeparator) || DefaultSplit));
     }
     sliceDoc(from = 0, to = this.doc.length) {
         return this.doc.sliceString(from, to, this.lineBreak);
@@ -10920,8 +10834,8 @@ class EditorState {
     }
     static create(config = {}) {
         let configuration = Configuration.resolve(config.extensions || [], new Map);
-        let doc = config.doc instanceof dist_Text ? config.doc
-            : dist_Text.of((config.doc || "").split(configuration.staticFacet(EditorState.lineSeparator) || DefaultSplit));
+        let doc = config.doc instanceof Text ? config.doc
+            : Text.of((config.doc || "").split(configuration.staticFacet(EditorState.lineSeparator) || DefaultSplit));
         let selection = !config.selection ? dist_EditorSelection.single(0)
             : config.selection instanceof dist_EditorSelection ? config.selection
                 : dist_EditorSelection.single(config.selection.anchor, config.selection.head);
@@ -11022,7 +10936,7 @@ class RangeValue {
 }
 RangeValue.prototype.startSide = RangeValue.prototype.endSide = 0;
 RangeValue.prototype.point = false;
-RangeValue.prototype.mapMode = dist_MapMode.TrackDel;
+RangeValue.prototype.mapMode = MapMode.TrackDel;
 class Range {
     constructor(from, to, value) {
         this.from = from;
@@ -12869,12 +12783,12 @@ class WidgetView extends ContentView {
     ignoreEvent(event) { return this.widget.ignoreEvent(event); }
     get overrideDOMText() {
         if (this.length == 0)
-            return dist_Text.empty;
+            return Text.empty;
         let top = this;
         while (top.parent)
             top = top.parent;
         let { view } = top, text = view && view.state.doc, start = this.posAtStart;
-        return text ? text.slice(start, start + this.length) : dist_Text.empty;
+        return text ? text.slice(start, start + this.length) : Text.empty;
     }
     domAtPos(pos) {
         return (this.length ? pos == 0 : this.side > 0)
@@ -12933,7 +12847,7 @@ class WidgetBufferView extends ContentView {
         return this.dom.getBoundingClientRect();
     }
     get overrideDOMText() {
-        return dist_Text.empty;
+        return Text.empty;
     }
     get isHidden() { return true; }
 }
@@ -13172,14 +13086,14 @@ class LineDecoration extends Decoration {
         return super.range(from, to);
     }
 }
-LineDecoration.prototype.mapMode = dist_MapMode.TrackBefore;
+LineDecoration.prototype.mapMode = MapMode.TrackBefore;
 LineDecoration.prototype.point = true;
 class PointDecoration extends Decoration {
     constructor(spec, startSide, endSide, block, widget, isReplace) {
         super(startSide, endSide, widget, spec);
         this.block = block;
         this.isReplace = isReplace;
-        this.mapMode = !block ? dist_MapMode.TrackDel : startSide <= 0 ? dist_MapMode.TrackBefore : dist_MapMode.TrackAfter;
+        this.mapMode = !block ? MapMode.TrackDel : startSide <= 0 ? MapMode.TrackBefore : MapMode.TrackAfter;
     }
     get type() {
         return this.startSide != this.endSide ? BlockType.WidgetRange
@@ -13415,7 +13329,7 @@ class BlockWidgetView extends ContentView {
         }
     }
     get overrideDOMText() {
-        return this.parent ? this.parent.view.state.doc.slice(this.posAtStart, this.posAtEnd) : dist_Text.empty;
+        return this.parent ? this.parent.view.state.doc.slice(this.posAtStart, this.posAtEnd) : Text.empty;
     }
     domBoundsAround() { return null; }
     become(other) {
@@ -14262,7 +14176,7 @@ class ViewUpdate {
         this.transactions = transactions;
         this.flags = 0;
         this.startState = view.state;
-        this.changes = ChangeSet.empty(this.startState.doc.length);
+        this.changes = dist_ChangeSet.empty(this.startState.doc.length);
         for (let tr of transactions)
             this.changes = this.changes.compose(tr.changes);
         let changedRanges = [];
@@ -15427,7 +15341,7 @@ function applyDOMChange(view, domChange) {
                 diff.toB == diff.from + 2 && domChange.text.slice(diff.from, diff.toB) == LineBreakPlaceholder + LineBreakPlaceholder)
                 diff.toB--;
             change = { from: from + diff.from, to: from + diff.toA,
-                insert: dist_Text.of(domChange.text.slice(diff.from, diff.toB).split(LineBreakPlaceholder)) };
+                insert: Text.of(domChange.text.slice(diff.from, diff.toB).split(LineBreakPlaceholder)) };
         }
     }
     else if (newSel && (!view.hasFocus && view.state.facet(editable) || newSel.main.eq(sel))) {
@@ -15442,7 +15356,7 @@ function applyDOMChange(view, domChange) {
         /^\. ?$/.test(change.insert.toString()) && view.contentDOM.getAttribute("autocorrect") == "off") {
         if (newSel && change.insert.length == 2)
             newSel = dist_EditorSelection.single(newSel.main.anchor - 1, newSel.main.head - 1);
-        change = { from: change.from, to: change.to, insert: dist_Text.of([change.insert.toString().replace(".", " ")]) };
+        change = { from: change.from, to: change.to, insert: Text.of([change.insert.toString().replace(".", " ")]) };
     }
     else if (change && change.from >= sel.from && change.to <= sel.to &&
         (change.from != sel.from || change.to != sel.to) &&
@@ -15456,7 +15370,7 @@ function applyDOMChange(view, domChange) {
         change.insert.toString() == "\n " && view.lineWrapping) {
         if (newSel)
             newSel = dist_EditorSelection.single(newSel.main.anchor - 1, newSel.main.head - 1);
-        change = { from: sel.from, to: sel.to, insert: dist_Text.of([" "]) };
+        change = { from: sel.from, to: sel.to, insert: Text.of([" "]) };
     }
     if (change) {
         return applyDOMChangeInner(view, change, newSel, lastKey);
@@ -16402,7 +16316,7 @@ function clearHeightChangeFlag() { heightChangeFlag = false; }
 class HeightOracle {
     constructor(lineWrapping) {
         this.lineWrapping = lineWrapping;
-        this.doc = dist_Text.empty;
+        this.doc = Text.empty;
         this.heightSamples = {};
         this.lineHeight = 14;
         this.charWidth = 7;
@@ -17153,7 +17067,7 @@ class ViewState {
         let guessWrapping = state.facet(contentAttributes).some(v => typeof v != "function" && v.class == "cm-lineWrapping");
         this.heightOracle = new HeightOracle(guessWrapping);
         this.stateDeco = state.facet(decorations).filter(d => typeof d != "function");
-        this.heightMap = HeightMap.empty().applyChanges(this.stateDeco, dist_Text.empty, this.heightOracle.setDoc(state.doc), [new ChangedRange(0, 0, 0, state.doc.length)]);
+        this.heightMap = HeightMap.empty().applyChanges(this.stateDeco, Text.empty, this.heightOracle.setDoc(state.doc), [new ChangedRange(0, 0, 0, state.doc.length)]);
         for (let i = 0; i < 2; i++) {
             this.viewport = this.getViewport(0, null);
             if (!this.updateForViewport())
@@ -17193,7 +17107,7 @@ class ViewState {
         let prevDeco = this.stateDeco;
         this.stateDeco = this.state.facet(decorations).filter(d => typeof d != "function");
         let contentChanges = update.changedRanges;
-        let heightChanges = ChangedRange.extendWithRanges(contentChanges, heightRelevantDecoChanges(prevDeco, this.stateDeco, update ? update.changes : ChangeSet.empty(this.state.doc.length)));
+        let heightChanges = ChangedRange.extendWithRanges(contentChanges, heightRelevantDecoChanges(prevDeco, this.stateDeco, update ? update.changes : dist_ChangeSet.empty(this.state.doc.length)));
         let prevHeight = this.heightMap.height;
         let scrollAnchor = this.scrolledToBottom ? null : this.scrollAnchorAt(this.scrollTop);
         clearHeightChangeFlag();
@@ -17303,7 +17217,7 @@ class ViewState {
             clearHeightChangeFlag();
             for (let vp of this.viewports) {
                 let heights = vp.from == this.viewport.from ? lineHeights : view.docView.measureVisibleLineHeights(vp);
-                this.heightMap = (refresh ? HeightMap.empty().applyChanges(this.stateDeco, dist_Text.empty, this.heightOracle, [new ChangedRange(0, 0, 0, view.state.doc.length)]) : this.heightMap).updateHeight(oracle, 0, refresh, new MeasuredHeights(vp.from, heights));
+                this.heightMap = (refresh ? HeightMap.empty().applyChanges(this.stateDeco, Text.empty, this.heightOracle, [new ChangedRange(0, 0, 0, view.state.doc.length)]) : this.heightMap).updateHeight(oracle, 0, refresh, new MeasuredHeights(vp.from, heights));
             }
             if (heightChangeFlag)
                 result |= 2;
@@ -18382,7 +18296,7 @@ class EditContextManager {
             let from = this.toEditorPos(e.updateRangeStart), to = this.toEditorPos(e.updateRangeEnd);
             if (view.inputState.composing >= 0 && !this.composing)
                 this.composing = { contextBase: e.updateRangeStart, editorBase: from, drifted: false };
-            let change = { from, to, insert: dist_Text.of(e.text.split("\n")) };
+            let change = { from, to, insert: Text.of(e.text.split("\n")) };
             if (change.from == this.from && anchor < this.from)
                 change.from = anchor;
             else if (change.to == this.to && anchor > this.to)
@@ -18395,7 +18309,7 @@ class EditContextManager {
             }
             if ((browser.mac || browser.android) && change.from == head - 1 &&
                 /^\. ?$/.test(e.text) && view.contentDOM.getAttribute("autocorrect") == "off")
-                change = { from, to, insert: dist_Text.of([e.text.replace(".", " ")]) };
+                change = { from, to, insert: Text.of([e.text.replace(".", " ")]) };
             this.pendingContextChange = change;
             if (!view.state.readOnly) {
                 let newLen = this.to - this.from + (change.to - change.from + change.insert.length);
@@ -18611,7 +18525,7 @@ class EditorView {
             document.fonts.ready.then(() => this.requestMeasure());
     }
     dispatch(...input) {
-        let trs = input.length == 1 && input[0] instanceof dist_Transaction ? input
+        let trs = input.length == 1 && input[0] instanceof Transaction ? input
             : input.length == 1 && Array.isArray(input[0]) ? input[0]
                 : [this.state.update(...input)];
         this.dispatchTransactions(trs, this);
@@ -20849,7 +20763,7 @@ function hoverTooltip(source, options = {}) {
                 if (tr.docChanged) {
                     let mapped = [];
                     for (let tooltip of value) {
-                        let newPos = tr.changes.mapPos(tooltip.pos, -1, dist_MapMode.TrackDel);
+                        let newPos = tr.changes.mapPos(tooltip.pos, -1, MapMode.TrackDel);
                         if (newPos != null) {
                             let copy = Object.assign(Object.create(null), tooltip);
                             copy.pos = newPos;
@@ -21179,7 +21093,7 @@ class GutterMarker extends RangeValue {
 }
 GutterMarker.prototype.elementClass = "";
 GutterMarker.prototype.toDOM = undefined;
-GutterMarker.prototype.mapMode = dist_MapMode.TrackBefore;
+GutterMarker.prototype.mapMode = MapMode.TrackBefore;
 GutterMarker.prototype.startSide = GutterMarker.prototype.endSide = -1;
 GutterMarker.prototype.point = true;
 const gutterLineClass = Facet.define();
@@ -21667,6 +21581,2524 @@ const __test = { HeightMap, HeightOracle, MeasuredHeights, QueryType, ChangedRan
     moveVisually, clearHeightChangeFlag, getHeightChangeFlag: () => heightChangeFlag };
 
 
+;// ./node_modules/@lqv/codemirror/dist/esm/icon.mjs
+
+const icon_icon = ((0,jsx_runtime.jsx)("g", { transform: "scale(0.5333333333)", children: (0,jsx_runtime.jsxs)("g", { transform: "translate(-138.61 -857.23)", children: [(0,jsx_runtime.jsx)("rect", { style: {
+                    strokeLinejoin: "round",
+                    stroke: "#FFF",
+                    strokeLinecap: "round",
+                    strokeWidth: 3.8521,
+                    fill: "#FFF",
+                }, rx: "9.4681", ry: "14.97", height: "58.455", width: "121.82", y: "931.93", x: "171.45" }), (0,jsx_runtime.jsx)("path", { style: {
+                    stroke: "#000",
+                    strokeDasharray: "4.9175124 4.9175124",
+                    strokeWidth: 4.9175,
+                    fill: "none",
+                }, d: "m184.06 947.36h94.08" }), (0,jsx_runtime.jsx)("path", { style: {
+                    stroke: "#000",
+                    strokeDasharray: "4.9175124 4.9175124",
+                    strokeWidth: 4.9175,
+                    fill: "none",
+                }, d: "m184.06 957.05h94.08" }), (0,jsx_runtime.jsx)("path", { style: {
+                    stroke: "#000",
+                    strokeDasharray: "4.9175124 4.9175124",
+                    strokeWidth: 4.9175,
+                    fill: "none",
+                }, d: "m184.06 966.75h94.08" }), (0,jsx_runtime.jsx)("path", { style: {
+                    stroke: "#FFF",
+                    strokeWidth: 4.9175,
+                    fill: "none",
+                }, d: "m184.06 977.23h94.08" }), (0,jsx_runtime.jsx)("path", { style: {
+                    stroke: "#FFF",
+                    strokeLinecap: "round",
+                    strokeWidth: 4.3986,
+                    fill: "none",
+                }, d: "m278.67 929.84s8.86-13.98-0.31-21.47c-10.76-8.79-20.81 8.66-36.55-3.07" })] }) }));
+
+;// ./node_modules/@lqv/codemirror/dist/esm/fake-selection.mjs
+
+
+const fake_selection_FakeSelection = dist_StateEffect.define();
+const fakeSelectionConfig = Facet.define({
+    combine(configs) {
+        return combineConfig(configs, {
+            cursorBlinkRate: 1200,
+            cursorStyle: "block",
+            drawRangeCursor: true,
+        }, {
+            cursorBlinkRate: (a, b) => a ?? b,
+            cursorStyle: (a, b) => a ?? b,
+            drawRangeCursor: (a, b) => a ?? b,
+        });
+    },
+});
+/**
+ * CodeMirror extension to imitate selections in replay.
+ */
+function fakeSelection(config = {}) {
+    return [
+        fakeSelectionConfig.of(config),
+        fakeCursorLayer,
+        fakeSelectionLayer,
+        style,
+    ];
+}
+/// Retrieve the [`drawSelection`](#view.drawSelection) configuration
+/// for this state. (Note that this will return a set of defaults even
+/// if `drawSelection` isn't enabled.)
+function getDrawFakeSelectionConfig(state) {
+    return state.facet(fakeSelectionConfig);
+}
+function fake_selection_configChanged(update) {
+    return (update.startState.facet(fakeSelectionConfig) !==
+        update.state.facet(fakeSelectionConfig));
+}
+const fakeCursorLayer = dist_layer({
+    above: true,
+    markers(view) {
+        const { state } = view;
+        const conf = state.facet(fakeSelectionConfig);
+        const cursors = [];
+        if (!this.range)
+            return [];
+        for (const r of [this.range]) {
+            if (r.empty || conf.drawRangeCursor) {
+                const className = conf.cursorStyle === "block"
+                    ? "lqv-fakeCursorBlock"
+                    : "lqv-fakeCursorColumn";
+                const cursor = r.empty
+                    ? r
+                    : dist_EditorSelection.cursor(r.head, r.head > r.anchor ? -1 : 1);
+                for (const piece of RectangleMarker.forRange(view, className, cursor))
+                    cursors.push(piece);
+            }
+        }
+        return cursors;
+    },
+    update(update, dom) {
+        const effects = update.transactions
+            .map((tr) => tr.effects.filter((e) => e.is(fake_selection_FakeSelection)))
+            .reduce((a, b) => a.concat(b), []);
+        const confChange = fake_selection_configChanged(update);
+        if (confChange)
+            fake_selection_setBlinkRate(update.state, dom);
+        if (effects.length === 0) {
+            return update.docChanged || update.selectionSet || confChange;
+        }
+        if (effects.length > 0) {
+            dom.style.animationName =
+                dom.style.animationName === "lqv-blink" ? "lqv-blink2" : "lqv-blink";
+            this.range = SelectionRange.fromJSON(effects[effects.length - 1].value);
+            return true;
+        }
+    },
+    mount(dom, view) {
+        fake_selection_setBlinkRate(view.state, dom);
+    },
+    class: "lqv-fakeCursorLayer",
+});
+function fake_selection_setBlinkRate(state, dom) {
+    dom.style.animationDuration = `${state.facet(fakeSelectionConfig).cursorBlinkRate}ms`;
+}
+const fakeSelectionLayer = dist_layer({
+    above: false,
+    markers(view) {
+        if (!this.range) {
+            return [];
+        }
+        return RectangleMarker.forRange(view, "lqv-fakeSelectionBackground", this.range);
+    },
+    update(update) {
+        const effects = update.transactions
+            .map((tr) => tr.effects.filter((e) => e.is(fake_selection_FakeSelection)))
+            .reduce((a, b) => a.concat(b), []);
+        if (effects.length === 0) {
+            return (update.docChanged ||
+                update.selectionSet ||
+                update.viewportChanged ||
+                fake_selection_configChanged(update));
+        }
+        if (effects.length > 0) {
+            this.range = SelectionRange.fromJSON(effects[effects.length - 1].value);
+            return true;
+        }
+    },
+    class: "lqv-fakeSelectionLayer",
+});
+const themeSpec = {
+    ".lqv-fakeSelectionBackground": {
+        background: "#d7d4f0",
+    },
+    ".lqv-fakeCursorLayer": {
+        animation: "steps(1) lqv-blink 1.2s infinite",
+        pointerEvents: "none",
+    },
+    // Two animations defined so that we can switch between them to
+    // restart the animation without forcing another style
+    // recomputation.
+    "@keyframes lqv-blink": { "0%": {}, "50%": { opacity: 0 }, "100%": {} },
+    "@keyframes lqv-blink2": { "0%": {}, "50%": { opacity: 0 }, "100%": {} },
+    ".lqv-fakeCursorBlock": {
+        background: "#f00a",
+        width: "1ch",
+        marginLeft: "-0.6px",
+        pointerEvents: "none",
+    },
+    ".lqv-fakeCursorColumn": {
+        borderLeft: "1.2px solid black",
+        marginLeft: "-0.6px",
+        pointerEvents: "none",
+    },
+};
+const style = Prec.highest(EditorView.theme(themeSpec));
+
+;// ./node_modules/@lqv/codemirror/dist/esm/index.mjs
+
+
+
+/** Reserved command for specifying file. */
+const selectCmd = "file:";
+/** Reserved string for specifying scroll actions. */
+const scrollCmd = "s";
+/** Key for the default view (in single-file mode). */
+const defaultViewName = "default";
+/**
+ * Replay typing in CodeMirror.
+ * @returns Unsubscription function.
+ */
+function cmReplay({ data, handle, playback, scrollBehavior, didScroll, shouldScroll = () => true, start, view, }) {
+    return cmReplayMultiple({
+        data: [[0, selectCmd + defaultViewName], ...data],
+        handle: (key, docs) => handle(key, docs.default),
+        playback,
+        scrollBehavior,
+        didScroll: (_filename, scrollToOptions) => {
+            didScroll?.(scrollToOptions);
+        },
+        shouldScroll,
+        start,
+        views: {
+            [defaultViewName]: view,
+        },
+    });
+}
+/**
+ * Replay typing to several CodeMirror instances in parallel.
+ * @returns Unsubscription function.
+ */
+function cmReplayMultiple({ data, didScroll, handle, playback, scrollBehavior = "auto", shouldScroll = () => true, start = 0, views, }) {
+    /** Current file being replayed into */
+    let file = undefined;
+    // validation
+    if (!(data.length > 0 &&
+        data[0][0] === 0 &&
+        typeof data[0][1] === "string" &&
+        data[0][1].startsWith(selectCmd))) {
+        throw new Error("First command must have time 0 and select the file");
+    }
+    // we're going to mess with data, clone it
+    data = JSON.parse(JSON.stringify(data));
+    /* unpackage */
+    // decompress times
+    const times = data.map((_) => _[0]);
+    for (let i = 1; i < times.length; ++i)
+        times[i] += times[i - 1];
+    // deserialize changesets
+    for (const [, action] of data) {
+        // changeset
+        if (Array.isArray(action) && Array.isArray(action[0])) {
+            action[0] = ChangeSet.fromJSON(action[0]);
+        }
+    }
+    // for scrolling in legacy recordings
+    const hasScroll = {};
+    for (const key in views) {
+        hasScroll[key] = false;
+    }
+    // initialize inverses
+    const inverses = {};
+    const lastScroll = {};
+    for (const key in views) {
+        inverses[key] = [];
+        lastScroll[key] = [0, 0];
+    }
+    // compute inverses
+    {
+        const docs = {};
+        for (const key in views) {
+            docs[key] = views[key].state.doc;
+        }
+        for (let i = 0; i < data.length; ++i) {
+            const action = data[i][1];
+            if (Array.isArray(action)) {
+                if (action[0] instanceof ChangeSet) {
+                    // editor change
+                    inverses[file][i] = action[0].invert(docs[file]);
+                    docs[file] = action[0].apply(docs[file]);
+                }
+                else if (action[0] === scrollCmd) {
+                    // scroll
+                    hasScroll[file] = true;
+                    inverses[file][i] = lastScroll[file];
+                    lastScroll[file] = [action[1], action[2] ?? 0];
+                }
+            }
+            else if (action.startsWith(selectCmd)) {
+                file = action.slice(selectCmd.length);
+            }
+        }
+    }
+    /* main logic */
+    let index = 0;
+    let lastTime = 0;
+    const repaint = () => {
+        const t = playback.currentTime;
+        const progress = (t - start) * 1000;
+        const changes = {};
+        for (const key in views) {
+            changes[key] = ChangeSet.empty(views[key].state.doc.length);
+        }
+        const selections = {};
+        // apply / revert changes
+        if (lastTime <= t && index < data.length) {
+            // forward
+            let i = index;
+            for (; i < data.length && times[i] <= progress; ++i) {
+                const action = data[i][1];
+                if (typeof action === "string") {
+                    if (action.startsWith(selectCmd)) {
+                        file = action.slice(selectCmd.length);
+                    }
+                    // handle action
+                    const docs = {};
+                    for (const key in views) {
+                        docs[key] = changes[key].apply(views[key].state.doc);
+                    }
+                    handle(action, docs);
+                }
+                else {
+                    if (action[0] === scrollCmd) {
+                        if (shouldScroll(file)) {
+                            // scroll
+                            const [, y, x = 0] = action;
+                            const fontSize = getFontSize(views[file]);
+                            if (!Number.isNaN(fontSize)) {
+                                const scrollToOptions = {
+                                    left: x * fontSize,
+                                    top: y * fontSize,
+                                    behavior: scrollBehavior,
+                                };
+                                views[file].scrollDOM.scrollTo(scrollToOptions);
+                                didScroll?.(file, scrollToOptions);
+                            }
+                        }
+                    }
+                    else {
+                        // editor change
+                        changes[file] = changes[file].compose(action[0]);
+                        // handle selection
+                        if (action[1]) {
+                            const [anchor, head] = action[1];
+                            selections[file] = { anchor, head };
+                        }
+                    }
+                }
+            }
+            index = i;
+        }
+        else if (t < lastTime && 0 < index) {
+            // revert
+            let i = index - 1;
+            for (; 0 <= i && progress < times[i]; --i) {
+                if (inverses[file][i]) {
+                    const inverse = inverses[file][i];
+                    // editor change
+                    if (inverse instanceof ChangeSet) {
+                        changes[file] = changes[file].compose(inverses[file][i]);
+                    }
+                    // scroll
+                    else if (inverses[file][i].length === 2) {
+                        if (shouldScroll(file)) {
+                            const [y, x] = inverses[file][i];
+                            const fontSize = getFontSize(views[file]);
+                            if (!Number.isNaN(fontSize)) {
+                                const scrollToOptions = {
+                                    left: x * fontSize,
+                                    top: y * fontSize,
+                                    behavior: scrollBehavior,
+                                };
+                                views[file].scrollDOM.scrollTo(scrollToOptions);
+                                didScroll?.(file, scrollToOptions);
+                            }
+                        }
+                    }
+                }
+                else if (data[i][1] === selectCmd + file) {
+                    // find file to replay into
+                    for (let j = i - 1; 0 <= j; --j) {
+                        const action = data[j][1];
+                        if (typeof action === "string" && action.startsWith(selectCmd)) {
+                            file = action.slice(selectCmd.length);
+                            // XXX figure out how to handle more general actions
+                            handle(action, {});
+                            break;
+                        }
+                    }
+                }
+            }
+            index = i + 1;
+        }
+        for (const key in views) {
+            const effects = selections[key]
+                ? [FakeSelection.of(selections[key])]
+                : undefined;
+            const view = views[key];
+            view.dispatch(view.state.update({
+                changes: changes[key],
+                effects,
+            }));
+            // scrolling for legacy recordings
+            const scrollIntoView = !hasScroll[key] && shouldScroll(key);
+            if (scrollIntoView) {
+                // get position of last change
+                let pos;
+                changes[key].iterChangedRanges((_fromA, _toA, _fromB, toB) => {
+                    pos = toB;
+                });
+                // changes can be empty
+                if (pos === undefined) {
+                    return;
+                }
+                const { scrollDOM } = view;
+                const rect = scrollDOM.getBoundingClientRect();
+                // it isn't possible to measure things that are offscreen
+                const line = view.state.doc.lineAt(pos);
+                const wordTop = view.defaultLineHeight * (line.number - 1);
+                if (wordTop < scrollDOM.scrollTop) {
+                    const scrollToOptions = {
+                        behavior: scrollBehavior,
+                        top: wordTop,
+                    };
+                    scrollDOM.scrollTo(scrollToOptions);
+                    didScroll?.(key, scrollToOptions);
+                }
+                else if (wordTop > scrollDOM.scrollTop + rect.height) {
+                    const scrollToOptions = {
+                        behavior: scrollBehavior,
+                        top: wordTop - rect.height + view.defaultLineHeight,
+                    };
+                    scrollDOM.scrollTo(scrollToOptions);
+                    didScroll?.(key, scrollToOptions);
+                }
+            }
+        }
+        lastTime = t;
+    };
+    /* subscribe */
+    playback.addEventListener("seeking", repaint);
+    playback.addEventListener("timeupdate", repaint);
+    return () => {
+        playback.removeEventListener("seeking", repaint);
+        playback.removeEventListener("timeupdate", repaint);
+    };
+}
+/** Get the fontSize of a view's scrollDOM. */
+function getFontSize(view) {
+    return Number.parseFloat(getComputedStyle(view.scrollDOM).fontSize);
+}
+
+;// ./node_modules/@lqv/codemirror/dist/esm/recording.mjs
+
+
+
+
+
+
+// the actual thingy that gets exported
+class CodeRecorder extends ReplayDataRecorder {
+    constructor() {
+        super();
+        bind(this, ["extension"]);
+    }
+    /**
+     * Get a CodeMirror extension for recording.
+     * @param specialKeys Map of key sequences to commands, e.g. {"Mod-Enter": "run"}.
+     * @returns CodeMirror extension.
+     */
+    extension(specialKeys = {}) {
+        // legacy
+        if (Array.isArray(specialKeys)) {
+            // biome-ignore lint/style/noParameterAssign: helpful for backwards compatibility
+            specialKeys = Object.fromEntries(specialKeys.map((key) => [key, key]));
+        }
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        const $this = this;
+        const scrollListener = ViewPlugin.fromClass(class {
+            constructor(view) {
+                view.scrollDOM.addEventListener("scroll", () => {
+                    if (!$this.manager || $this.manager.paused || !$this.manager.active)
+                        return;
+                    const time = $this.manager.getTime();
+                    const fontSize = Number.parseFloat(getComputedStyle(view.scrollDOM).getPropertyValue("font-size"));
+                    // vertical scroll is more common so we put it first and omit
+                    // horizontal scroll if it's zero
+                    const action = [
+                        scrollCmd,
+                        view.scrollDOM.scrollTop / fontSize,
+                        view.scrollDOM.scrollLeft / fontSize,
+                    ];
+                    if (action[2] === 0) {
+                        action.pop();
+                    }
+                    $this.capture(time, action);
+                });
+            }
+        });
+        // record document changes
+        const updateListener = EditorView.updateListener.of((update) => {
+            if (!this.manager || this.manager.paused || !this.manager.active)
+                return;
+            // get selection change (if any)
+            const transactions = update.transactions
+                .map((t) => {
+                if (!t.selection)
+                    return null;
+                const range = t.selection.ranges[0];
+                return [range.anchor, range.head];
+            })
+                .filter(Boolean)
+                .slice(-1);
+            // empty events can break replay
+            if (update.changes.empty && transactions.length === 0)
+                return;
+            this.capture(this.manager.getTime(), [
+                update.changes.toJSON(),
+                ...transactions,
+                // biome-ignore lint/suspicious/noExplicitAny: TODO
+            ]);
+        });
+        // record special key presses
+        const keyListener = keymap.of(Object.keys(specialKeys).map((key) => ({
+            key,
+            run: () => {
+                if (this.manager?.active && !this.manager.paused) {
+                    this.capture(this.manager.getTime(), specialKeys[key]);
+                }
+                return false;
+            },
+        })));
+        return [scrollListener, updateListener, keyListener];
+    }
+}
+const KeySaveComponent = (props) => {
+    return ((0,jsx_runtime.jsx)(jsx_runtime.Fragment, { children: (0,jsx_runtime.jsx)("textarea", { readOnly: true, value: JSON.stringify(props.data) }) }));
+};
+const CodeRecording = {
+    enabled: () => true,
+    icon: icon_icon,
+    key: "codemirror",
+    name: "Code",
+    recorder: new CodeRecorder(),
+    saveComponent: KeySaveComponent,
+    title: "Record code",
+};
+
+;// ./node_modules/liqvid/dist/esm/utils/media.mjs
+/** Promisifed version of [canplay](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplay_event) event */
+function awaitMediaCanPlay(media) {
+    return new Promise((resolve) => {
+        if (media.readyState === media.HAVE_FUTURE_DATA) {
+            return resolve();
+        }
+        else {
+            media.addEventListener("canplay", () => resolve());
+        }
+    });
+}
+/** Promisified version of [`canplaythrough`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplaythrough_event) event. */
+function awaitMediaCanPlayThrough(media) {
+    return new Promise((resolve) => {
+        if (media.readyState === media.HAVE_ENOUGH_DATA) {
+            return resolve();
+        }
+        else {
+            media.addEventListener("canplaythrough", () => resolve());
+        }
+    });
+}
+
+;// ./node_modules/@liqvid/playback/dist/esm/react.mjs
+
+const react_symbol = Symbol.for("@lqv/playback");
+if (!(react_symbol in globalThis)) {
+    globalThis[react_symbol] = (0,react.createContext)(null);
+}
+/**
+ * {@link React.Context} used to access ambient {@link Playback}
+ */
+const PlaybackContext = globalThis[react_symbol];
+/** Access the ambient {@link Playback} */
+function react_usePlayback() {
+    return (0,react.useContext)(PlaybackContext);
+}
+function useTime(callback, transform, deps) {
+    const playback = react_usePlayback();
+    const prev = useRef();
+    useEffect(() => {
+        const listener = typeof transform === "function"
+            ? (t) => {
+                const value = transform(t);
+                if (value !== prev.current)
+                    callback(value);
+                prev.current = value;
+            }
+            : (t) => {
+                if (t !== prev.current)
+                    callback(t);
+                prev.current = t;
+            };
+        // subscriptions
+        playback.on("seek", listener);
+        playback.on("timeupdate", listener);
+        // initial call
+        listener(playback.currentTime);
+        // unsubscriptions
+        return () => {
+            playback.off("seek", listener);
+            playback.off("timeupdate", listener);
+        };
+    }, typeof transform === "function" ? deps : transform);
+}
+
+;// ./node_modules/liqvid/dist/esm/CaptionsDisplay.mjs
+
+
+
+function Captions() {
+    const playback = react_usePlayback();
+    const domElement = (0,react.useRef)();
+    (0,react.useEffect)(() => {
+        const updateCaptions = () => {
+            domElement.current.innerHTML = "";
+            for (const cue of playback.captions) {
+                domElement.current.appendChild(cue);
+            }
+        };
+        playback.on("cuechange", updateCaptions);
+        return () => {
+            playback.off("cuechange", updateCaptions);
+        };
+    }, [playback]);
+    return react.createElement("div", { className: "lv-captions-display", ref: domElement });
+}
+
+;// ./node_modules/liqvid/dist/esm/hooks.mjs
+
+
+
+
+
+/** Access the ambient {@link Player} */
+function usePlayer() {
+    return (0,react.useContext)(Player.Context);
+}
+/** Register a callback for when the marker changes */
+function useMarkerUpdate(callback, deps) {
+    const script = useScript();
+    useEffect(() => {
+        script.on("markerupdate", callback);
+        return () => {
+            script.off("markerupdate", callback);
+        };
+    }, [callback, script, ...deps]);
+}
+/** Access the ambient {@link Script} */
+function useScript() {
+    return usePlayer().script;
+}
+/** Register a callback for when the time changes */
+function useTimeUpdate(callback, deps) {
+    const playback = usePlayback();
+    useEffect(() => {
+        playback.on("seek", callback);
+        playback.on("timeupdate", callback);
+        return () => {
+            playback.off("seek", callback);
+            playback.off("timeupdate", callback);
+        };
+    }, [callback, playback, ...deps]);
+}
+
+;// ./node_modules/liqvid/dist/esm/controls/ThumbnailBox.mjs
+
+
+
+
+function ThumbnailBox(props) {
+    const player = usePlayer(), { playback } = player;
+    const { cols = 5, rows = 5, frequency = 4, path, progress, show, title, height = 100, width = 160, } = props;
+    const count = cols * rows;
+    (0,react.useEffect)(() => {
+        // preload thumbs (once more important loading has taken place)
+        const maxSlide = Math.floor(playback.duration / frequency / 1000), maxSheet = Math.floor(maxSlide / count);
+        player.hub.on("canplay", () => {
+            for (let sheetNum = 0; sheetNum <= maxSheet; ++sheetNum) {
+                const img = new Image();
+                img.src = path.replace("%s", sheetNum.toString());
+            }
+        });
+    }, [count, frequency, path, playback.duration, player]);
+    const time = (progress * playback.duration) / 1000, markerNum = Math.floor(time / frequency), sheetNum = Math.floor(markerNum / count), markerNumOnSheet = markerNum % count, row = Math.floor(markerNumOnSheet / rows), col = markerNumOnSheet % rows;
+    const sheetName = path.replace("%s", sheetNum.toString());
+    return (react.createElement("div", { className: "lv-controls-thumbnail", style: {
+            display: show ? "block" : "none",
+            left: `calc(${progress * 100}%)`,
+        } },
+        title && react.createElement("span", { className: "lv-thumbnail-title" }, title),
+        react.createElement("div", { className: "lv-thumbnail-box" },
+            react.createElement("img", { src: sheetName, style: {
+                    left: `-${col * width}px`,
+                    top: `-${row * height}px`,
+                } }),
+            react.createElement("span", { className: "lv-thumbnail-time" }, formatTime(time * 1000)))));
+}
+
+;// ./node_modules/liqvid/dist/esm/controls/ScrubberBar.mjs
+
+
+
+
+
+
+
+function ScrubberBar(props) {
+    const keymap = useKeymap();
+    const playback = react_usePlayback();
+    const script = useScript();
+    const [progress, setProgress] = (0,react.useState)({
+        scrubber: playback.currentTime / playback.duration,
+        thumb: playback.currentTime / playback.duration,
+    });
+    const [showThumb, setShowThumb] = (0,react.useState)(false);
+    // refs
+    const scrubberBar = (0,react.useRef)();
+    /* Event handlers */
+    const seek = (0,react.useCallback)(() => {
+        if (playback.seeking)
+            return;
+        const progress = playback.currentTime / playback.duration;
+        setProgress({ scrubber: progress, thumb: progress });
+    }, [playback]);
+    const seeked = (0,react.useCallback)(() => {
+        const progress = playback.currentTime / playback.duration;
+        setProgress((prev) => ({ scrubber: progress, thumb: prev.thumb }));
+    }, [playback]);
+    const timeupdate = (0,react.useCallback)(() => {
+        const progress = playback.currentTime / playback.duration;
+        setProgress((prev) => ({ scrubber: progress, thumb: prev.thumb }));
+    }, [playback]);
+    const back5 = (0,react.useCallback)(() => playback.seek(playback.currentTime - 5000), [playback]);
+    const fwd5 = (0,react.useCallback)(() => playback.seek(playback.currentTime + 5000), [playback]);
+    const back10 = (0,react.useCallback)(() => playback.seek(playback.currentTime - 10000), [playback]);
+    const fwd10 = (0,react.useCallback)(() => playback.seek(playback.currentTime + 10000), [playback]);
+    const seekPercent = (0,react.useCallback)((e) => {
+        const num = parseInt(e.key, 10);
+        if (!isNaN(num)) {
+            playback.seek((playback.duration * num) / 10);
+        }
+    }, [playback]);
+    (0,react.useEffect)(() => {
+        /* playback listeners */
+        playback.on("seek", seek);
+        playback.on("seeked", seeked);
+        playback.on("timeupdate", timeupdate);
+        /* keyboard shortcuts */
+        // seek 5
+        keymap.bind("ArrowLeft", back5);
+        keymap.bind("ArrowRight", fwd5);
+        // seek 10
+        keymap.bind("J", back10);
+        keymap.bind("L", fwd10);
+        // percentage seeking
+        keymap.bind("0,1,2,3,4,5,6,7,8,9", seekPercent);
+        // seek by marker
+        if (script) {
+            keymap.bind("W", script.back);
+            keymap.bind("E", script.forward);
+        }
+        return () => {
+            playback.off("seek", seek);
+            playback.off("seeked", seeked);
+            playback.off("timeupdate", timeupdate);
+            keymap.unbind("ArrowLeft", back5);
+            keymap.unbind("ArrowRight", fwd5);
+            keymap.unbind("J", back10);
+            keymap.unbind("L", fwd10);
+            keymap.unbind("0,1,2,3,4,5,6,7,8,9", seekPercent);
+            if (script) {
+                keymap.unbind("W", script.back);
+                keymap.unbind("E", script.forward);
+            }
+        };
+    }, [
+        back10,
+        back5,
+        fwd10,
+        fwd5,
+        keymap,
+        playback,
+        script,
+        seek,
+        seekPercent,
+        seeked,
+        timeupdate,
+    ]);
+    // event handlers
+    const divEvents = (0,react.useMemo)(() => {
+        if (!anyHover)
+            return {};
+        const listener = onDrag(
+        // move
+        (e, { x }) => {
+            const rect = scrubberBar.current.getBoundingClientRect(), progress = clamp(0, (x - rect.left) / rect.width, 1);
+            setProgress({ scrubber: progress, thumb: progress });
+            playback.seek(progress * playback.duration);
+        }, 
+        // down
+        (e) => {
+            playback.seeking = true;
+            const rect = scrubberBar.current.getBoundingClientRect(), progress = clamp(0, (e.clientX - rect.left) / rect.width, 1);
+            setProgress({ scrubber: progress, thumb: progress });
+            playback.seek(progress * playback.duration);
+        }, 
+        // up
+        () => (playback.seeking = false));
+        return {
+            onMouseDown: (e) => listener(e.nativeEvent),
+        };
+    }, [playback]);
+    // events to attach on the wrapper
+    const wrapEvents = (0,react.useMemo)(() => {
+        const props = {};
+        if (anyHover) {
+            Object.assign(props, {
+                // show thumb preview on hover
+                onMouseOver: () => setShowThumb(true),
+                onMouseMove: (e) => {
+                    const rect = scrubberBar.current.getBoundingClientRect(), progress = clamp(0, (e.clientX - rect.left) / rect.width, 1);
+                    setProgress((prev) => ({ scrubber: prev.scrubber, thumb: progress }));
+                },
+                onMouseOut: () => setShowThumb(false),
+            });
+        }
+        const listener = onDrag(
+        // move
+        (e, { x }) => {
+            const rect = scrubberBar.current.getBoundingClientRect(), progress = clamp(0, (x - rect.left) / rect.width, 1);
+            setProgress({ scrubber: progress, thumb: progress });
+        }, 
+        // start
+        (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            playback.seeking = true;
+            setShowThumb(true);
+        }, 
+        // end
+        (e, { x }) => {
+            e.preventDefault();
+            const rect = scrubberBar.current.getBoundingClientRect(), progress = clamp(0, (x - rect.left) / rect.width, 1);
+            setShowThumb(false);
+            playback.seeking = false;
+            playback.seek(progress * playback.duration);
+        });
+        props.ref = captureRef((ref) => {
+            ref.addEventListener("touchstart", listener, { passive: false });
+        });
+        return props;
+    }, [playback]);
+    // events to be attached to the scrubber
+    const scrubberEvents = (0,react.useMemo)(() => {
+        // if (anyHover) return {};
+        const listener = onDrag(
+        // move
+        (e, { x }) => {
+            const rect = scrubberBar.current.getBoundingClientRect(), progress = clamp(0, (x - rect.left) / rect.width, 1);
+            setProgress({ scrubber: progress, thumb: progress });
+        }, 
+        // start
+        (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            playback.seeking = true;
+            setShowThumb(true);
+        }, 
+        // end
+        (e, { x }) => {
+            e.preventDefault();
+            const rect = scrubberBar.current.getBoundingClientRect(), progress = clamp(0, (x - rect.left) / rect.width, 1);
+            setShowThumb(false);
+            playback.seeking = false;
+            playback.seek(progress * playback.duration);
+        });
+        return {
+            ref: captureRef((ref) => {
+                ref.addEventListener("touchstart", listener, { passive: false });
+            }),
+        };
+    }, [playback]);
+    const highlights = (props.thumbs && props.thumbs.highlights) || [];
+    const activeHighlight = highlights.find((_) => between(_.time / playback.duration, progress.thumb, _.time / playback.duration + 0.01));
+    const thumbTitle = activeHighlight ? activeHighlight.title : null;
+    return (react.createElement("div", { className: "lv-controls-scrub", ref: scrubberBar, ...divEvents },
+        props.thumbs && (react.createElement(ThumbnailBox, { ...props.thumbs, progress: progress.thumb, show: showThumb, title: thumbTitle })),
+        react.createElement("div", { className: "lv-controls-scrub-wrap", ...wrapEvents },
+            react.createElement("svg", { className: "lv-controls-scrub-progress", preserveAspectRatio: "none", viewBox: "0 0 100 10" },
+                react.createElement("rect", { className: "lv-progress-elapsed", x: "0", y: "0", height: "10", width: progress.scrubber * 100 }),
+                react.createElement("rect", { className: "lv-progress-remaining", x: progress.scrubber * 100, y: "0", height: "10", width: (1 - progress.scrubber) * 100 }),
+                highlights.map(({ time }) => (react.createElement("rect", { key: time, className: ["lv-thumb-highlight"]
+                        .concat(time <= playback.currentTime ? "past" : [])
+                        .join(" "), x: (time / playback.duration) * 100, y: "0", width: "1", height: "10" })))),
+            react.createElement("svg", { className: "lv-scrubber", style: { left: `calc(${progress.scrubber * 100}% - 6px)` }, viewBox: "0 0 100 100", ...scrubberEvents },
+                react.createElement("circle", { cx: "50", cy: "50", r: "50", stroke: "none" })))));
+}
+
+;// ./node_modules/liqvid/dist/esm/Controls.mjs
+
+
+
+
+
+
+// hiding timeout
+const TIMEOUT = 3000;
+function Controls(props) {
+    const keymap = useKeymap();
+    const playback = react_usePlayback();
+    const [visible, setVisible] = (0,react.useState)(true);
+    const timer = (0,react.useRef)(0);
+    // reset the hiding timer
+    const resetTimer = (0,react.useCallback)(() => {
+        if (playback.paused)
+            return;
+        if (timer.current !== undefined)
+            clearTimeout(timer.current);
+        timer.current = window.setTimeout(() => setVisible(false), TIMEOUT);
+        setVisible(true);
+    }, [playback]);
+    // mount subscriptions
+    (0,react.useEffect)(() => {
+        // hide on keyboard input
+        keymap.bind("*", resetTimer);
+        // show/hiding
+        document.body.addEventListener("touchstart", resetTimer);
+        document.body.addEventListener("mousemove", resetTimer);
+        playback.on("play", resetTimer);
+        playback.on("pause", () => {
+            clearTimeout(timer.current);
+            setVisible(true);
+        });
+        playback.on("stop", () => {
+            clearTimeout(timer.current);
+            setVisible(true);
+        });
+        document.body.addEventListener("mouseleave", () => {
+            if (playback.paused)
+                return;
+            setVisible(false);
+        });
+    }, [keymap, playback, resetTimer]);
+    const classNames = ["rp-controls", "lv-controls"];
+    if (!visible)
+        classNames.push("hidden");
+    return (react.createElement("div", { className: classNames.join(" ") },
+        react.createElement(ScrubberBar, { thumbs: props.thumbs }),
+        react.createElement("div", { className: "lv-controls-buttons" }, props.controls instanceof Array ? (react.createElement(react.Fragment, null,
+            Player.defaultControlsLeft,
+            react.createElement("div", { className: "lv-controls-right" },
+                ...props.controls,
+                Player.defaultControlsRight))) : (props.controls))));
+}
+
+;// ./node_modules/liqvid/dist/esm/controls/Captions.mjs
+
+
+
+
+/** Captions control. */
+function Captions_Captions() {
+    const player = usePlayer();
+    const keymap = useKeymap();
+    const [visible, setVisible] = (0,react.useState)(false);
+    const toggleCaptions = (0,react.useCallback)((e) => {
+        player.canvas.parentElement.classList.toggle("lv-captions");
+        // blur or keyboard controls will get snagged
+        if (e.currentTarget instanceof HTMLButtonElement)
+            e.currentTarget.blur();
+    }, 
+    // note that player.canvas may not have loaded yet
+    [player.canvas]);
+    (0,react.useEffect)(() => {
+        // visibility
+        setVisible(!!player.canvas.querySelector("track"));
+        // keyboard shortcut
+        keymap.bind("C", toggleCaptions);
+        return () => {
+            keymap.unbind("C", toggleCaptions);
+        };
+    }, [keymap, player.canvas, toggleCaptions]);
+    const events = (0,react.useMemo)(() => react_onClick(toggleCaptions), [toggleCaptions]);
+    const style = (0,react.useMemo)(() => (visible ? {} : { display: "none" }), [visible]);
+    return (react.createElement("button", { className: "lv-controls-captions", ...events, style, title: "Captions (c)" },
+        react.createElement("svg", { viewBox: "0 0 36 36" },
+            react.createElement("path", { d: "M 6.00014 8.00002 C 4.33815 8.00002 2.99981 8.8919 2.99981 9.99989 L 2.99981 25.9999 C 2.99981 27.1079 4.33815 27.9998 6.00014 27.9998 L 30.0002 27.9998 C 31.6622 27.9998 33 27.1079 33 25.9999 L 33 9.99989 C 33 8.8919 31.6622 8.00002 30.0002 8.00002 L 6.00014 8.00002 Z M 14.4032 14.0389 C 15.33 14.0389 16.0827 14.3128 16.6615 14.8606 C 17.006 15.1844 17.2644 15.6495 17.4366 16.2558 L 15.9225 16.6176 C 15.833 16.2248 15.6452 15.9148 15.3592 15.6874 C 15.0768 15.46 14.7322 15.3463 14.3257 15.3463 C 13.7642 15.3463 13.3077 15.5479 12.9563 15.9509 C 12.6083 16.354 12.4344 17.0069 12.4344 17.9095 C 12.4344 18.8672 12.6066 19.5493 12.9511 19.9559 C 13.2956 20.3624 13.7435 20.5656 14.2947 20.5656 C 14.7012 20.5656 15.0509 20.4365 15.3437 20.1781 C 15.6366 19.9197 15.8467 19.5132 15.9742 18.9585 L 17.4573 19.4288 C 17.2299 20.2556 16.851 20.8705 16.3204 21.2736 C 15.7933 21.6732 15.1233 21.8731 14.3102 21.8731 C 13.3043 21.8731 12.4774 21.5303 11.8298 20.8447 C 11.1821 20.1557 10.8582 19.2152 10.8582 18.0232 C 10.8582 16.7623 11.1838 15.7839 11.8349 15.0879 C 12.486 14.3886 13.3422 14.0389 14.4032 14.0389 Z M 22.0462 14.0389 C 22.9729 14.0389 23.7257 14.3128 24.3044 14.8606 C 24.6489 15.1844 24.9073 15.6495 25.0796 16.2558 L 23.5655 16.6176 C 23.4759 16.2248 23.2881 15.9148 23.0022 15.6874 C 22.7197 15.46 22.3752 15.3463 21.9687 15.3463 C 21.4071 15.3463 20.9506 15.5479 20.5992 15.9509 C 20.2513 16.354 20.0773 17.0069 20.0773 17.9095 C 20.0773 18.8672 20.2496 19.5493 20.5941 19.9559 C 20.9386 20.3624 21.3864 20.5656 21.9377 20.5656 C 22.3442 20.5656 22.6938 20.4365 22.9867 20.1781 C 23.2795 19.9197 23.4897 19.5132 23.6171 18.9585 L 25.1002 19.4288 C 24.8729 20.2556 24.4939 20.8705 23.9634 21.2736 C 23.4363 21.6732 22.7662 21.8731 21.9532 21.8731 C 20.9472 21.8731 20.1204 21.5303 19.4727 20.8447 C 18.825 20.1557 18.5012 19.2152 18.5012 18.0232 C 18.5012 16.7623 18.8267 15.7839 19.4779 15.0879 C 20.129 14.3886 20.9851 14.0389 22.0462 14.0389 Z" }))));
+}
+
+;// ./node_modules/liqvid/dist/esm/utils/rsc.mjs
+// work with Next.js
+const rsc_isClient = typeof globalThis.document !== "undefined";
+
+;// ./node_modules/liqvid/dist/esm/polyfills.mjs
+
+const id = (_) => _;
+const fullscreenEnabled = rsc_isClient
+    ? [
+        "fullscreenEnabled",
+        "webkitFullscreenEnabled",
+        "mozFullScreenEnabled",
+        "msFullscreenEnabled",
+    ]
+        // biome-ignore lint/suspicious/noExplicitAny: vendor-specific
+        .map((_) => document[_])
+        .concat(false)
+        .find((_) => _ !== undefined)
+    : false;
+const requestFullScreen = rsc_isClient
+    ? [
+        "requestFullscreen",
+        "webkitRequestFullscreen",
+        "mozRequestFullScreen",
+        "msRequestFullscreen",
+    ]
+        // biome-ignore lint/suspicious/noExplicitAny: vendor-specific
+        .map((_) => document.body[_])
+        .concat(() => { })
+        .find(id)
+        .bind(document.body)
+    : async () => { };
+const exitFullScreen = rsc_isClient
+    ? [
+        "exitFullscreen",
+        "webkitExitFullscreen",
+        "mozCancelFullScreen",
+        "msExitFullscreen",
+    ]
+        // biome-ignore lint/suspicious/noExplicitAny: vendor-specific
+        .map((_) => document[_])
+        .concat(async () => { })
+        .find(id)
+        .bind(document)
+    : async () => { };
+const isFullScreen = () => ["fullscreen", "webkitIsFullScreen", "mozFullScreen"]
+    // biome-ignore lint/suspicious/noExplicitAny: vendor-specific
+    .map((_) => document[_])
+    .find((_) => _ !== undefined);
+function onFullScreenChange(callback) {
+    for (const event of [
+        "fullscreenchange",
+        "webkitfullscreenchange",
+        "mozfullscreenchange",
+        "MSFullscreenChange",
+    ])
+        document.addEventListener(event, callback);
+}
+
+;// ./node_modules/liqvid/dist/esm/fake-fullscreen.mjs
+
+let __isFullScreen = false;
+const __callbacks = [];
+const fake_fullscreen_requestFullScreen = fullscreenEnabled
+    ? requestFullScreen
+    : () => {
+        window.parent.postMessage({ type: "fake-fullscreen", value: true }, window.parent.origin);
+        if (!__isFullScreen) {
+            __isFullScreen = true;
+            for (const _ of __callbacks)
+                _();
+        }
+    };
+const fake_fullscreen_exitFullScreen = fullscreenEnabled
+    ? exitFullScreen
+    : () => {
+        window.parent.postMessage({ type: "fake-fullscreen", value: false }, window.parent.origin);
+        if (__isFullScreen) {
+            __isFullScreen = false;
+            for (const _ of __callbacks)
+                _();
+        }
+    };
+const fake_fullscreen_isFullScreen = fullscreenEnabled
+    ? isFullScreen
+    : () => {
+        return __isFullScreen;
+    };
+const fake_fullscreen_onFullScreenChange = fullscreenEnabled
+    ? onFullScreenChange
+    : (callback) => {
+        __callbacks.push(callback);
+    };
+
+;// ./node_modules/liqvid/dist/esm/i18n.mjs
+const strings = {
+    EXIT_FULL_SCREEN: "Exit full screen",
+    ENTER_FULL_SCREEN: "Full screen",
+    MUTE: "Mute",
+    UNMUTE: "Unmute",
+    PAUSE: "Pause",
+    PLAY: "Play",
+};
+
+;// ./node_modules/liqvid/dist/esm/controls/FullScreen.mjs
+
+
+
+
+
+
+const toggleFullScreen = () => fake_fullscreen_isFullScreen() ? fake_fullscreen_exitFullScreen() : fake_fullscreen_requestFullScreen();
+const FullScreen_events = react_onClick(toggleFullScreen);
+/** Fullscreen control */
+function FullScreen() {
+    const keymap = useKeymap();
+    const forceUpdate = useForceUpdate();
+    (0,react.useEffect)(() => {
+        // listener
+        fake_fullscreen_onFullScreenChange(forceUpdate);
+        // keyboard shortcut
+        keymap.bind("F", toggleFullScreen);
+        return () => {
+            keymap.unbind("F", toggleFullScreen);
+        };
+    }, [forceUpdate, keymap]);
+    const full = fake_fullscreen_isFullScreen();
+    const label = (full ? strings.EXIT_FULL_SCREEN : strings.ENTER_FULL_SCREEN) + " (f)";
+    return (react.createElement("button", { className: "lv-controls-fullscreen", "aria-label": label, title: label, ...FullScreen_events },
+        react.createElement("svg", { viewBox: "0 0 36 36" }, full ? exitFullScreenIcon : enterFullScreenIcon)));
+}
+/** Icon to exit full screen */
+const exitFullScreenIcon = (react.createElement(react.Fragment, null,
+    react.createElement("path", { fill: "white", d: "M 14 14 h -4 v 2 h 6 v -6 h -2 v 4 z" }),
+    react.createElement("path", { fill: "white", d: "M 22 14 v -4 h -2 v 6 h 6 v -2 h -4 z" }),
+    react.createElement("path", { fill: "white", d: "M 20 26 h 2 v -4 h 4 v -2 h -6 v 6 z" }),
+    react.createElement("path", { fill: "white", d: "M 10 22 h 4 v 4 h 2 v -6 h -6 v 2 z" })));
+/** Icon to enter full screen */
+const enterFullScreenIcon = (react.createElement(react.Fragment, null,
+    react.createElement("path", { fill: "white", d: "M 10 16 h 2 v -4 h 4 v -2 h -6 v 6 z" }),
+    react.createElement("path", { fill: "white", d: "M 20 10 v 2 h 4 v 4 h 2 v -6 h -6 z" }),
+    react.createElement("path", { fill: "white", d: "M 24 24 h -4 v 2 h 6 v -6 h -2 v 4 z" }),
+    react.createElement("path", { fill: "white", d: "M 12 20 h -2 v 6 h 6 v -2 h -4 v -4 z" })));
+
+;// ./node_modules/liqvid/dist/esm/controls/PlayPause.mjs
+
+
+
+
+
+
+/** Control for playing/pausing */
+function PlayPause() {
+    const keymap = useKeymap();
+    const playback = react_usePlayback();
+    const forceUpdate = useForceUpdate();
+    (0,react.useEffect)(() => {
+        // subscribe to events
+        const events = ["pause", "play", "seeking", "seeked", "stop"];
+        for (const e of events)
+            playback.on(e, () => {
+                forceUpdate();
+            });
+        // keyboard controls
+        const toggle = () => playback[playback.paused ? "play" : "pause"]();
+        keymap.bind("K", toggle);
+        keymap.bind("Space", () => {
+            toggle();
+        });
+        return () => {
+            // unbind playback listeners
+            for (const e of events)
+                playback.off(e, forceUpdate);
+            // unbind keyboard controls
+            keymap.unbind("K", toggle);
+            keymap.unbind("Space", toggle);
+        };
+    }, [forceUpdate, keymap, playback]);
+    // event handler
+    const events = (0,react.useMemo)(() => react_onClick(() => (playback.paused ? playback.play() : playback.pause())), [playback]);
+    const label = (playback.paused || playback.seeking ? strings.PLAY : strings.PAUSE) +
+        " (k)";
+    return (react.createElement("button", { className: "lv-controls-playpause", "aria-label": label, title: label, ...events },
+        react.createElement("svg", { viewBox: "0 0 36 36" }, playback.paused || playback.seeking ? playIcon : pauseIcon)));
+}
+/** Play icon */
+const playIcon = (react.createElement("path", { d: "M 12,26 18.5,22 18.5,14 12,10 z M 18.5,22 25,18 25,18 18.5,14 z", fill: "white" }));
+/** Pause icon */
+const pauseIcon = (react.createElement("path", { d: "M 12 26 h 4 v -16 h -4 z M 21 26 h 4 v -16 h -4 z", fill: "white" }));
+
+;// ./node_modules/liqvid/dist/esm/controls/Settings.mjs
+
+
+
+
+
+const PLAYBACK_RATES = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
+var Dialogs;
+(function (Dialogs) {
+    Dialogs[Dialogs["None"] = 0] = "None";
+    Dialogs[Dialogs["Main"] = 1] = "Main";
+    Dialogs[Dialogs["Speed"] = 2] = "Speed";
+    Dialogs[Dialogs["Captions"] = 3] = "Captions";
+})(Dialogs || (Dialogs = {}));
+/** Settings menu */
+function Settings() {
+    const player = usePlayer(), { keymap, playback } = player;
+    const [dialog, setDialog] = (0,react.useState)(Dialogs.None);
+    const [currentRate, setRate] = (0,react.useState)(playback.playbackRate);
+    const forceUpdate = useForceUpdate();
+    (0,react.useEffect)(() => {
+        const ratechange = () => setRate(playback.playbackRate);
+        const canvasClick = () => setDialog(Dialogs.None);
+        const slowDown = () => (playback.playbackRate = get(PLAYBACK_RATES, PLAYBACK_RATES.indexOf(playback.playbackRate) - 1));
+        const speedUp = () => (playback.playbackRate = get(PLAYBACK_RATES, PLAYBACK_RATES.indexOf(playback.playbackRate) + 1));
+        // subscribe
+        playback.on("ratechange", ratechange);
+        player.hub.on("canvasClick", canvasClick);
+        // keyboard shortcuts
+        keymap.bind("Shift+<", slowDown);
+        keymap.bind("Shift+>", speedUp);
+        return () => {
+            playback.off("ratechange", ratechange);
+            player.hub.off("canvasClick", canvasClick);
+            keymap.unbind("Shift+<", slowDown);
+            keymap.unbind("Shift+>", speedUp);
+        };
+    }, [keymap, playback, player.hub]);
+    /* handlers */
+    const setSpeed = (0,react.useMemo)(() => {
+        // biome-ignore lint/suspicious/noExplicitAny: ReturnType<typeof onClick> not working for some reason
+        const map = {};
+        for (const rate of PLAYBACK_RATES) {
+            map[rate] = react_onClick(() => {
+                playback.playbackRate = rate;
+                setDialog(Dialogs.Main);
+            });
+        }
+        return map;
+    }, [playback]);
+    const toggle = (0,react.useMemo)(() => react_onClick(() => setDialog((prev) => prev === Dialogs.None ? Dialogs.Main : Dialogs.None)), []);
+    // const toggleSubtitles = useMemo(() => onClick(() => {
+    //   document.body.classList.toggle("lv-captions");
+    //   forceUpdate();
+    // }), []);
+    // event handlers
+    const openMain = react_onClick(() => setDialog(Dialogs.Main));
+    const openSpeed = react_onClick(() => setDialog(Dialogs.Speed));
+    const openCaptions = react_onClick(() => setDialog(Dialogs.Captions));
+    // styles
+    const dialogStyle = (0,react.useMemo)(() => ({
+        display: dialog === Dialogs.Main ? "block" : "none",
+    }), [dialog]);
+    const speedDialogStyle = (0,react.useMemo)(() => ({
+        display: dialog === Dialogs.Speed ? "block" : "none",
+    }), [dialog]);
+    const captionDialogStyle = (0,react.useMemo)(() => ({
+        display: dialog === Dialogs.Captions ? "block" : "none",
+    }), [dialog]);
+    // captions, ugh
+    const mainAudio = (0,react.useRef)();
+    (0,react.useEffect)(() => {
+        mainAudio.current = getMainAudio(player.canvas);
+        if (mainAudio.current) {
+            tracks.current = captionsAndSubtitles(mainAudio.current);
+        }
+    }, [player.canvas]);
+    const tracks = (0,react.useRef)([]);
+    const selectedTrack = tracks.current.find((t) => t.mode === "showing");
+    const setTrack = (0,react.useMemo)(() => react_onClick((e) => {
+        // get index, this is kind of ugly
+        let i = -1;
+        let temp = e.currentTarget;
+        while ((temp = temp.previousElementSibling))
+            i++;
+        // hide old tracks
+        for (let j = 0; j < tracks.current.length; ++j) {
+            if (j !== i) {
+                // this is absurd but necessary to dispatch cuechange???
+                tracks.current[j].mode = "disabled";
+                tracks.current[j].mode = "hidden";
+                tracks.current[j].mode = "disabled";
+            }
+        }
+        // activate new track
+        if (i >= 0)
+            tracks.current[i].mode = "showing";
+        // refresh
+        forceUpdate();
+    }), [forceUpdate]);
+    return (react.createElement("div", { className: "lv-controls-settings" },
+        react.createElement("div", { className: "lv-settings-speed-dialog", style: speedDialogStyle },
+            react.createElement("span", { className: "lv-dialog-subtitle", ...openMain }, "< Speed"),
+            react.createElement("ul", null, PLAYBACK_RATES.map((rate) => (react.createElement("li", { className: rate === currentRate ? "selected" : "", key: rate, ...setSpeed[rate] }, rate === 1 ? "Normal" : rate.toString()))))),
+        react.createElement("div", { className: "lv-settings-captions-dialog", style: captionDialogStyle },
+            react.createElement("span", { className: "lv-dialog-subtitle", ...openMain }, "< Captions"),
+            react.createElement("ul", null,
+                react.createElement("li", { className: selectedTrack ? "" : "selected", ...setTrack }, "Off"),
+                tracks.current.map((track) => (react.createElement("li", { className: track === selectedTrack ? "selected" : "", key: track.id || track.label || track.language, ...setTrack }, trackLabel(track)))))),
+        react.createElement("div", { className: "lv-settings-dialog", style: dialogStyle },
+            react.createElement("table", null,
+                react.createElement("tbody", null,
+                    react.createElement("tr", { ...openSpeed },
+                        react.createElement("th", { scope: "row" }, "Speed"),
+                        react.createElement("td", null,
+                            currentRate === 1 ? "Normal" : currentRate,
+                            " >")),
+                    tracks.current.length > 0 && (react.createElement("tr", { ...openCaptions },
+                        react.createElement("th", { scope: "row" },
+                            "Subtitles (",
+                            tracks.current.length,
+                            ")"),
+                        react.createElement("td", null,
+                            trackLabel(selectedTrack),
+                            " >")))))),
+        react.createElement("svg", { ...toggle, viewBox: "0 0 48 48" },
+            react.createElement("path", { fill: "#FFF", d: "m24.04 0.14285c-1.376 0-2.7263 0.12375-4.0386 0.34741l-0.64 6.7853c-1.3572 0.37831-2.6417 0.90728-3.8432 1.585l-5.244-4.3317c-2.2152 1.5679-4.1541 3.4955-5.7217 5.7101l4.3426 5.2437c-0.67695 1.2001-1.2177 2.4878-1.5959 3.8432l-6.7745 0.64053c-0.22379 1.3127-0.34741 2.6622-0.34741 4.0386 0 1.3788 0.12285 2.7238 0.34741 4.0386l6.7745 0.64056c0.37825 1.3554 0.91896 2.6431 1.5959 3.8432l-4.3317 5.2437c1.5648 2.2089 3.4908 4.1457 5.6997 5.7105l5.2545-4.3426c1.2023 0.67835 2.485 1.2174 3.8432 1.5959l0.64053 6.7853c1.3123 0.22368 2.6626 0.33658 4.0386 0.33658s2.7155-0.11289 4.0278-0.33658l0.64053-6.7853c1.3582-0.37847 2.6409-0.91755 3.8432-1.5959l5.2545 4.3426c2.2088-1.5649 4.1348-3.5017 5.6997-5.7105l-4.3317-5.2437c0.67695-1.2001 1.2177-2.4878 1.5959-3.8432l6.7744-0.64056c0.22456-1.3148 0.34741-2.6598 0.34741-4.0386 0-1.3765-0.12361-2.726-0.34741-4.0386l-6.7744-0.64053c-0.37825-1.3554-0.91896-2.6431-1.5959-3.8432l4.3426-5.2437c-1.568-2.2146-3.507-4.1422-5.722-5.7101l-5.2437 4.3317c-1.2015-0.67776-2.486-1.2067-3.8432-1.585l-0.641-6.7853c-1.3123-0.22366-2.6518-0.34741-4.0278-0.34741zm0 14.776c5.0178 0 9.076 4.0691 9.076 9.0869s-4.0582 9.0869-9.076 9.0869-9.0869-4.0691-9.0869-9.0869 4.0691-9.0869 9.0869-9.0869z" }))));
+}
+function getMainAudio(elt) {
+    for (const audio of Array.from(elt.querySelectorAll("audio"))) {
+        if (captionsAndSubtitles(audio).length > 0)
+            return audio;
+    }
+}
+function trackLabel(track) {
+    if (track === undefined)
+        return "Off";
+    return track.label || track.language;
+}
+function captionsAndSubtitles(audio) {
+    return Array.from(audio.textTracks).filter((t) => ["captions", "subtitles"].includes(t.kind));
+}
+function get(arr, i) {
+    return arr[clamp(0, i, arr.length - 1)];
+}
+
+;// ./node_modules/liqvid/dist/esm/controls/TimeDisplay.mjs
+
+
+
+
+
+function TimeDisplay() {
+    const playback = react_usePlayback();
+    const forceUpdate = useForceUpdate();
+    (0,react.useEffect)(() => {
+        playback.on("durationchange", forceUpdate);
+        playback.on("seek", forceUpdate);
+        playback.on("timeupdate", forceUpdate);
+        return () => {
+            playback.off("durationchange", forceUpdate);
+            playback.off("seek", forceUpdate);
+            playback.off("timeupdate", forceUpdate);
+        };
+    }, [forceUpdate, playback]);
+    return (react.createElement("span", { className: "lv-controls-time" },
+        react.createElement("span", { className: "lv-current-time" }, formatTime(playback.currentTime)),
+        react.createElement("span", { className: "lv-time-separator" }, "/"),
+        react.createElement("span", { className: "lv-total-time" }, formatTime(playback.duration))));
+}
+
+;// ./node_modules/liqvid/dist/esm/controls/Volume.mjs
+
+
+
+
+
+/** Volume control */
+function Volume() {
+    const keymap = useKeymap();
+    const playback = react_usePlayback();
+    const forceUpdate = useForceUpdate();
+    // keyboard controls
+    const incrementVolume = (0,react.useCallback)(() => (playback.volume = playback.volume + 0.05), [playback]);
+    const decrementVolume = (0,react.useCallback)(() => (playback.volume = playback.volume - 0.05), [playback]);
+    const toggleMute = (0,react.useCallback)(() => (playback.muted = !playback.muted), [playback]);
+    (0,react.useEffect)(() => {
+        playback.on("volumechange", forceUpdate);
+        keymap.bind("ArrowUp", incrementVolume);
+        keymap.bind("ArrowDown", decrementVolume);
+        keymap.bind("M", toggleMute);
+        return () => {
+            playback.off("volumechange", forceUpdate);
+            keymap.unbind("ArrowUp", incrementVolume);
+            keymap.unbind("ArrowDown", decrementVolume);
+            keymap.unbind("M", toggleMute);
+        };
+    }, [
+        decrementVolume,
+        forceUpdate,
+        incrementVolume,
+        keymap,
+        playback,
+        toggleMute,
+    ]);
+    // input
+    const onChange = (0,react.useCallback)((e) => {
+        playback.volume = parseFloat(e.target.value) / 100;
+    }, [playback]);
+    const events = (0,react.useMemo)(() => react_onClick(() => (playback.muted = !playback.muted)), [playback]);
+    const label = (playback.muted ? strings.UNMUTE : strings.MUTE) + " (m)";
+    const volumeText = new Intl.NumberFormat(undefined, { style: "percent" }).format(playback.volume) + " volume";
+    return (react.createElement("div", { className: "lv-controls-volume" },
+        react.createElement("button", { "aria-label": label, title: label },
+            react.createElement("svg", { ...events, viewBox: "0 0 100 100" },
+                speakerIcon,
+                playback.muted ? (mutedIcon) : (react.createElement("g", null,
+                    playback.volume > 0 && waveIcon1,
+                    playback.volume >= 0.5 && waveIcon2)))),
+        react.createElement("input", { "aria-valuetext": volumeText, min: "0", max: "100", onChange: onChange, type: "range", value: playback.muted ? 0 : playback.volume * 100 })));
+}
+const speakerIcon = (react.createElement("path", { d: "M 10 35 h 20 l 25 -20 v 65 l -25 -20 h -20 z", fill: "white", stroke: "none" }));
+const mutedIcon = (react.createElement("path", { d: "M 63 55 l 20 20 m 0 -20 l -20 20", stroke: "white", strokeWidth: "7" }));
+const waveIcon1 = (react.createElement("path", { d: "M 62 32.5 a 1,1 0 0,1 0,30", fill: "white", stroke: "none" }));
+const waveIcon2 = (react.createElement("path", { d: "M 62 15 a 1,1 0 0,1 0,65 v -10 a 10,10 0 0,0 0,-45 v -10 z", fill: "white", stroke: "none" }));
+
+;// ./node_modules/liqvid/dist/esm/Player.mjs
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const allowScroll = Symbol();
+const ignoreCanvasClick = Symbol();
+class Player extends react.PureComponent {
+    /**
+     * Liqvid analogue of the [`canplay`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplay_event) event.
+     * This can be used to wait for Audio or Video files to load. You can also use {@link obstruct} to add custom loaders.
+     */
+    canPlay;
+    /**
+     * Liqvid analogue of the [`canplaythrough`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplaythrough_event) event.
+     * This can be used to wait for Audio or Video files to load. You can also use {@link obstruct} to add custom loaders.
+     */
+    canPlayThrough;
+    /** The {@link HTMLDivElement `<div>`} where content is attached (separate from controls). */
+    canvas;
+    /** Whether keyboard controls are currently being handled. */
+    captureKeys;
+    hub;
+    /** {@link Keymap} attached to the player */
+    keymap;
+    /** {@link Playback} attached to the player */
+    playback;
+    /** {@link Script} attached to the player */
+    script;
+    buffers;
+    __canPlayTasks;
+    __canPlayThroughTasks;
+    dag;
+    /** {@link React.Context} used to access ambient Player */
+    static Context = createUniqueContext("@liqvid/player", null);
+    /**
+     * Symbol to access the {@link Player} instance attached to a DOM element
+     *
+     * `player.canvas.parentElement[Player.symbol] === player`
+     */
+    static symbol = Symbol.for("@liqvid/player/element");
+    /** Default controls appearing on the left */
+    static defaultControlsLeft = (react.createElement(react.Fragment, null,
+        react.createElement(PlayPause, null),
+        react.createElement(Volume, null),
+        react.createElement(TimeDisplay, null)));
+    /** Default controls appearing on the right */
+    static defaultControlsRight = (react.createElement(react.Fragment, null,
+        react.createElement(Captions_Captions, null),
+        react.createElement(Settings, null),
+        react.createElement(FullScreen, null)));
+    static defaultProps = {
+        controls: (react.createElement(react.Fragment, null,
+            Player.defaultControlsLeft,
+            react.createElement("div", { className: "lv-controls-right" }, Player.defaultControlsRight))),
+        style: {},
+    };
+    constructor(props) {
+        super(props);
+        this.hub = new events.EventEmitter();
+        this.__canPlayTasks = [];
+        this.__canPlayThroughTasks = [];
+        this.keymap = new Keymap();
+        this.captureKeys = true;
+        if (props.script) {
+            this.script = props.script;
+            this.playback = this.script.playback;
+        }
+        else {
+            this.playback = props.playback;
+        }
+        this.buffers = new Map();
+        bind(this, [
+            "onMouseUp",
+            "suspendKeyCapture",
+            "resumeKeyCapture",
+            "reparseTree",
+        ]);
+        this.updateTree = this.updateTree.bind(this);
+    }
+    componentDidMount() {
+        const element = this.canvas.parentElement;
+        // biome-ignore lint/suspicious/noExplicitAny: symbol
+        element[Player.symbol] = this;
+        // inline or frame?
+        // const client =
+        //   element.parentElement.nodeName.toLowerCase() === "main" &&
+        //   element.parentElement.parentElement === document.body &&
+        //   element.parentElement.childNodes.length === 1;
+        // document.documentElement.classList.toggle("lv-frame", client);
+        // element.classList.toggle("lv-frame", client);
+        // keyboard events
+        document.body.addEventListener("keydown", (e) => {
+            if (!this.captureKeys || document.activeElement !== document.body)
+                return;
+            this.keymap.handle(e);
+        });
+        // prevent scroll on mobile
+        // document.addEventListener("touchmove", e => {
+        //   if (e[allowScroll]) return;
+        //   e.preventDefault();
+        // }, {passive: false});
+        // document.addEventListener("touchforcechange", e => e.preventDefault(), {passive: false});
+        // canPlay events --- mostly unused
+        this.canPlay = Promise.all(this.__canPlayTasks).then(() => {
+            this.hub.emit("canplay");
+        });
+        this.canPlayThrough = Promise.all(this.__canPlayThroughTasks).then(() => {
+            this.hub.emit("canplaythrough");
+        });
+        // hiding stuff
+        if (this.script) {
+            this.dag = toposort(this.canvas, this.script.markerNumberOf);
+            this.script.on("markerupdate", this.updateTree);
+            this.updateTree();
+        }
+    }
+    updateTree() {
+        const { script } = this;
+        recurse(this.dag);
+        /** Hide element */
+        function hide(leaf) {
+            leaf.element.style.opacity = "0";
+            leaf.element.style.pointerEvents = "none";
+            leaf.element.setAttribute("aria-hidden", "true");
+        }
+        /** Show element */
+        function show(leaf) {
+            leaf.element.style.removeProperty("opacity");
+            leaf.element.style.removeProperty("pointer-events");
+            leaf.element.removeAttribute("aria-hidden");
+            return leaf.children.forEach(recurse);
+        }
+        /** Recurse through DAG */
+        function recurse(leaf) {
+            if (typeof leaf.first !== "undefined") {
+                if (leaf.first <= script.markerIndex &&
+                    (!leaf.last || script.markerIndex < leaf.last)) {
+                    return show(leaf);
+                }
+                hide(leaf);
+            }
+            else if (typeof leaf.during !== "undefined") {
+                if (script.markerName.startsWith(leaf.during)) {
+                    return show(leaf);
+                }
+                return hide(leaf);
+            }
+            else {
+                return leaf.children.forEach(recurse);
+            }
+        }
+    }
+    canvasClick() {
+        const allow = this.hub.listeners("canvasClick").every((_) => _() ?? true);
+        if (allow) {
+            this.playback.paused ? this.playback.play() : this.playback.pause();
+        }
+        this.hub.emit("canvasClick");
+    }
+    onMouseUp(e) {
+        // ignore clicks on input tags
+        if (["a", "area", "button", "input", "option", "select", "textarea"].includes(e.target.nodeName.toLowerCase()))
+            return;
+        // data-affords markup
+        if (e.target?.closest(`*[data-affords~="click"]`)) {
+            return;
+        }
+        // the reason for this escape hatch is that this gets called in between an element's onMouseUp
+        // listener and the listener added by dragHelper, so you can't call stopPropagation() in the
+        // onMouseUp or else the dragging won't release.
+        // biome-ignore lint/suspicious/noExplicitAny: symbol
+        if (e.nativeEvent[ignoreCanvasClick])
+            return;
+        this.canvasClick();
+    }
+    static allowScroll(e) {
+        // biome-ignore lint/suspicious/noExplicitAny: symbol
+        ("nativeEvent" in e ? e.nativeEvent : e)[allowScroll] = true;
+    }
+    /**
+     * Prevent canvas clicks from pausing the video.
+     * @param e Click event on video canvas
+     * @deprecated Use data-affords="click" instead
+     */
+    static preventCanvasClick(e) {
+        // biome-ignore lint/suspicious/noExplicitAny: symbol
+        ("nativeEvent" in e ? e.nativeEvent : e)[ignoreCanvasClick] = true;
+    }
+    /** Suspends keyboard controls so that components can receive keyboard input. */
+    suspendKeyCapture() {
+        this.captureKeys = false;
+    }
+    /** Resumes keyboard controls. */
+    resumeKeyCapture() {
+        this.captureKeys = true;
+    }
+    /** @deprecated */
+    ready() {
+        console.info(".ready() is a noop in v2.1");
+    }
+    /**
+     * Reparse a section of the document for `during()` and `from()`
+     * @param node Element to reparse
+     */
+    reparseTree(node) {
+        const root = findClosest(node, this.dag);
+        if (!root) {
+            throw new Error("Could not find node in tree");
+        }
+        root.children = toposort(root.element, this.script.markerNumberOf).children;
+        this.updateTree();
+    }
+    registerBuffer(elt) {
+        this.buffers.set(elt, []);
+    }
+    unregisterBuffer(elt) {
+        this.buffers.delete(elt);
+    }
+    updateBuffer(elt, buffers) {
+        this.buffers.set(elt, buffers);
+        this.playback.emit("bufferupdate");
+    }
+    /**
+     * Obstruct {@link canPlay} or {@link canPlayThrough} events
+     * @param event Which event type to obstruct
+     * @param task Promise to append
+     */
+    obstruct(event, task) {
+        if (event === "canplay") {
+            this.__canPlayTasks.push(task);
+        }
+        else {
+            this.__canPlayThroughTasks.push(task);
+        }
+    }
+    render() {
+        const attrs = {
+            style: this.props.style,
+        };
+        const canvasAttrs = anyHover ? { onMouseUp: this.onMouseUp } : {};
+        const classNames = ["lv-player", "ractive-player"];
+        return (react.createElement(Player.Context.Provider, { value: this },
+            react.createElement(PlaybackContext.Provider, { value: this.playback },
+                react.createElement(KeymapContext.Provider, { value: this.keymap },
+                    react.createElement("div", { className: classNames.join(" "), ...attrs },
+                        react.createElement("div", { className: "rp-canvas lv-canvas", ...canvasAttrs, ref: (canvas) => (this.canvas = canvas) }, this.props.children),
+                        react.createElement(Captions, null),
+                        react.createElement(Controls, { controls: this.props.controls, thumbs: this.props.thumbs }))))));
+    }
+}
+/* topological sort */
+function toposort(root, mn) {
+    const nodes = Array.from(root.querySelectorAll("*[data-from-first], *[data-during]"));
+    const dag = { children: [], element: root };
+    const path = [dag];
+    for (const node of nodes) {
+        // get first and last marker
+        let firstMarkerName, lastMarkerName, during;
+        if (node.dataset.fromFirst) {
+            firstMarkerName = node.dataset.fromFirst;
+            lastMarkerName = node.dataset.fromLast;
+        }
+        else if (node.dataset.during) {
+            during = node.dataset.during;
+        }
+        // CSS hides this initially, take over now
+        node.style.opacity = "0";
+        node.style.pointerEvents = "none";
+        // node.removeAttribute("data-from-first");
+        // node.removeAttribute("data-from-last");
+        // node.removeAttribute("data-from-during");
+        // build the leaf
+        const leaf = {
+            children: [],
+            element: node,
+        };
+        if (during)
+            leaf.during = during;
+        if (firstMarkerName)
+            leaf.first = mn(firstMarkerName);
+        if (lastMarkerName)
+            leaf.last = mn(lastMarkerName);
+        // figure out where to graft it
+        let current = path[path.length - 1];
+        while (!current.element.contains(node)) {
+            path.pop();
+            current = path[path.length - 1];
+        }
+        current.children.push(leaf);
+        path.push(leaf);
+    }
+    return dag;
+}
+/**
+ * Find element's closest ancestor in DAG
+ * @param needle Element to find
+ * @param haystack DAG leaf to search
+ * @returns Closest ancestor
+ */
+function findClosest(needle, haystack) {
+    if (!haystack.element.contains(needle)) {
+        return null;
+    }
+    for (let i = 0; i < haystack.children.length; ++i) {
+        if (haystack.children[i].element.contains(needle)) {
+            return findClosest(needle, haystack.children[i]) ?? haystack;
+        }
+    }
+    return haystack;
+}
+
+;// ./node_modules/liqvid/dist/esm/Media.mjs
+
+
+
+
+class Media_Media extends react.PureComponent {
+    playback;
+    player;
+    domElement;
+    /** When the media element should start playing. */
+    start;
+    static defaultProps = {
+        obstructCanPlay: false,
+        obstructCanPlayThrough: false,
+    };
+    static contextType = Player.Context;
+    constructor(props, context) {
+        super(props, context);
+        this.player = context;
+        this.playback = context.playback;
+        // get the time right
+        this.start = this.props.start ?? 0;
+        bind(this, [
+            "pause",
+            "play",
+            "onPlay",
+            "onRateChange",
+            "onSeek",
+            "onTimeUpdate",
+            "onVolumeChange",
+            "onDomPlay",
+            "onDomPause",
+        ]);
+    }
+    componentDidMount() {
+        // attach event listeners
+        this.playback.on("pause", this.pause);
+        this.playback.on("play", this.onPlay);
+        this.playback.on("ratechange", this.onRateChange);
+        this.playback.on("seek", this.onSeek);
+        this.playback.on("seeking", this.pause);
+        this.playback.on("timeupdate", this.onTimeUpdate);
+        this.playback.on("volumechange", this.onVolumeChange);
+        this.domElement.addEventListener("play", this.onDomPlay);
+        this.domElement.addEventListener("pause", this.onDomPause);
+        // canplay/canplaythrough events
+        if (this.props.obstructCanPlay) {
+            this.player.obstruct("canplay", awaitMediaCanPlay(this.domElement));
+        }
+        if (this.props.obstructCanPlayThrough) {
+            this.player.obstruct("canplaythrough", awaitMediaCanPlayThrough(this.domElement));
+        }
+        // need to call this once initially
+        this.onVolumeChange();
+        // progress updater?
+        /*const getBuffers = () => {
+          const ranges = this.domElement.buffered;
+    
+          const buffers: [number, number][] = [];
+          for (let i = 0; i < ranges.length; ++i) {
+            if (ranges.end(i) === Infinity) continue;
+            buffers.push([ranges.start(i) * 1000 + this.start, ranges.end(i) * 1000 + this.start]);
+          }
+    
+          return buffers;
+        };
+    
+        const updateBuffers = () => {
+          this.player.updateBuffer(this.domElement, getBuffers());
+        };
+    
+        this.player.registerBuffer(this.domElement);
+        updateBuffers();
+        this.domElement.addEventListener("progress", updateBuffers);
+        // setInterval(updateBuffers, 1000);
+        // this.domElement.addEventListener('load', updateBuffers);
+        */
+    }
+    componentWillUnmount() {
+        this.playback.off("pause", this.pause);
+        this.playback.off("play", this.onPlay);
+        this.playback.off("ratechange", this.onRateChange);
+        this.playback.off("seek", this.onSeek);
+        this.playback.off("seeking", this.pause);
+        this.playback.off("timeupdate", this.onTimeUpdate);
+        this.playback.off("volumechange", this.onVolumeChange);
+        this.domElement.removeEventListener("pause", this.onDomPause);
+        this.domElement.removeEventListener("play", this.onDomPlay);
+        // this.player.unregisterBuffer(this.domElement);
+    }
+    // getter
+    get end() {
+        return this.start + this.domElement.duration * 1000;
+    }
+    pause() {
+        if (!this.domElement.ended) {
+            this.domElement.removeEventListener("pause", this.onDomPause);
+            this.domElement.pause();
+            this.domElement.addEventListener("pause", this.onDomPause);
+        }
+    }
+    play() {
+        this.domElement.removeEventListener("play", this.onDomPlay);
+        const promise = this.domElement.play();
+        this.domElement.addEventListener("play", this.onDomPlay);
+        return promise;
+    }
+    onPlay() {
+        this.onTimeUpdate(this.playback.currentTime);
+    }
+    onRateChange() {
+        this.domElement.playbackRate = this.playback.playbackRate;
+    }
+    onSeek(t) {
+        this.domElement.currentTime = (t - this.start) / 1000;
+        if (between(this.start, t, this.end)) {
+            if (this.domElement.paused &&
+                !this.playback.paused &&
+                !this.playback.seeking) {
+                this.play().catch(this.playback.pause);
+            }
+        }
+        else {
+            if (!this.domElement.paused)
+                this.pause();
+        }
+    }
+    onTimeUpdate(t) {
+        if (between(this.start, t, this.end)) {
+            if (!this.domElement.paused)
+                return;
+            this.domElement.currentTime = (t - this.start) / 1000;
+            this.play().catch(this.playback.pause);
+        }
+        else {
+            if (!this.domElement.paused)
+                this.pause();
+            this.domElement.currentTime = (t - this.start) / 1000;
+        }
+    }
+    onVolumeChange() {
+        this.domElement.volume = this.playback.volume;
+        this.domElement.muted = this.playback.muted;
+    }
+    onDomPlay() {
+        if (this.playback.paused) {
+            this.playback.off("play", this.onPlay);
+            this.playback.play();
+            this.playback.on("play", this.onPlay);
+        }
+    }
+    onDomPause() {
+        if (!this.playback.seeking &&
+            !this.playback.paused &&
+            !hasEnded(this.domElement)) {
+            this.playback.off("pause", this.pause);
+            this.playback.pause();
+            this.playback.on("pause", this.pause);
+        }
+    }
+}
+/**
+ * Guess whether a media element has ended.
+ * (`paused` fires before `ended`, and `currentTime` may be >100ms
+ * behind `duration` when this happens).
+ * @param media Media element to check.
+ * @param threshold How far from the end of the media should be considered "ended".
+ * @returns Whether the media element has reached its end.
+ */
+function hasEnded(media, threshold = 0.5) {
+    return media.ended || media.duration - media.currentTime < threshold;
+}
+
+;// ./node_modules/liqvid/dist/esm/Audio.mjs
+
+
+
+/** Liqvid equivalent of {@link HTMLAudioElement `<audio>`}. */
+class Audio extends (/* unused pure expression or super */ null && (Media)) {
+    componentDidMount() {
+        super.componentDidMount();
+        // tracks
+        for (const track of Array.from(this.domElement.textTracks)) {
+            if (!["captions", "subtitles"].includes(track.kind))
+                continue;
+            let mode = track.mode;
+            track.addEventListener("cuechange", () => {
+                if (track.mode !== "showing") {
+                    if (mode === "showing")
+                        this.playback.captions = [];
+                    mode = track.mode;
+                    return;
+                }
+                mode = track.mode;
+                const captions = [];
+                for (const cue of Array.from(track.activeCues)) {
+                    // @ts-expect-error check this I guess
+                    const html = cue.text.replace(/\n/g, "<br/>");
+                    captions.push(fragmentFromHTML(html));
+                }
+                this.playback.captions = captions;
+            });
+        }
+    }
+    // render method
+    render() {
+        const { start, obstructCanPlay, obstructCanPlayThrough, children, ...attrs } = this.props;
+        return (React.createElement("audio", { preload: "auto", ref: (node) => (this.domElement = node), ...attrs }, children));
+    }
+}
+
+;// ./node_modules/liqvid/dist/esm/IdMap.mjs
+
+
+
+/**
+ * This class gives a way to automagically attach data loaded from a file as attributes on elements.
+ * This is provided to facilitate the development of—and provide a standard interface for—GUI tools.
+ */
+class IdMap extends react.PureComponent {
+    static Context = react.createContext([]);
+    /** IDs found within the IdMap */
+    foundIds;
+    constructor(props) {
+        super(props);
+        bind(this, ["renderContent"]);
+        this.foundIds = new Set();
+    }
+    render() {
+        if (this.props.hasOwnProperty("map")) {
+            return (react.createElement(IdMap.Context.Provider, { value: [this.foundIds, this.props.map] }, this.renderContent([this.foundIds, this.props.map])));
+        }
+        else {
+            return (react.createElement(IdMap.Context.Consumer, null, this.renderContent));
+        }
+    }
+    renderContent([foundIds, map]) {
+        return recursiveMap(this.props.children, (node) => {
+            const attrs = {};
+            if (node.props.hasOwnProperty("id")) {
+                const { id } = node.props;
+                foundIds.add(id);
+                // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+                if (map[id] !== undefined)
+                    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+                    Object.assign(attrs, map[id]);
+            }
+            if (Object.keys(attrs).length === 0) {
+                return node;
+            }
+            else {
+                return react.cloneElement(node, attrs);
+            }
+        });
+    }
+}
+
+;// ./node_modules/liqvid/dist/esm/Video.mjs
+
+
+/** Liqvid equivalent of {@link HTMLVideoElement `<video>`}. */
+class Video extends (/* unused pure expression or super */ null && (Media)) {
+    // render method
+    render() {
+        const { start, children, obstructCanPlay, obstructCanPlayThrough, ...attrs } = this.props;
+        return (React.createElement("video", { playsInline: true, preload: "auto", ref: (node) => (this.domElement = node), ...attrs }, children));
+    }
+}
+
+;// ./node_modules/@liqvid/playback/dist/esm/core.mjs
+
+
+
+/**
+ * Class pretending to be a media element advancing in time.
+ *
+ * Imitates {@link HTMLMediaElement} to a certain extent, although it does not implement that interface.
+ */
+class core_Playback extends events.EventEmitter {
+    constructor(options) {
+        super();
+        /**
+          The current playback time in milliseconds.
+          
+          **Warning:** {@link HTMLMediaElement.currentTime} measures this property in *seconds*.
+        */
+        this.currentTime = 0;
+        /** Flag indicating whether playback is currently paused. */
+        this.paused = true;
+        /* private fields exposed by getters */
+        this.__captions = [];
+        this.__playbackRate = 1;
+        this.__muted = false;
+        this.__seeking = false;
+        this.__volume = 1;
+        this.duration = options.duration;
+        this.__playingFrom = 0;
+        this.__startTime = performance.now();
+        // we will have lots of listeners, turn off warning
+        this.setMaxListeners(0);
+        // bind methods
+        bind(this, ["pause", "play"]);
+        this.__advance = this.__advance.bind(this);
+        // browser-only
+        if (isClient) {
+            // audio
+            this.__initAudio();
+            // initiate playback loop
+            requestAnimationFrame(this.__advance);
+        }
+    }
+    /* magic properties */
+    /** Gets or sets the current captions */
+    get captions() {
+        return this.__captions;
+    }
+    /** @emits cuechange */
+    set captions(captions) {
+        this.__captions = captions;
+        this.emit("cuechange");
+    }
+    /**
+     * Length of the playback in milliseconds.
+     *
+     * **Warning:** {@link HTMLMediaElement.duration} measures this in *seconds*.
+     */
+    get duration() {
+        return this.__duration;
+    }
+    /** @emits durationchange */
+    set duration(duration) {
+        if (duration === this.__duration)
+            return;
+        this.__duration = duration;
+        this.emit("durationchange");
+    }
+    /** Gets or sets a flag that indicates whether playback is muted. */
+    get muted() {
+        return this.__muted;
+    }
+    /** @emits volumechange */
+    set muted(val) {
+        if (val === this.__muted)
+            return;
+        this.__muted = val;
+        if (this.audioNode) {
+            if (this.__muted) {
+                this.audioNode.gain.value = 0;
+            }
+            else {
+                this.audioNode.gain.setValueAtTime(this.volume, this.audioContext.currentTime);
+            }
+        }
+        this.emit("volumechange");
+    }
+    /** Gets or sets the current rate of speed for the playback. */
+    get playbackRate() {
+        return this.__playbackRate;
+    }
+    /** @emits ratechange */
+    set playbackRate(val) {
+        if (val === this.__playbackRate)
+            return;
+        this.__playbackRate = val;
+        this.__playingFrom = this.currentTime;
+        this.__startTime = performance.now();
+        this.emit("ratechange");
+    }
+    /** Gets or sets a flag that indicates whether the playback is currently moving to a new position. */
+    get seeking() {
+        return this.__seeking;
+    }
+    /**
+     * @emits seeking
+     * @emits seeked
+     */
+    set seeking(val) {
+        if (val === this.__seeking)
+            return;
+        this.__seeking = val;
+        if (this.__seeking)
+            this.emit("seeking");
+        else
+            this.emit("seeked");
+    }
+    /**
+     * Pause playback.
+     *
+     * @emits pause
+     */
+    pause() {
+        this.paused = true;
+        this.__playingFrom = this.currentTime;
+        this.emit("pause");
+    }
+    /**
+     * Start or resume playback.
+     *
+     * @emits play
+     */
+    play() {
+        this.paused = false;
+        // this is necessary for currentTime to be correct when playing from stop state
+        this.currentTime = this.__playingFrom;
+        this.__startTime = performance.now();
+        this.emit("play");
+    }
+    /**
+     * Seek playback to a specific time.
+     *
+     * @emits seek
+     */
+    seek(t) {
+        t = constrain(0, t, this.duration);
+        this.currentTime = this.__playingFrom = t;
+        this.__startTime = performance.now();
+        this.emit("seek", t);
+        if (this.currentTime >= this.duration) {
+            this.stop();
+        }
+    }
+    /** Gets or sets the volume level for the playback. */
+    get volume() {
+        return this.__volume;
+    }
+    /** @emits volumechange */
+    set volume(volume) {
+        this.muted = false;
+        const prevVolume = this.__volume;
+        this.__volume = constrain(0, volume, 1);
+        if (this.audioNode) {
+            if (prevVolume === 0 || this.__volume === 0) {
+                this.audioNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+            }
+            else {
+                this.audioNode.gain.exponentialRampToValueAtTime(this.__volume, this.audioContext.currentTime + 2);
+            }
+        }
+        this.emit("volumechange");
+    }
+    /**
+     * Stop playback and reset pointer to start
+     *
+     * @emits stop
+     */
+    stop() {
+        this.paused = true;
+        this.__playingFrom = 0;
+        this.emit("stop");
+    }
+    /* private methods */
+    /**
+     * @emits timeupdate
+     */
+    __advance(t) {
+        // paused
+        if (this.paused || this.__seeking) {
+            this.__startTime = t;
+        }
+        else {
+            // playing
+            this.currentTime =
+                this.__playingFrom +
+                    Math.max((t - this.__startTime) * this.__playbackRate, 0);
+            if (this.currentTime >= this.duration) {
+                this.currentTime = this.duration;
+                this.stop();
+            }
+            this.emit("timeupdate", this.currentTime);
+        }
+        requestAnimationFrame(this.__advance);
+    }
+    /**
+     * Try to initiate audio
+     *
+     * @listens click
+     * @listens keydown
+     * @listens touchstart
+     */
+    __initAudio() {
+        const requestAudioContext = () => {
+            try {
+                this.audioContext = new (window.AudioContext || webkitAudioContext)();
+                this.audioNode = this.audioContext.createGain();
+                this.audioNode.connect(this.audioContext.destination);
+                window.removeEventListener("click", requestAudioContext);
+                window.removeEventListener("keydown", requestAudioContext);
+                window.removeEventListener("touchstart", requestAudioContext);
+            }
+            catch (e) {
+                // console.log("Failed to create audio context");
+            }
+        };
+        window.addEventListener("click", requestAudioContext);
+        window.addEventListener("keydown", requestAudioContext);
+        window.addEventListener("touchstart", requestAudioContext);
+    }
+}
+
+;// ./node_modules/@liqvid/playback/dist/esm/animation.mjs
+
+
+/** Extended {@link CorePlayback Playback} supporting the Web Animation API */
+class Playback extends core_Playback {
+    constructor(options) {
+        super(options);
+        this.__animations = [];
+        this.__delays = new WeakMap();
+        if (isClient) {
+            this.__createTimeline();
+        }
+    }
+    /**
+     * Create an {@link Animation} (factory) synced to this playback
+     * @param keyframes A [keyframes object](https://developer.mozilla.org/en-US/docs/Web/API/Web_Animations_API/Keyframe_Formats) or `null`
+     * @param options Either an integer representing the animation's duration (in milliseconds), or {@link KeyframeEffectOptions}
+     * @returns A callback to attach the animation to a target
+     */
+    newAnimation(keyframes, options) {
+        let anim;
+        return (target) => {
+            if (target === null) {
+                anim.cancel();
+                anim = undefined;
+                return;
+            }
+            else if (anim !== undefined) {
+                console.warn("Animations should not be reused as they will not cancel properly. Check animations attached to ", target);
+            }
+            // create animation
+            anim = new Animation(new KeyframeEffect(target, keyframes, options), this.timeline);
+            if (typeof options === "object" &&
+                (options.fill === "forwards" || options.fill === "both")) {
+                anim.persist();
+            }
+            /* adopt animation */
+            const delay = anim.effect.getTiming().delay;
+            this.__delays.set(anim.effect, delay);
+            anim.currentTime = (this.currentTime - delay) / this.playbackRate;
+            anim.startTime = null;
+            anim.pause();
+            if (delay !== 0) {
+                anim.effect.updateTiming({ delay: 0.1 });
+            }
+            this.__animations.push(anim);
+            anim.addEventListener("cancel", () => {
+                this.__animations.splice(this.__animations.indexOf(anim), 1);
+            });
+            // return
+            return anim;
+        };
+    }
+    /**
+     * Create our timeline
+     *
+     * @listens pause
+     * @listens play
+     * @listens ratechange
+     * @listens seek
+     */
+    __createTimeline() {
+        // don't crash old browsers when not polyfilled
+        if (typeof window.DocumentTimeline === "undefined") {
+            return;
+        }
+        this.timeline = new DocumentTimeline();
+        // pause
+        this.on("pause", () => {
+            for (const anim of this.__animations) {
+                anim.pause();
+            }
+        });
+        // play
+        this.on("play", () => {
+            for (const anim of this.__animations) {
+                anim.startTime = null;
+                anim.play();
+                anim.startTime =
+                    this.timeline.currentTime +
+                        (this.__delays.get(anim.effect) - this.currentTime) /
+                            this.playbackRate;
+            }
+        });
+        // ratechange
+        this.on("ratechange", () => {
+            for (const anim of this.__animations) {
+                anim.playbackRate = this.playbackRate;
+            }
+        });
+        // seek
+        this.on("seek", () => {
+            for (const anim of this.__animations) {
+                const offset = (this.__delays.get(anim.effect) - this.currentTime) /
+                    this.playbackRate;
+                if (this.paused) {
+                    // anim.startTime = this.timeline.currentTime + offset
+                    anim.currentTime = -offset;
+                    anim.pause();
+                }
+                else {
+                    anim.startTime = this.timeline.currentTime + offset;
+                }
+            }
+        });
+    }
+}
+
+;// ./node_modules/liqvid/dist/esm/playback.mjs
+
+
+// backwards compatibility
+Object.defineProperty(Playback.prototype, "hub", {
+    get: function () {
+        return this;
+    },
+});
+const seek = Playback.prototype.seek;
+Playback.prototype.seek = function (t) {
+    if (typeof t === "string") {
+        t = parseTime(t);
+    }
+    seek.call(this, t);
+};
+
+
+;// ./node_modules/liqvid/dist/esm/script.mjs
+
+
+
+
+class Script extends events.EventEmitter {
+    /** The underlying {@link Playback} instance. */
+    playback;
+    /** The array of markers, in the form [name, startTime, endTime]. */
+    markers;
+    /** Index of the active marker. */
+    markerIndex;
+    constructor(markers) {
+        super();
+        this.setMaxListeners(0);
+        // bind methods
+        bind(this, [
+            "back",
+            "forward",
+            "markerByName",
+            "markerNumberOf",
+            "parseStart",
+            "parseEnd",
+            "__updateMarker",
+        ]);
+        // parse times
+        let time = 0;
+        this.markers = [];
+        for (const marker of markers) {
+            if (marker.length === 2) {
+                const [, duration] = marker;
+                this.markers.push([
+                    marker[0],
+                    time,
+                    time +
+                        (typeof duration === "string" ? parseTime(duration) : duration),
+                ]);
+            }
+            else {
+                const [, begin, end] = marker;
+                this.markers.push([
+                    marker[0],
+                    typeof begin === "string" ? parseTime(begin) : begin,
+                    typeof end === "string" ? parseTime(end) : end,
+                ]);
+            }
+            time = this.markers[this.markers.length - 1][2];
+        }
+        this.markerIndex = 0;
+        // create playback object
+        this.playback = new Playback({
+            duration: this.markers[this.markers.length - 1][2],
+        });
+        this.playback.on("seek", this.__updateMarker);
+        this.playback.on("timeupdate", this.__updateMarker);
+    }
+    /** @deprecated */
+    get hub() {
+        return this;
+    }
+    /** Name of the active marker. */
+    get markerName() {
+        return this.markers[this.markerIndex][0];
+    }
+    // public methods
+    /** Seek playback to the previous marker. */
+    back() {
+        this.playback.seek(this.markers[Math.max(0, this.markerIndex - 1)][1]);
+    }
+    /** Advance playback to the next marker. */
+    forward() {
+        this.playback.seek(this.markers[Math.min(this.markers.length - 1, this.markerIndex + 1)][1]);
+    }
+    /**
+     * Returns the first marker with the given name.
+     * @throws {Error} If no marker named `name` exists.
+     */
+    markerByName(name) {
+        return this.markers[this.markerNumberOf(name)];
+    }
+    /**
+     * Returns the first index of a marker named `name`.
+     * @throws {Error} If no marker named `name` exists.
+     */
+    markerNumberOf(name) {
+        for (let i = 0; i < this.markers.length; ++i) {
+            if (this.markers[i][0] === name)
+                return i;
+        }
+        throw new Error(`Marker ${name} does not exist`);
+    }
+    /** If `start` is a string, returns the starting time of the marker with that name. Otherwise, returns `start`. */
+    parseStart(start) {
+        if (typeof start === "string") {
+            if (start.match(timeRegexp))
+                return parseTime(start);
+            else
+                return this.markerByName(start)[1];
+        }
+        else {
+            return start;
+        }
+    }
+    /** If `end` is a string, returns the ending time of the marker with that name. Otherwise, returns `end`. */
+    parseEnd(end) {
+        if (typeof end === "string") {
+            if (end.match(timeRegexp))
+                return parseTime(end);
+            else
+                return this.markerByName(end)[2];
+        }
+        else {
+            return end;
+        }
+    }
+    /** Update marker */
+    __updateMarker(t) {
+        let newIndex;
+        for (let i = 0; i < this.markers.length; ++i) {
+            const [, begin, end] = this.markers[i];
+            if (between(begin, t, end)) {
+                newIndex = i;
+                break;
+            }
+        }
+        if (newIndex === undefined)
+            newIndex = this.markers.length - 1;
+        if (newIndex !== this.markerIndex) {
+            const prevIndex = this.markerIndex;
+            this.markerIndex = newIndex;
+            this.emit("markerupdate", prevIndex);
+        }
+    }
+}
+
+;// ./node_modules/liqvid/dist/esm/index.mjs
+
+
+
+
+
+
+
+
+
+
+// backwards compatibility
+
+
+// controls
+
+
+
+
+
+
+
+const esm_Controls = {
+    Captions: Captions_Captions,
+    FullScreen: FullScreen,
+    PlayPause: PlayPause,
+    ScrubberBar: ScrubberBar,
+    Settings: Settings,
+    TimeDisplay: TimeDisplay,
+    Volume: Volume,
+};
+// alias
+
+if (rsc_isClient && !window.hasOwnProperty("RactivePlayer")) {
+    Object.defineProperty(window, "RactivePlayer", {
+        get() {
+            if (typeof window.Liqvid !== "undefined") {
+                return window.Liqvid;
+            }
+        },
+    });
+}
+
+// EXTERNAL MODULE: ./node_modules/react-dom/client.js
+var client = __webpack_require__(572);
 ;// ./node_modules/@lqv/playback/dist/esm/hack.mjs
 /** Hack to make Liqvid behave like {@link MediaElement}. */
 const PlaybackMEProxy = {
@@ -21743,7 +24175,7 @@ if (!(esm_react_symbol in globalThis)) {
 /**
  * Access the ambient {@link MediaElement}
  */
-function react_useME() {
+function useME() {
     const playback = esm_react_usePlayback();
     // do not use playback.constructor.name === "Playback"
     // because minimization can mangle that
@@ -21768,7 +24200,7 @@ function esm_react_usePlayback() {
     return (0,react.useContext)(react_PlaybackContext);
 }
 function react_useTime(callback, transform, deps) {
-    const playback = react_useME();
+    const playback = useME();
     const prev = useRef();
     useEffect(() => {
         const listener = typeof transform === "function"
@@ -21804,7 +24236,7 @@ var classnames = __webpack_require__(872);
 
 
 const identity = (arg) => arg;
-function useStore(api, selector = identity) {
+function react_useStore(api, selector = identity) {
   const slice = react.useSyncExternalStore(
     api.subscribe,
     () => selector(api.getState()),
@@ -21815,7 +24247,7 @@ function useStore(api, selector = identity) {
 }
 const createImpl = (createState) => {
   const api = createStore(createState);
-  const useBoundStore = (selector) => useStore(api, selector);
+  const useBoundStore = (selector) => react_useStore(api, selector);
   Object.assign(useBoundStore, api);
   return useBoundStore;
 };
@@ -24318,7 +26750,7 @@ class LanguageDescription {
     }
 }
 const indentService = Facet.define();
-const dist_indentUnit = Facet.define({
+const indentUnit = Facet.define({
     combine: values => {
         if (!values.length)
             return "  ";
@@ -24329,11 +26761,11 @@ const dist_indentUnit = Facet.define({
     }
 });
 function getIndentUnit(state) {
-    let unit = state.facet(dist_indentUnit);
+    let unit = state.facet(indentUnit);
     return unit.charCodeAt(0) == 9 ? state.tabSize * unit.length : unit.length;
 }
 function indentString(state, cols) {
-    let result = "", ts = state.tabSize, ch = state.facet(dist_indentUnit)[0];
+    let result = "", ts = state.tabSize, ch = state.facet(indentUnit)[0];
     if (ch == "\t") {
         while (cols >= ts) {
             result += "\t";
@@ -25853,7 +28285,7 @@ function ifIn(nodes, source) {
 }
 function ifNotIn(nodes, source) {
     return (context) => {
-        for (let pos = syntaxTree(context.state).resolveInner(context.pos, -1); pos; pos = pos.parent) {
+        for (let pos = dist_syntaxTree(context.state).resolveInner(context.pos, -1); pos; pos = pos.parent) {
             if (nodes.indexOf(pos.name) > -1)
                 return null;
             if (pos.type.isTop)
@@ -27185,7 +29617,7 @@ function snippet(template) {
             let active = new ActiveSnippet(ranges, 0);
             let effects = spec.effects = [setActive.of(active)];
             if (editor.state.field(snippetState, false) === undefined)
-                effects.push(StateEffect.appendConfig.of([snippetState, addSnippetKeymap, snippetPointerHandler, autocomplete_dist_baseTheme]));
+                effects.push(dist_StateEffect.appendConfig.of([snippetState, addSnippetKeymap, snippetPointerHandler, autocomplete_dist_baseTheme]));
         }
         editor.dispatch(editor.state.update(spec));
     };
@@ -27327,7 +29759,7 @@ const dist_defaults = {
 };
 const closeBracketEffect = dist_StateEffect.define({
     map(value, mapping) {
-        let mapped = mapping.mapPos(value, -1, dist_MapMode.TrackAfter);
+        let mapped = mapping.mapPos(value, -1, MapMode.TrackAfter);
         return mapped == null ? undefined : mapped;
     }
 });
@@ -27771,10 +30203,10 @@ const historyField_ = StateField.define({
         let isolate = tr.annotation(isolateHistory);
         if (isolate == "full" || isolate == "before")
             state = state.isolate();
-        if (tr.annotation(dist_Transaction.addToHistory) === false)
+        if (tr.annotation(Transaction.addToHistory) === false)
             return !tr.changes.empty ? state.addMapping(tr.changes.desc) : state;
         let event = HistEvent.fromTransaction(tr);
-        let time = tr.annotation(dist_Transaction.time), userEvent = tr.annotation(dist_Transaction.userEvent);
+        let time = tr.annotation(Transaction.time), userEvent = tr.annotation(Transaction.userEvent);
         if (event)
             state = state.addChanges(event, time, userEvent, config, tr);
         else if (tr.selection)
@@ -27856,7 +30288,7 @@ class HistEvent {
         };
     }
     static fromJSON(json) {
-        return new HistEvent(json.changes && ChangeSet.fromJSON(json.changes), [], json.mapped && ChangeDesc.fromJSON(json.mapped), json.startSelection && dist_EditorSelection.fromJSON(json.startSelection), json.selectionsAfter.map(dist_EditorSelection.fromJSON));
+        return new HistEvent(json.changes && dist_ChangeSet.fromJSON(json.changes), [], json.mapped && ChangeDesc.fromJSON(json.mapped), json.startSelection && dist_EditorSelection.fromJSON(json.startSelection), json.selectionsAfter.map(dist_EditorSelection.fromJSON));
     }
     static fromTransaction(tr, selection) {
         let effects = commands_dist_none;
@@ -28502,7 +30934,7 @@ const splitLine = ({ state, dispatch }) => {
     if (state.readOnly)
         return false;
     let changes = state.changeByRange(range => {
-        return { changes: { from: range.from, to: range.to, insert: dist_Text.of(["", ""]) },
+        return { changes: { from: range.from, to: range.to, insert: Text.of(["", ""]) },
             range: dist_EditorSelection.cursor(range.from) };
     });
     dispatch(state.update(changes, { scrollIntoView: true, userEvent: "input" }));
@@ -28662,7 +31094,7 @@ function newlineAndIndent(atEof) {
             let insert = ["", indentString(state, indent)];
             if (explode)
                 insert.push(indentString(state, cx.lineIndent(line.from, -1)));
-            return { changes: { from, to, insert: dist_Text.of(insert) },
+            return { changes: { from, to, insert: Text.of(insert) },
                 range: dist_EditorSelection.cursor(from + 1 + insert[1].length) };
         });
         dispatch(state.update(changes, { scrollIntoView: true, userEvent: "input" }));
@@ -28715,7 +31147,7 @@ const indentMore = ({ state, dispatch }) => {
     if (state.readOnly)
         return false;
     dispatch(state.update(changeBySelectedLine(state, (line, changes) => {
-        changes.push({ from: line.from, insert: state.facet(dist_indentUnit) });
+        changes.push({ from: line.from, insert: state.facet(indentUnit) });
     }), { userEvent: "input.indent" }));
     return true;
 };
@@ -30785,7 +33217,7 @@ const searchExtensions = [
 
 
 
-const extensions_basicSetup = [
+const basicSetup = [
     lineNumbers(),
     highlightActiveLineGutter(),
     highlightSpecialChars(),
@@ -31366,14 +33798,14 @@ function store_useBoothStore() {
 /**
  * Container for code editing/recording/replaying.
  */
-const esm_CodeBooth = ({ children, className, recorder, ...attrs }) => {
+const CodeBooth = ({ children, className, recorder, ...attrs }) => {
     const store = (0,react.useRef)();
     if (!store.current) {
         store.current = makeStore({ recorder });
     }
-    const stateClassNames = useStore(store.current, (state) => state.classNames);
+    const stateClassNames = react_useStore(store.current, (state) => state.classNames);
     /* render */
-    return ((0,jsx_runtime.jsx)("div", { className: classnames(stateClassNames, className), "data-affords": "click", ...attrs, children: (0,jsx_runtime.jsx)(BoothStore.Provider, { value: store.current, children: (0,jsx_runtime.jsxs)(react_PlaybackContext.Provider, { value: react_useME(), children: [(0,jsx_runtime.jsx)(KeyboardShortcuts, {}), children] }) }) }));
+    return ((0,jsx_runtime.jsx)("div", { className: classnames(stateClassNames, className), "data-affords": "click", ...attrs, children: (0,jsx_runtime.jsx)(BoothStore.Provider, { value: store.current, children: (0,jsx_runtime.jsxs)(react_PlaybackContext.Provider, { value: useME(), children: [(0,jsx_runtime.jsx)(KeyboardShortcuts, {}), children] }) }) }));
 };
 function KeyboardShortcuts() {
     const store = store_useBoothStore();
@@ -31405,396 +33837,41 @@ function KeyboardShortcuts() {
     return null;
 }
 
-;// ./node_modules/@lqv/codemirror/dist/esm/fake-selection.mjs
+;// ./node_modules/@lqv/codemirror/dist/esm/extensions.mjs
 
-
-const FakeSelection = dist_StateEffect.define();
-const fakeSelectionConfig = Facet.define({
-    combine(configs) {
-        return combineConfig(configs, {
-            cursorBlinkRate: 1200,
-            cursorStyle: "block",
-            drawRangeCursor: true,
-        }, {
-            cursorBlinkRate: (a, b) => a ?? b,
-            cursorStyle: (a, b) => a ?? b,
-            drawRangeCursor: (a, b) => a ?? b,
-        });
-    },
-});
 /**
- * CodeMirror extension to imitate selections in replay.
+ * Handle key sequences in `seqs` even if key capture is suspended.
+ * @param keymap {@link Keymap} to handle key sequences.
+ * @param seqs Key sequences to handle.
  */
-function fakeSelection(config = {}) {
-    return [
-        fakeSelectionConfig.of(config),
-        fakeCursorLayer,
-        fakeSelectionLayer,
-        style,
-    ];
-}
-/// Retrieve the [`drawSelection`](#view.drawSelection) configuration
-/// for this state. (Note that this will return a set of defaults even
-/// if `drawSelection` isn't enabled.)
-function getDrawFakeSelectionConfig(state) {
-    return state.facet(fakeSelectionConfig);
-}
-function fake_selection_configChanged(update) {
-    return (update.startState.facet(fakeSelectionConfig) !==
-        update.state.facet(fakeSelectionConfig));
-}
-const fakeCursorLayer = dist_layer({
-    above: true,
-    markers(view) {
-        const { state } = view;
-        const conf = state.facet(fakeSelectionConfig);
-        const cursors = [];
-        if (!this.range)
-            return [];
-        for (const r of [this.range]) {
-            if (r.empty || conf.drawRangeCursor) {
-                const className = conf.cursorStyle === "block"
-                    ? "lqv-fakeCursorBlock"
-                    : "lqv-fakeCursorColumn";
-                const cursor = r.empty
-                    ? r
-                    : dist_EditorSelection.cursor(r.head, r.head > r.anchor ? -1 : 1);
-                for (const piece of RectangleMarker.forRange(view, className, cursor))
-                    cursors.push(piece);
-            }
-        }
-        return cursors;
-    },
-    update(update, dom) {
-        const effects = update.transactions
-            .map((tr) => tr.effects.filter((e) => e.is(FakeSelection)))
-            .reduce((a, b) => a.concat(b), []);
-        const confChange = fake_selection_configChanged(update);
-        if (confChange)
-            fake_selection_setBlinkRate(update.state, dom);
-        if (effects.length === 0) {
-            return update.docChanged || update.selectionSet || confChange;
-        }
-        if (effects.length > 0) {
-            dom.style.animationName =
-                dom.style.animationName === "lqv-blink" ? "lqv-blink2" : "lqv-blink";
-            this.range = SelectionRange.fromJSON(effects[effects.length - 1].value);
-            return true;
-        }
-    },
-    mount(dom, view) {
-        fake_selection_setBlinkRate(view.state, dom);
-    },
-    class: "lqv-fakeCursorLayer",
-});
-function fake_selection_setBlinkRate(state, dom) {
-    dom.style.animationDuration = `${state.facet(fakeSelectionConfig).cursorBlinkRate}ms`;
-}
-const fakeSelectionLayer = dist_layer({
-    above: false,
-    markers(view) {
-        if (!this.range) {
-            return [];
-        }
-        return RectangleMarker.forRange(view, "lqv-fakeSelectionBackground", this.range);
-    },
-    update(update) {
-        const effects = update.transactions
-            .map((tr) => tr.effects.filter((e) => e.is(FakeSelection)))
-            .reduce((a, b) => a.concat(b), []);
-        if (effects.length === 0) {
-            return (update.docChanged ||
-                update.selectionSet ||
-                update.viewportChanged ||
-                fake_selection_configChanged(update));
-        }
-        if (effects.length > 0) {
-            this.range = SelectionRange.fromJSON(effects[effects.length - 1].value);
-            return true;
-        }
-    },
-    class: "lqv-fakeSelectionLayer",
-});
-const themeSpec = {
-    ".lqv-fakeSelectionBackground": {
-        background: "#d7d4f0",
-    },
-    ".lqv-fakeCursorLayer": {
-        animation: "steps(1) lqv-blink 1.2s infinite",
-        pointerEvents: "none",
-    },
-    // Two animations defined so that we can switch between them to
-    // restart the animation without forcing another style
-    // recomputation.
-    "@keyframes lqv-blink": { "0%": {}, "50%": { opacity: 0 }, "100%": {} },
-    "@keyframes lqv-blink2": { "0%": {}, "50%": { opacity: 0 }, "100%": {} },
-    ".lqv-fakeCursorBlock": {
-        background: "#f00a",
-        width: "1ch",
-        marginLeft: "-0.6px",
-        pointerEvents: "none",
-    },
-    ".lqv-fakeCursorColumn": {
-        borderLeft: "1.2px solid black",
-        marginLeft: "-0.6px",
-        pointerEvents: "none",
-    },
-};
-const style = Prec.highest(EditorView.theme(themeSpec));
-
-;// ./node_modules/@lqv/codemirror/dist/esm/index.mjs
-
-
-
-/** Reserved command for specifying file. */
-const esm_selectCmd = "file:";
-/** Reserved string for specifying scroll actions. */
-const scrollCmd = "s";
-/** Key for the default view (in single-file mode). */
-const defaultViewName = "default";
-/**
- * Replay typing in CodeMirror.
- * @returns Unsubscription function.
- */
-function cmReplay({ data, handle, playback, scrollBehavior, didScroll, shouldScroll = () => true, start, view, }) {
-    return esm_cmReplayMultiple({
-        data: [[0, esm_selectCmd + defaultViewName], ...data],
-        handle: (key, docs) => handle(key, docs.default),
-        playback,
-        scrollBehavior,
-        didScroll: (_filename, scrollToOptions) => {
-            didScroll?.(scrollToOptions);
-        },
-        shouldScroll,
-        start,
-        views: {
-            [defaultViewName]: view,
-        },
+function passThrough(keymap, seqs = []) {
+    return seqs.map((key) => {
+        const can = cm2lv(key);
+        // argh
+        const fake = typeof window === "undefined" ? null : new KeyboardEvent("keydown");
+        return {
+            key,
+            run: () => {
+                const handlers = keymap.getHandlers(can);
+                for (const cb of handlers) {
+                    cb(fake);
+                }
+                return false;
+            },
+        };
     });
 }
 /**
- * Replay typing to several CodeMirror instances in parallel.
- * @returns Unsubscription function.
+ * Convert CodeMirror key sequences to Liqvid format.
  */
-function esm_cmReplayMultiple({ data, didScroll, handle, playback, scrollBehavior = "auto", shouldScroll = () => true, start = 0, views, }) {
-    /** Current file being replayed into */
-    let file = undefined;
-    // validation
-    if (!(data.length > 0 &&
-        data[0][0] === 0 &&
-        typeof data[0][1] === "string" &&
-        data[0][1].startsWith(esm_selectCmd))) {
-        throw new Error("First command must have time 0 and select the file");
-    }
-    // we're going to mess with data, clone it
-    data = JSON.parse(JSON.stringify(data));
-    /* unpackage */
-    // decompress times
-    const times = data.map((_) => _[0]);
-    for (let i = 1; i < times.length; ++i)
-        times[i] += times[i - 1];
-    // deserialize changesets
-    for (const [, action] of data) {
-        // changeset
-        if (Array.isArray(action) && Array.isArray(action[0])) {
-            action[0] = ChangeSet.fromJSON(action[0]);
-        }
-    }
-    // for scrolling in legacy recordings
-    const hasScroll = {};
-    for (const key in views) {
-        hasScroll[key] = false;
-    }
-    // initialize inverses
-    const inverses = {};
-    const lastScroll = {};
-    for (const key in views) {
-        inverses[key] = [];
-        lastScroll[key] = [0, 0];
-    }
-    // compute inverses
-    {
-        const docs = {};
-        for (const key in views) {
-            docs[key] = views[key].state.doc;
-        }
-        for (let i = 0; i < data.length; ++i) {
-            const action = data[i][1];
-            if (Array.isArray(action)) {
-                if (action[0] instanceof ChangeSet) {
-                    // editor change
-                    inverses[file][i] = action[0].invert(docs[file]);
-                    docs[file] = action[0].apply(docs[file]);
-                }
-                else if (action[0] === scrollCmd) {
-                    // scroll
-                    hasScroll[file] = true;
-                    inverses[file][i] = lastScroll[file];
-                    lastScroll[file] = [action[1], action[2] ?? 0];
-                }
-            }
-            else if (action.startsWith(esm_selectCmd)) {
-                file = action.slice(esm_selectCmd.length);
-            }
-        }
-    }
-    /* main logic */
-    let index = 0;
-    let lastTime = 0;
-    const repaint = () => {
-        const t = playback.currentTime;
-        const progress = (t - start) * 1000;
-        const changes = {};
-        for (const key in views) {
-            changes[key] = ChangeSet.empty(views[key].state.doc.length);
-        }
-        const selections = {};
-        // apply / revert changes
-        if (lastTime <= t && index < data.length) {
-            // forward
-            let i = index;
-            for (; i < data.length && times[i] <= progress; ++i) {
-                const action = data[i][1];
-                if (typeof action === "string") {
-                    if (action.startsWith(esm_selectCmd)) {
-                        file = action.slice(esm_selectCmd.length);
-                    }
-                    // handle action
-                    const docs = {};
-                    for (const key in views) {
-                        docs[key] = changes[key].apply(views[key].state.doc);
-                    }
-                    handle(action, docs);
-                }
-                else {
-                    if (action[0] === scrollCmd) {
-                        if (shouldScroll(file)) {
-                            // scroll
-                            const [, y, x = 0] = action;
-                            const fontSize = getFontSize(views[file]);
-                            if (!Number.isNaN(fontSize)) {
-                                const scrollToOptions = {
-                                    left: x * fontSize,
-                                    top: y * fontSize,
-                                    behavior: scrollBehavior,
-                                };
-                                views[file].scrollDOM.scrollTo(scrollToOptions);
-                                didScroll?.(file, scrollToOptions);
-                            }
-                        }
-                    }
-                    else {
-                        // editor change
-                        changes[file] = changes[file].compose(action[0]);
-                        // handle selection
-                        if (action[1]) {
-                            const [anchor, head] = action[1];
-                            selections[file] = { anchor, head };
-                        }
-                    }
-                }
-            }
-            index = i;
-        }
-        else if (t < lastTime && 0 < index) {
-            // revert
-            let i = index - 1;
-            for (; 0 <= i && progress < times[i]; --i) {
-                if (inverses[file][i]) {
-                    const inverse = inverses[file][i];
-                    // editor change
-                    if (inverse instanceof ChangeSet) {
-                        changes[file] = changes[file].compose(inverses[file][i]);
-                    }
-                    // scroll
-                    else if (inverses[file][i].length === 2) {
-                        if (shouldScroll(file)) {
-                            const [y, x] = inverses[file][i];
-                            const fontSize = getFontSize(views[file]);
-                            if (!Number.isNaN(fontSize)) {
-                                const scrollToOptions = {
-                                    left: x * fontSize,
-                                    top: y * fontSize,
-                                    behavior: scrollBehavior,
-                                };
-                                views[file].scrollDOM.scrollTo(scrollToOptions);
-                                didScroll?.(file, scrollToOptions);
-                            }
-                        }
-                    }
-                }
-                else if (data[i][1] === esm_selectCmd + file) {
-                    // find file to replay into
-                    for (let j = i - 1; 0 <= j; --j) {
-                        const action = data[j][1];
-                        if (typeof action === "string" && action.startsWith(esm_selectCmd)) {
-                            file = action.slice(esm_selectCmd.length);
-                            // XXX figure out how to handle more general actions
-                            handle(action, {});
-                            break;
-                        }
-                    }
-                }
-            }
-            index = i + 1;
-        }
-        for (const key in views) {
-            const effects = selections[key]
-                ? [FakeSelection.of(selections[key])]
-                : undefined;
-            const view = views[key];
-            view.dispatch(view.state.update({
-                changes: changes[key],
-                effects,
-            }));
-            // scrolling for legacy recordings
-            const scrollIntoView = !hasScroll[key] && shouldScroll(key);
-            if (scrollIntoView) {
-                // get position of last change
-                let pos;
-                changes[key].iterChangedRanges((_fromA, _toA, _fromB, toB) => {
-                    pos = toB;
-                });
-                // changes can be empty
-                if (pos === undefined) {
-                    return;
-                }
-                const { scrollDOM } = view;
-                const rect = scrollDOM.getBoundingClientRect();
-                // it isn't possible to measure things that are offscreen
-                const line = view.state.doc.lineAt(pos);
-                const wordTop = view.defaultLineHeight * (line.number - 1);
-                if (wordTop < scrollDOM.scrollTop) {
-                    const scrollToOptions = {
-                        behavior: scrollBehavior,
-                        top: wordTop,
-                    };
-                    scrollDOM.scrollTo(scrollToOptions);
-                    didScroll?.(key, scrollToOptions);
-                }
-                else if (wordTop > scrollDOM.scrollTop + rect.height) {
-                    const scrollToOptions = {
-                        behavior: scrollBehavior,
-                        top: wordTop - rect.height + view.defaultLineHeight,
-                    };
-                    scrollDOM.scrollTo(scrollToOptions);
-                    didScroll?.(key, scrollToOptions);
-                }
-            }
-        }
-        lastTime = t;
-    };
-    /* subscribe */
-    playback.addEventListener("seeking", repaint);
-    playback.addEventListener("timeupdate", repaint);
-    return () => {
-        playback.removeEventListener("seeking", repaint);
-        playback.removeEventListener("timeupdate", repaint);
-    };
-}
-/** Get the fontSize of a view's scrollDOM. */
-function getFontSize(view) {
-    return Number.parseFloat(getComputedStyle(view.scrollDOM).fontSize);
+function cm2lv(seq) {
+    const isMac = typeof globalThis.navigator !== "undefined" &&
+        navigator.platform === "MacIntel";
+    // biome-ignore lint/style/noParameterAssign: this is fine
+    seq = seq.replace("Mod", isMac ? "Meta" : "Ctrl");
+    // biome-ignore lint/style/noParameterAssign: this is fine
+    seq = seq.replace(/-/g, "+");
+    return Keymap.normalize(seq);
 }
 
 ;// ./node_modules/@lqv/codebooth/dist/esm/components/Editor.mjs
@@ -31886,7 +33963,7 @@ function Editor({ content = "", editable = true, extensions, filename, group: gr
     return (0,jsx_runtime.jsx)("div", { ref: ref, ...props });
 }
 
-;// ./node_modules/@lqv/codebooth/dist/esm/components/Replay.mjs
+;// ./node_modules/@lqv/codebooth/dist/esm/components/Record.mjs
 
 
 
@@ -31894,1022 +33971,5221 @@ function Editor({ content = "", editable = true, extensions, filename, group: gr
 
 
 
-/**
- * Editor to replay recorded coding.
- */
-function Replay({ extensions = [], handle, replay, scrollBehavior, selectionConfig, didScroll, shouldScroll, start = 0, ...props }) {
+
+
+/** Recording editor. */
+const Record = (props) => {
+    const { captureKeys = {
+        "Mod-Enter": "run",
+        "Mod-K": "clear",
+        "Mod-L": "clear",
+    }, extensions = [], group = "default", passKeys = ["Mod-Alt-2", "Mod-Alt-3", "Mod-Alt-4"], ...attrs } = props;
     const store = store_useBoothStore();
-    const playback = react_useME();
-    const __handle = (0,react.useCallback)((cmd, doc) => {
-        if (cmd === "run") {
-            // run command
-            store.setState((state) => ({ run: state.run + 1 }));
-        }
-        else if (cmd === "clear") {
-            // clear console
-            store.setState(() => ({ messages: [] }));
-        }
-        // userspace handler
-        handle?.(store, cmd, doc);
-    }, [handle, store]);
-    const __extensions = (0,react.useMemo)(() => [
-        fakeSelection(selectionConfig),
-        ViewPlugin.define((view) => {
-            if (replay) {
-                if (replay instanceof Promise) {
-                    replay.then((data) => cmReplay({
-                        data,
-                        didScroll,
-                        handle: __handle,
-                        playback,
-                        scrollBehavior,
-                        shouldScroll,
-                        start,
-                        view,
-                    }));
-                }
-                else {
-                    cmReplay({
-                        data: replay,
-                        didScroll,
-                        handle: __handle,
-                        playback,
-                        scrollBehavior,
-                        shouldScroll,
-                        start,
-                        view,
-                    });
-                }
+    const lqvKeymap = useKeymap();
+    const newExtensions = (0,react.useMemo)(() => lqvKeymap
+        ? [keymap.of(passThrough(lqvKeymap, passKeys)), ...extensions]
+        : extensions, [extensions, lqvKeymap, passKeys]);
+    // attach recording extensions --- this has to be done this way because
+    // the `shortcuts` Compartment will abort further handling of the sequence
+    (0,react.useEffect)(() => {
+        const state = store.getState();
+        const { view } = state.groups[group].files.find((file) => file.filename === props.filename);
+        view.dispatch({
+            effects: recording.reconfigure([
+                ...recording.get(view.state),
+                [state.recorder.extension(captureKeys)],
+            ]),
+        });
+        includeFilenameInRecording(state);
+    }, [captureKeys, group, props.filename, store.getState]);
+    return ((0,jsx_runtime.jsx)(Editor, { content: props.content, extensions: newExtensions, ...attrs }));
+};
+/* NOOOOOOOOOO */
+const modifiedRecorder = Symbol();
+function includeFilenameInRecording(state) {
+    // only do this if we are recording in multiple files
+    let recordingExtensions = 0;
+    outer: for (const group of Object.values(state.groups)) {
+        for (const { view } of group.files) {
+            const extnState = recording.get(view.state);
+            if (Array.isArray(extnState) && extnState.length > 0) {
+                recordingExtensions++;
+                if (recordingExtensions > 1)
+                    break outer;
             }
-            return {};
-        }),
-        ...extensions,
-    ], [
-        __handle,
-        didScroll,
-        extensions,
-        playback,
-        replay,
-        scrollBehavior,
-        selectionConfig,
-        shouldScroll,
-        start,
-    ]);
-    return (0,jsx_runtime.jsx)(Editor, { editable: false, extensions: __extensions, ...props });
+        }
+    }
+    if (recordingExtensions < 2) {
+        return;
+    }
+    // be idempotent
+    if (state.recorder[modifiedRecorder]) {
+        return;
+    }
+    // intercept beginRecording
+    const beginRecording = state.recorder.beginRecording.bind(state.recorder);
+    state.recorder.beginRecording = (...args) => {
+        // have to call existing beginRecording() FIRST in order to
+        // set state.recorder.duration, otherwise we get negative times!
+        beginRecording(...args);
+        state.recorder.capture(0, selectCmd + state.getActiveFile().filename);
+    };
+    state.recorder[modifiedRecorder] = true;
 }
+
+;// ./node_modules/@lqv/codebooth/dist/esm/components/Resize.mjs
+
+
+
+
 /**
- * Replay coding to multiple editors.
+ * Component for adjusting the vertical editor/console split.
  */
-function ReplayMultiple({ didScroll, group, handle: propsHandle, replay, scrollBehavior, shouldScroll, start = 0, }) {
-    const playback = useME();
-    const store = useBoothStore();
-    /* Handle callback */
-    const handle = useCallback((cmd, docs) => {
-        // file selection change
-        if (cmd.startsWith(selectCmd)) {
-            store.setState((state) => ({
-                groups: {
-                    ...state.groups,
-                    [group]: {
-                        ...state.groups[group],
-                        activeFile: cmd.slice(selectCmd.length),
+function Resize({ dir = "ew", max = 0.75, min = 0.25, }) {
+    const ref = (0,react.useRef)();
+    /* event handlers */
+    const resizeEvents = (0,react.useMemo)(() => {
+        let container;
+        return react_onDrag((_e, { x, y }) => {
+            const rect = container.getBoundingClientRect();
+            if (dir === "ew") {
+                const split = clamp(min, (x - rect.left) / rect.width, max) * 100;
+                container.style.setProperty("--split", `${split}%`);
+            }
+            else if (dir === "ns") {
+                const split = clamp(min, (rect.bottom - y) / rect.height, max) * 100;
+                container.style.setProperty("--v-split", `${split}%`);
+            }
+        }, () => {
+            container = ref.current.closest(".lqv-codebooth");
+            container.classList.add("dragging");
+        }, () => {
+            container.classList.remove("dragging");
+        });
+    }, [dir, max, min]);
+    return ((0,jsx_runtime.jsx)("div", { ...resizeEvents, ref: ref, className: `ui-resizable-handle ui-resizable-${dir}` }));
+}
+
+;// ./node_modules/@lqv/codebooth/dist/esm/components/Console.mjs
+
+
+
+
+/** Component for displaying console logs. */
+function Console({ className }) {
+    const store = store_useBoothStore();
+    const messages = react_useStore(store, (state) => state.messages);
+    return ((0,jsx_runtime.jsxs)("section", { className: classnames("lqv-console", className), children: [(0,jsx_runtime.jsx)("header", { children: "Console" }), (0,jsx_runtime.jsx)("output", { children: messages })] }));
+}
+
+;// ./node_modules/@lqv/codebooth/dist/esm/components/buttons.mjs
+
+
+
+
+
+
+
+/** Div to hold buttons. */
+function Buttons({ className, ...props }) {
+    return (0,jsx_runtime.jsx)("div", { className: classnames("lqv-cb-buttons", className), ...props });
+}
+/** Button for clearing the output/console. */
+function Clear({ className, children = "Clear", shortcut = "Mod-L", title = "Clear", ...attrs }) {
+    const store = store_useBoothStore();
+    const clear = (0,react.useCallback)(() => {
+        store.setState({ messages: [] });
+    }, [store.setState]);
+    const events = (0,react.useMemo)(() => react_onClick(clear), [clear]);
+    /* add keyboard shortcuts */
+    (0,react.useEffect)(() => {
+        store.setState((prev) => ({
+            shortcuts: {
+                ...prev.shortcuts,
+                [shortcut]: {
+                    key: shortcut,
+                    run: () => {
+                        clear();
+                        return true;
                     },
+                },
+            },
+        }));
+        return () => {
+            store.setState((prev) => ({
+                shortcuts: {
+                    ...prev.shortcuts,
+                    [shortcut]: undefined,
+                },
+            }));
+        };
+    }, [clear, shortcut, store.setState]);
+    return ((0,jsx_runtime.jsx)("button", { className: classnames("lqv-cb-clear", className), title: title, type: "button", ...events, ...attrs, children: children }));
+}
+/** Button for copying the contents of one group to another. */
+function Copy({ children = "Copy", className, from: fromGroup, to: toGroup, ...attrs }) {
+    const store = useBoothStore();
+    const copy = useCallback(() => {
+        const { groups } = store.getState();
+        const from = groups[fromGroup];
+        const to = groups[toGroup];
+        if (!(from && to)) {
+            console.error(`Could not copy from ${fromGroup} to ${toGroup}`);
+            return;
+        }
+        for (const file of from.files) {
+            const source = file.view;
+            const target = to.files.find((_) => _.filename === file.filename).view;
+            target.dispatch(target.state.update({
+                changes: {
+                    from: 0,
+                    to: target.state.doc.length,
+                    insert: source.state.doc,
                 },
             }));
         }
-        else if (cmd === "run") {
-            // run command
-            store.setState((state) => ({ run: state.run + 1 }));
-        }
-        else if (cmd === "clear") {
-            // clear console
-            store.setState(() => ({ messages: [] }));
-        }
-        // userspace handler
-        propsHandle?.(store, cmd, docs);
-    }, [group, propsHandle, store]);
+    }, [fromGroup, store.getState, toGroup]);
+    const events = useMemo(() => onClick(copy), [copy]);
+    return (_jsx("button", { className: classNames("lqv-cb-copy", className), ...events, ...attrs, children: children }));
+}
+/** Button for resetting editor contents to initial state. */
+function Reset({ className, children = "Reset", title = "Reset", ...attrs }) {
+    const store = useBoothStore();
+    const contents = useRef({});
+    /* get contents */
     useEffect(() => {
         const state = store.getState();
-        const views = {};
-        for (const file of state.groups[group].files) {
-            views[file.filename] = file.view;
+        for (const key in state.groups) {
+            contents.current[key] = {};
+            for (const file of state.groups[key].files) {
+                contents.current[key][file.filename] = file.view.state.doc.toString();
+            }
         }
-        if (replay instanceof Promise) {
-            replay.then((data) => cmReplayMultiple({
-                data,
-                didScroll,
-                handle,
-                playback,
-                scrollBehavior,
-                shouldScroll,
-                start,
-                views,
-            }));
+    }, [store]);
+    /* reset */
+    const reset = useCallback(() => {
+        const state = store.getState();
+        for (const groupName in contents.current) {
+            for (const file of state.groups[groupName].files) {
+                if (file.filename in contents.current[groupName]) {
+                    file.view.dispatch(file.view.state.update({
+                        changes: {
+                            from: 0,
+                            to: file.view.state.doc.length,
+                            insert: contents.current[groupName][file.filename],
+                        },
+                    }));
+                }
+            }
         }
-        else {
-            cmReplayMultiple({
-                data: replay,
-                didScroll,
-                handle,
-                playback,
-                scrollBehavior,
-                shouldScroll,
-                start,
-                views,
-            });
+    }, [store]);
+    const resetEvents = useMemo(() => onClick(reset), [reset]);
+    return (_jsx("button", { className: classNames("lqv-cb-reset", className), title: title, ...resetEvents, ...attrs, children: children }));
+}
+/** Button for running the code. */
+function Run({ className, children = "Run", shortcut = "Mod-Enter", title = "Run", ...props }) {
+    const store = store_useBoothStore();
+    // run callback
+    const run = (0,react.useCallback)(() => {
+        store.setState((prev) => ({ run: prev.run + 1 }));
+    }, [store.setState]);
+    /* add keyboard shortcuts */
+    (0,react.useEffect)(() => {
+        store.setState((prev) => ({
+            shortcuts: {
+                ...prev.shortcuts,
+                [shortcut]: {
+                    key: shortcut,
+                    run: () => {
+                        run();
+                        return true;
+                    },
+                },
+            },
+        }));
+    }, [run, shortcut, store.setState]);
+    // click events
+    const events = (0,react.useMemo)(() => react_onClick(run), [run]);
+    return ((0,jsx_runtime.jsx)("button", { className: classnames("lqv-cb-run", className), title: title, type: "button", ...events, ...props, children: children }));
+}
+/** Group selection tab. */
+function Tab({ id, ...props }) {
+    const store = useBoothStore();
+    const active = useStore(store, (state) => state.activeGroup === id);
+    const events = useMemo(() => onClick(() => {
+        store.setState({ activeGroup: id });
+    }), [id, store.setState]);
+    return (_jsx("button", { "aria-controls": ids.editorGroup({ group: id }), "aria-selected": active, id: ids.groupTab({ group: id }), role: "tab", type: "button", ...events, ...props }));
+}
+/** Holds a list of {@link Tab}s. */
+function TabList(props) {
+    return _jsx("div", { role: "tablist", ...props });
+}
+
+;// ./node_modules/axios/lib/helpers/bind.js
+
+function bind_bind(fn, thisArg) {
+    return function wrap() {
+        return fn.apply(thisArg, arguments);
+    };
+}
+
+;// ./node_modules/axios/lib/utils.js
+
+
+const { toString: utils_toString } = Object.prototype;
+const { getPrototypeOf } = Object;
+const { iterator, toStringTag } = Symbol;
+const kindOf = (cache => thing => {
+    const str = utils_toString.call(thing);
+    return cache[str] || (cache[str] = str.slice(8, -1).toLowerCase());
+})(Object.create(null));
+const kindOfTest = (type) => {
+    type = type.toLowerCase();
+    return (thing) => kindOf(thing) === type;
+};
+const typeOfTest = type => thing => typeof thing === type;
+const { isArray } = Array;
+const isUndefined = typeOfTest('undefined');
+function isBuffer(val) {
+    return val !== null && !isUndefined(val) && val.constructor !== null && !isUndefined(val.constructor)
+        && isFunction(val.constructor.isBuffer) && val.constructor.isBuffer(val);
+}
+const isArrayBuffer = kindOfTest('ArrayBuffer');
+function isArrayBufferView(val) {
+    let result;
+    if ((typeof ArrayBuffer !== 'undefined') && (ArrayBuffer.isView)) {
+        result = ArrayBuffer.isView(val);
+    }
+    else {
+        result = (val) && (val.buffer) && (isArrayBuffer(val.buffer));
+    }
+    return result;
+}
+const isString = typeOfTest('string');
+const isFunction = typeOfTest('function');
+const isNumber = typeOfTest('number');
+const isObject = (thing) => thing !== null && typeof thing === 'object';
+const isBoolean = thing => thing === true || thing === false;
+const isPlainObject = (val) => {
+    if (kindOf(val) !== 'object') {
+        return false;
+    }
+    const prototype = getPrototypeOf(val);
+    return (prototype === null || prototype === Object.prototype || Object.getPrototypeOf(prototype) === null) && !(toStringTag in val) && !(iterator in val);
+};
+const isEmptyObject = (val) => {
+    if (!isObject(val) || isBuffer(val)) {
+        return false;
+    }
+    try {
+        return Object.keys(val).length === 0 && Object.getPrototypeOf(val) === Object.prototype;
+    }
+    catch (e) {
+        return false;
+    }
+};
+const isDate = kindOfTest('Date');
+const isFile = kindOfTest('File');
+const isBlob = kindOfTest('Blob');
+const isFileList = kindOfTest('FileList');
+const isStream = (val) => isObject(val) && isFunction(val.pipe);
+const isFormData = (thing) => {
+    let kind;
+    return thing && ((typeof FormData === 'function' && thing instanceof FormData) || (isFunction(thing.append) && ((kind = kindOf(thing)) === 'formdata' ||
+        (kind === 'object' && isFunction(thing.toString) && thing.toString() === '[object FormData]'))));
+};
+const isURLSearchParams = kindOfTest('URLSearchParams');
+const [isReadableStream, isRequest, isResponse, isHeaders] = ['ReadableStream', 'Request', 'Response', 'Headers'].map(kindOfTest);
+const trim = (str) => str.trim ?
+    str.trim() : str.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');
+function forEach(obj, fn, { allOwnKeys = false } = {}) {
+    if (obj === null || typeof obj === 'undefined') {
+        return;
+    }
+    let i;
+    let l;
+    if (typeof obj !== 'object') {
+        obj = [obj];
+    }
+    if (isArray(obj)) {
+        for (i = 0, l = obj.length; i < l; i++) {
+            fn.call(null, obj[i], i, obj);
         }
-    }, [
-        didScroll,
-        group,
-        handle,
-        playback,
-        replay,
-        scrollBehavior,
-        shouldScroll,
-        start,
-        store,
-    ]);
+    }
+    else {
+        if (isBuffer(obj)) {
+            return;
+        }
+        const keys = allOwnKeys ? Object.getOwnPropertyNames(obj) : Object.keys(obj);
+        const len = keys.length;
+        let key;
+        for (i = 0; i < len; i++) {
+            key = keys[i];
+            fn.call(null, obj[key], key, obj);
+        }
+    }
+}
+function findKey(obj, key) {
+    if (isBuffer(obj)) {
+        return null;
+    }
+    key = key.toLowerCase();
+    const keys = Object.keys(obj);
+    let i = keys.length;
+    let _key;
+    while (i-- > 0) {
+        _key = keys[i];
+        if (key === _key.toLowerCase()) {
+            return _key;
+        }
+    }
     return null;
 }
-
-;// ./node_modules/@liqvid/recording/dist/esm/recorder.mjs
-/**
- * Abstract class for recording interactions.
- */
-class Recorder {
-    constructor() {
-        /**
-         * A recorder is intransigent if it cannot be started immediately (e.g. AudioRecorder).
-         */
-        this.intransigent = false;
-    }
-    /** Begin recording. */
-    beginRecording() { }
-    /** Pause recording. */
-    pauseRecording() { }
-    /** Resume recording from paused. */
-    resumeRecording() { }
-    /** End recording. */
-    endRecording() { }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    finalizeRecording(data, startDelay = 0, stopDelay = 0) {
-        return data;
-    }
-    provide({ push, manager, }) {
-        this.push = push;
-        this.manager = manager;
-    }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    getUpdate(data, lastDuration) { }
-}
-
-;// ./node_modules/@liqvid/recording/dist/esm/recorders/audio-recording.mjs
-
-
-
-const icon = ((0,jsx_runtime.jsx)("g", { transform: "scale(0.126261032057) translate(164.575)", children: (0,jsx_runtime.jsxs)("g", { stroke: "#FFF", transform: "translate(-140.62 -173.21)", children: [(0,jsx_runtime.jsx)("path", { d: "m568.57 620.93c0 116.77-94.66 211.43-211.43 211.43s-211.43-94.66-211.43-211.43v-0.00001", fillOpacity: "0", transform: "translate(14.904)", strokeLinecap: "round", strokeWidth: "20" }), (0,jsx_runtime.jsx)("path", { d: "m568.57 620.93c0 116.77-94.66 211.43-211.43 211.43s-211.43-94.66-211.43-211.43v-0.00001", fillOpacity: "0", transform: "translate(14.904)", strokeLinecap: "round", strokeWidth: "40" }), (0,jsx_runtime.jsx)("path", { d: "m372.05 832.36v114.29", strokeWidth: "30", fill: "none" }), (0,jsx_runtime.jsx)("path", { fill: "#FFF", d: "m197.14 920.93c0.00001-18.935 59.482-34.286 132.86-34.286 73.375 0 132.86 15.35 132.86 34.286z", transform: "translate(42.047 34.286)", strokeLinecap: "round", strokeWidth: "20" }), (0,jsx_runtime.jsx)("path", { fill: "#FFF", strokeWidth: "21.455", strokeLinecap: "round", d: "m372.06 183.94c-77.019-0.00001-139.47 62.45-139.47 139.47v289.62c0 77.019 62.45 139.47 139.47 139.47 77.019 0 139.44-62.45 139.44-139.47v-289.62c0-77.02-62.42-139.47-139.44-139.47z" })] }) }));
-class AudioRecorder extends Recorder {
-    constructor() {
-        super(...arguments);
-        this.requested = false;
-        this.intransigent = true;
-    }
-    beginRecording() {
-        if (!this.stream)
-            throw new Error("Navigator stream not available");
-        this.promise = new Promise(async (resolve) => {
-            // record the audio
-            this.mediaRecorder = new MediaRecorder(this.stream, {
-                mimeType: "audio/webm",
-            });
-            // subscribe to events
-            this.mediaRecorder.addEventListener("dataavailable", (e) => {
-                this.push(e.data);
-            });
-            let startDelay;
-            this.mediaRecorder.addEventListener("start", () => {
-                startDelay = this.manager.getTime();
-            });
-            this.mediaRecorder.addEventListener("stop", () => {
-                resolve([startDelay, this.manager.getTime()]);
-            });
-            this.mediaRecorder.start();
-        });
-    }
-    pauseRecording() {
-        this.mediaRecorder.pause();
-    }
-    resumeRecording() {
-        this.mediaRecorder.resume();
-    }
-    async endRecording() {
-        this.mediaRecorder.stop();
-        return this.promise;
-    }
-    finalizeRecording(chunks) {
-        return new Blob(chunks, { type: "audio/webm" });
-    }
-    requestRecording(constraints = { audio: true }) {
-        // be idempotent
-        if (this.requested)
-            return;
-        const request = async () => {
-            // Only need to do this once...
-            window.removeEventListener("click", request);
-            try {
-                this.stream = await navigator.mediaDevices.getUserMedia(constraints);
-            }
-            catch (e) {
-                // User said no or browser rejected request due to insecure context
-                console.log("no recording allowed");
-            }
-        };
-        // Need user interaction to request media
-        window.addEventListener("click", request);
-        this.requested = true;
-    }
-}
-function AudioSaveComponent(props) {
-    return ((0,jsx_runtime.jsx)(jsx_runtime.Fragment, { children: props.data ? ((0,jsx_runtime.jsx)("a", { download: "audio.webm", href: URL.createObjectURL(props.data), children: "Download Audio" })) : ("Audio not yet available") }));
-}
-const recorder = new AudioRecorder();
-const AudioRecording = {
-    enabled: () => {
-        if (typeof recorder.stream === "undefined") {
-            if (ssr_isClient)
-                recorder.requestRecording();
-            return false;
+const _global = (() => {
+    if (typeof globalThis !== "undefined")
+        return globalThis;
+    return typeof self !== "undefined" ? self : (typeof window !== 'undefined' ? window : global);
+})();
+const isContextDefined = (context) => !isUndefined(context) && context !== _global;
+function merge() {
+    const { caseless } = isContextDefined(this) && this || {};
+    const result = {};
+    const assignValue = (val, key) => {
+        const targetKey = caseless && findKey(result, key) || key;
+        if (isPlainObject(result[targetKey]) && isPlainObject(val)) {
+            result[targetKey] = merge(result[targetKey], val);
         }
-        return true;
-    },
-    icon,
-    key: "audio",
-    name: "Audio",
-    recorder,
-    saveComponent: AudioSaveComponent,
-    title: "Record audio",
-};
-
-;// ./node_modules/@liqvid/recording/dist/esm/recorders/marker-recording.mjs
-
-
-
-
-const marker_recording_icon = ((0,jsx_runtime.jsx)("text", { fill: "#FFF", fontFamily: "Helvetica", fontSize: "75", textAnchor: "middle", x: "50", y: "75", children: "M" }));
-class MarkerRecorder extends Recorder {
-    constructor() {
-        super();
-        bind(this, ["onMarkerUpdate"]);
-    }
-    beginRecording() {
-        this.lastTime = 0;
-        this.script.on("markerupdate", this.onMarkerUpdate);
-    }
-    endRecording() {
-        this.script.off("markerupdate", this.onMarkerUpdate);
-        this.captureMarker(this.script.markerName);
-    }
-    finalizeRecording(data, startDelay, stopDelay) {
-        data[0][1] -= startDelay;
-        data[data.length - 1][1] += stopDelay;
-        return data.map((cue) => [cue[0], time_formatTimeMs(cue[1])]);
-    }
-    onMarkerUpdate(prevIndex) {
-        if (this.manager.paused)
-            return;
-        this.captureMarker(this.script.markers[prevIndex][0]);
-    }
-    captureMarker(markerName) {
-        const t = this.manager.getTime();
-        this.push([markerName, t - this.lastTime]);
-        this.lastTime = t;
-    }
-}
-function MarkerSaveComponent(props) {
-    return ((0,jsx_runtime.jsx)(jsx_runtime.Fragment, { children: (0,jsx_runtime.jsx)("textarea", { readOnly: true, value: format(props.data) }) }));
-}
-const MarkerRecording = {
-    icon: marker_recording_icon,
-    key: "markers",
-    name: "Markers",
-    recorder: new MarkerRecorder(),
-    saveComponent: MarkerSaveComponent,
-};
-function format(data) {
-    return JSON.stringify(data, null, 2).replace(/\[\s+"(.+?)",\s+"(.+?)"\s+\]/g, '["$1", "$2"]');
-}
-
-;// ./node_modules/@liqvid/recording/dist/esm/RecordingManager.mjs
-
-
-/**
- * Class for managing recording sessions.
- */
-class RecordingManager_RecordingManager extends events.EventEmitter {
-    constructor() {
-        super();
-        this.captureData = {};
-        this.setMaxListeners(0);
-        this.paused = false;
-        this.active = false;
-        bind(this, [
-            "beginRecording",
-            "endRecording",
-            "pauseRecording",
-            "resumeRecording",
-            "capture",
-        ]);
-    }
-    /**
-     * Begin recording.
-     *
-     * @emits start
-     */
-    beginRecording(plugins) {
-        this.plugins = plugins;
-        // initialize
-        this.pauseTime = 0;
-        this.intransigentRecorder = void 0;
-        // dependency injection for plugins
-        for (const key in this.plugins) {
-            const recorder = this.plugins[key];
-            recorder.provide({
-                push: (value) => this.capture(key, value),
-                manager: this,
-            });
-            this.captureData[key] = [];
-            if (recorder.intransigent) {
-                if (this.intransigentRecorder)
-                    throw new Error("At most one intransigent recorder is allowed");
-                this.intransigentRecorder = recorder;
-            }
+        else if (isPlainObject(val)) {
+            result[targetKey] = merge({}, val);
         }
-        // call this as close as possible to beginRecording() to minimize "lag"
-        this.baseTime = performance.now();
-        for (const key in this.plugins) {
-            this.plugins[key].beginRecording();
-        }
-        this.paused = false;
-        this.active = true;
-        this.emit("start");
-    }
-    /**
-     * Commit a piece of recording data.
-     * @param key Key for recording source.
-     * @param value Data to record.
-     *
-     * @emits capture
-     */
-    capture(key, value) {
-        this.captureData[key].push(value);
-        this.emit("capture", key, value);
-    }
-    /**
-     * End recording and collect finalized data from recorders.
-     *
-     * @emits finalize
-     */
-    async endRecording() {
-        const endTime = this.getTime();
-        this.duration = endTime;
-        const recording = {};
-        let startDelay = 0, stopDelay = 0;
-        let promise;
-        // stop intransigentRecorder
-        if (this.intransigentRecorder) {
-            promise =
-                this.intransigentRecorder.endRecording();
-        }
-        // stop other recorders
-        for (const key in this.plugins) {
-            if (this.plugins[key] === this.intransigentRecorder)
-                continue;
-            this.plugins[key].endRecording();
-        }
-        // get start/stop delays from intransigentRecorder
-        if (this.intransigentRecorder) {
-            try {
-                const [startTime, stopTime] = await promise;
-                startDelay = startTime;
-                stopDelay = stopTime - endTime;
-                this.duration = this.duration + stopDelay - startDelay;
-            }
-            catch (e) {
-                startDelay = 0;
-                stopDelay = 0;
-                console.error(e);
-            }
-        }
-        // finalize
-        for (const key in this.plugins) {
-            recording[key] = this.plugins[key].finalizeRecording(this.captureData[key], startDelay, stopDelay);
-            this.emit("finalize", key, recording[key]);
-        }
-        this.active = false;
-        this.emit("finalize", undefined, undefined);
-        return recording;
-    }
-    /** Get current recording time. */
-    getTime() {
-        return performance.now() - this.baseTime - this.pauseTime;
-    }
-    /**
-     * Pause recording.
-     *
-     * @emits pause
-     */
-    pauseRecording() {
-        this.lastPauseTime = performance.now();
-        for (const key in this.plugins) {
-            this.plugins[key].pauseRecording();
-        }
-        this.paused = true;
-        this.emit("pause");
-    }
-    /**
-     * Resume recording from paused state.
-     *
-     * @emits resume
-     */
-    resumeRecording() {
-        this.pauseTime += performance.now() - this.lastPauseTime;
-        for (const key in this.plugins) {
-            this.plugins[key].resumeRecording();
-        }
-        this.paused = false;
-        this.emit("resume");
-    }
-}
-
-;// ./node_modules/@liqvid/recording/dist/esm/RecordingRow.mjs
-
-
-
-function RecordingRow_RecordingRow(props) {
-    const [name, setName] = useState("Untitled");
-    const onChange = useCallback((e) => {
-        setName(e.target.value);
-    }, []);
-    const { data, pluginsByKey } = props;
-    return (_jsxs("li", { className: "recording-row", children: [_jsx("input", { className: "recording-name", onChange: onChange, type: "text", value: name }), _jsxs("table", { className: "recording-results", children: [_jsxs("caption", { children: ["Duration: ", data.duration, " (", formatTimeMs(data.duration), ")"] }), _jsx("tbody", { children: Object.keys(data).map((pluginKey) => {
-                            if (pluginKey === "duration")
-                                return null;
-                            const plugin = pluginsByKey[pluginKey], SaveComponent = plugin.saveComponent;
-                            return (_jsxs("tr", { children: [_jsx("th", { scope: "row", title: plugin.name, children: _jsxs("svg", { className: "recorder-plugin-icon", height: "36", width: "36", viewBox: "0 0 100 100", children: [_jsx("rect", { height: "100", width: "100", fill: "#222" }), plugin.icon] }) }, "head"), _jsx("td", { children: _jsx(SaveComponent, { data: data[pluginKey] }) }, "cell")] }, pluginKey));
-                        }) })] })] }));
-}
-
-;// ./node_modules/@liqvid/recording/dist/esm/Control.mjs
-"use client";
-
-
-
-
-
-
-
-/**
- * Liqvid recording control.
- */
-function RecordingControl(props) {
-    const keymap = useKeymap();
-    const [recordings, setRecordings] = useState([]);
-    const forceUpdate = useForceUpdate();
-    // recording manager
-    const manager = useRef();
-    useEffect(() => {
-        manager.current = props.manager ?? new RecordingManager();
-        const eventNames = ["finalize", "start", "pause", "resume"];
-        for (const eventName of eventNames) {
-            manager.current.on(eventName, forceUpdate);
-        }
-        return () => {
-            for (const eventName of eventNames) {
-                manager.current.off(eventName, forceUpdate);
-            }
-        };
-    }, [forceUpdate, props.manager]);
-    // active plugins
-    const activePlugins = useRef(null);
-    if (activePlugins.current === null) {
-        activePlugins.current = {};
-        for (const plugin of props.plugins) {
-            activePlugins.current[plugin.key] = false;
-        }
-    }
-    // plugins dictionary
-    const [pluginsByKey] = useState(() => {
-        const dict = {};
-        for (const plugin of props.plugins) {
-            dict[plugin.key] = plugin;
-        }
-        return dict;
-    });
-    /* commands */
-    const start = useCallback(() => {
-        const { active, beginRecording, endRecording } = manager.current;
-        if (active) {
-            endRecording().then((recording) => {
-                recording.duration = manager.current.duration;
-                setRecordings((prev) => prev.concat(recording));
-            });
+        else if (isArray(val)) {
+            result[targetKey] = val.slice();
         }
         else {
-            const recorders = {};
-            for (const plugin of props.plugins) {
-                if (activePlugins.current[plugin.key]) {
-                    recorders[plugin.key] = plugin.recorder;
-                }
-            }
-            beginRecording(recorders);
+            result[targetKey] = val;
         }
-    }, [props.plugins]);
-    const pause = useCallback(() => {
-        const { active, paused, pauseRecording, resumeRecording } = manager.current;
-        if (active) {
-            paused ? resumeRecording() : pauseRecording();
-        }
-    }, []);
-    const discard = useCallback(async () => {
-        const { active, endRecording } = manager.current;
-        if (active) {
-            const listeners = manager.current.listeners("finalize");
-            for (const listener of listeners) {
-                manager.current.off("finalize", listener);
-            }
-            try {
-                await endRecording();
-            }
-            catch (e) {
-                console.error(e);
-            }
-            for (const listener of listeners) {
-                manager.current.on("finalize", listener);
-            }
-            forceUpdate();
-        }
-    }, [forceUpdate]);
-    /* keyboard controls */
-    const callbacks = useMemo(() => ({ start, pause, discard }), [discard, pause, start]);
-    const reducer = useCallback((state, action) => {
-        // return new state
-        return {
-            ...state,
-            [action.command]: action.seq,
-        };
-    }, []);
-    const [state, dispatch] = useReducer(reducer, null, () => ({
-        start: isMac() ? "Alt+Meta+2" : "Ctrl+Alt+2",
-        pause: isMac() ? "Alt+Meta+3" : "Ctrl+Alt+3",
-        discard: isMac() ? "Alt+Meta+4" : "Ctrl+Alt+4",
-    }));
-    // bind
-    useEffect(() => {
-        for (const key of Object.keys(state)) {
-            keymap.bind(state[key], callbacks[key]);
-        }
-        return () => {
-            for (const key of Object.keys(state)) {
-                keymap.unbind(state[key], callbacks[key]);
-            }
-        };
-    }, [callbacks, keymap, state]);
-    // onBlur event, triggers rebind
-    const onBlur = useCallback((e) => {
-        e.preventDefault();
-        const name = e.currentTarget.getAttribute("name");
-        // bind sequence
-        const seq = e.currentTarget.dataset.value;
-        dispatch({ command: name, seq });
-    }, []);
-    // display shortcut sequence
-    const identifyKey = useCallback((e) => {
-        e.preventDefault();
-        const seq = Keymap.identify(e);
-        e.currentTarget.dataset.value = seq;
-        e.currentTarget.value = fmtSeq(seq);
-    }, []);
-    // warn before closing if recordings exist
-    const warn = useRef(false);
-    warn.current = recordings.length > 0;
-    useEffect(() => {
-        window.addEventListener("beforeunload", (e) => {
-            if (warn.current)
-                e.returnValue = "You have recording data";
-        });
-    }, []);
-    // show/hide control pane
-    const [paneOpen, setPaneOpen] = useState(false);
-    const togglePane = useMemo(() => onClick(() => {
-        setPaneOpen((prev) => !prev);
-    }), []);
-    const dialogStyle = {
-        display: paneOpen ? "block" : "none",
     };
-    // toggle plugin
-    const setActive = useMemo(() => onClick((e) => {
-        const key = e.currentTarget.dataset.plugin;
-        activePlugins.current[key] = !activePlugins.current[key];
-        forceUpdate();
-    }), [forceUpdate]);
-    /* render */
-    const commands = [
-        ["Start/Stop recording", "start"],
-        ["Pause recording", "pause"],
-        ["Discard recording", "discard"],
-    ];
-    return (_jsxs("div", { id: "lv-recording", children: [_jsxs("div", { id: "lv-recording-dialog", style: dialogStyle, children: [_jsx("table", { id: "lv-recording-configuration", children: _jsxs("tbody", { children: [_jsx("tr", { children: _jsx("th", { colSpan: 2, children: "Commands" }) }), commands.map(([desc, key]) => (_jsxs("tr", { children: [_jsx("th", { scope: "row", children: desc }), _jsx("td", { children: _jsx("input", { onBlur: onBlur, readOnly: true, onKeyDown: identifyKey, className: "shortcut", name: key, type: "text", value: fmtSeq(state[key]) }) })] }, key)))] }) }), _jsx("h3", { children: "Configuration" }), props.plugins.map((plugin) => {
-                        const classNames = ["recorder-plugin-icon"];
-                        if (activePlugins.current[plugin.key])
-                            classNames.push("active");
-                        const styles = {};
-                        const enabled = typeof plugin.enabled === "undefined" || plugin.enabled();
-                        if (!enabled) {
-                            styles.opacity = 0.3;
-                        }
-                        return (_jsxs("div", { className: "recorder-plugin", title: plugin.title, style: styles, children: [_jsxs("svg", { className: classNames.join(" "), height: "36", width: "36", viewBox: "0 0 100 100", "data-plugin": plugin.key, ...(enabled ? setActive : {}), children: [_jsx("rect", { height: "100", width: "100", fill: activePlugins.current[plugin.key] ? "red" : "#222" }), plugin.icon] }), _jsx("span", { className: "recorder-plugin-name", children: plugin.name })] }, plugin.key));
-                    }), _jsx("h3", { children: "Saved data" }), _jsx("ol", { className: "recordings", children: recordings.map((recording, i) => (_jsx(RecordingRow, { data: recording, pluginsByKey: pluginsByKey }, i))) })] }), _jsx("svg", { height: "36", width: "36", viewBox: "-50 -50 100 100", ...togglePane, children: _jsx("circle", { cx: "0", cy: "0", r: "35", stroke: "white", strokeWidth: "5", fill: manager.current?.active
-                        ? manager.current?.paused
-                            ? "yellow"
-                            : "red"
-                        : "#666" }) })] }));
-}
-/** Format key sequences with special characters on Mac */
-function fmtSeq(str) {
-    if (!isMac())
-        return str;
-    if (str === void 0)
-        return str;
-    return str
-        .split("+")
-        .map((k) => {
-        if (k === "Ctrl")
-            return "^";
-        else if (k === "Alt")
-            return "⌥";
-        if (k === "Shift")
-            return "⇧";
-        if (k === "Meta")
-            return "⌘";
-        return k;
-    })
-        .join("");
-}
-function isMac() {
-    return (typeof globalThis.navigator !== "undefined" &&
-        navigator.platform === "MacIntel");
-}
-
-;// ./node_modules/@liqvid/recording/dist/esm/recorders/replay-data-recorder.mjs
-
-class ReplayDataRecorder extends Recorder {
-    constructor() {
-        super();
-        this.duration = 0;
+    for (let i = 0, l = arguments.length; i < l; i++) {
+        arguments[i] && forEach(arguments[i], assignValue);
     }
-    beginRecording() {
-        this.duration = 0;
-    }
-    finalizeRecording(data) {
-        // for (let sum = 0, i = 0; i < data.length && sum < startDelay; ++i) {
-        //   const dur = data[i][0];
-        //   if (dur === 0) {
-        //     continue;
-        //   }
-        //   if (sum + dur >= startDelay) {
-        //     data[i][0] -= startDelay - sum;
-        //     break;
-        //   }
-        //   sum += dur;
-        //   // data.splice(i, 1);
-        //   --i;
-        // }
-        // console.log(JSON.stringify(data, null, 2));
-        return compress(data);
-    }
-    capture(time = this.manager.getTime(), data) {
-        if (time - this.duration < 0) {
-            // console.error(time, this.duration, data);
+    return result;
+}
+const extend = (a, b, thisArg, { allOwnKeys } = {}) => {
+    forEach(b, (val, key) => {
+        if (thisArg && isFunction(val)) {
+            a[key] = bind_bind(val, thisArg);
         }
-        this.push([time - this.duration, data]);
-        this.duration = time;
+        else {
+            a[key] = val;
+        }
+    }, { allOwnKeys });
+    return a;
+};
+const stripBOM = (content) => {
+    if (content.charCodeAt(0) === 0xFEFF) {
+        content = content.slice(1);
     }
-}
-/**
- * Truncate numerical precision to reduce filesize.
- * @param o Data to compress.
- * @param precision Number of decimal points to include.
- */
-function compress(o, precision = 2) {
-    switch (typeof o) {
-        case "object":
-            if (o instanceof Array) {
-                return o.map((val) => compress(val, precision));
+    return content;
+};
+const inherits = (constructor, superConstructor, props, descriptors) => {
+    constructor.prototype = Object.create(superConstructor.prototype, descriptors);
+    constructor.prototype.constructor = constructor;
+    Object.defineProperty(constructor, 'super', {
+        value: superConstructor.prototype
+    });
+    props && Object.assign(constructor.prototype, props);
+};
+const toFlatObject = (sourceObj, destObj, filter, propFilter) => {
+    let props;
+    let i;
+    let prop;
+    const merged = {};
+    destObj = destObj || {};
+    if (sourceObj == null)
+        return destObj;
+    do {
+        props = Object.getOwnPropertyNames(sourceObj);
+        i = props.length;
+        while (i-- > 0) {
+            prop = props[i];
+            if ((!propFilter || propFilter(prop, sourceObj, destObj)) && !merged[prop]) {
+                destObj[prop] = sourceObj[prop];
+                merged[prop] = true;
             }
-            if (o === null) {
-                return o;
-            }
-            return Object.fromEntries(Object.keys(o).map((key) => [
-                key,
-                compress(o[key], precision),
-            ]));
-        case "number":
-            return parseFloat(o.toFixed(precision));
-        default:
-            return o;
+        }
+        sourceObj = filter !== false && getPrototypeOf(sourceObj);
+    } while (sourceObj && (!filter || filter(sourceObj, destObj)) && sourceObj !== Object.prototype);
+    return destObj;
+};
+const endsWith = (str, searchString, position) => {
+    str = String(str);
+    if (position === undefined || position > str.length) {
+        position = str.length;
     }
-}
-
-;// ./node_modules/@liqvid/recording/dist/esm/recorders/video-recording.mjs
-
-
-
-const video_recording_icon = ((0,jsx_runtime.jsx)("path", { fill: "#FFF", d: "M35.113 14.703a4.558 4.558 0 0 0-4.568 4.568v2.338h-11.29A13.146 13.146 0 0 0 6.082 34.787v37.018a13.142 13.142 0 0 0 13.173 13.172H80.74a13.147 13.147 0 0 0 13.178-13.172V34.787A13.146 13.146 0 0 0 80.74 21.61H69.455v-2.338a4.558 4.558 0 0 0-4.568-4.568H35.113ZM50 31.196c12.18 0 22.103 9.917 22.103 22.097 0 12.18-9.923 22.103-22.103 22.103-12.181 0-22.103-9.923-22.103-22.103 0-12.18 9.922-22.097 22.103-22.097Zm-30.073.835a4.59 4.59 0 0 1 4.59 4.59h.006a4.59 4.59 0 1 1-4.595-4.59ZM50 35.536a17.721 17.721 0 0 0-17.757 17.757A17.722 17.722 0 0 0 50 71.05a17.723 17.723 0 0 0 17.757-17.757A17.722 17.722 0 0 0 50 35.536Z" }));
-class VideoRecorder extends Recorder {
-    constructor() {
-        super(...arguments);
-        this.requested = false;
-        this.intransigent = true;
+    position -= searchString.length;
+    const lastIndex = str.indexOf(searchString, position);
+    return lastIndex !== -1 && lastIndex === position;
+};
+const toArray = (thing) => {
+    if (!thing)
+        return null;
+    if (isArray(thing))
+        return thing;
+    let i = thing.length;
+    if (!isNumber(i))
+        return null;
+    const arr = new Array(i);
+    while (i-- > 0) {
+        arr[i] = thing[i];
     }
-    beginRecording() {
-        if (!this.stream)
-            throw new Error("Navigator stream not available");
-        this.promise = new Promise(async (resolve) => {
-            // record the video
-            this.mediaRecorder = new MediaRecorder(this.stream, {
-                mimeType: "video/webm",
-            });
-            // subscribe to events
-            this.mediaRecorder.addEventListener("dataavailable", (e) => {
-                this.push(e.data);
-            });
-            let startDelay;
-            this.mediaRecorder.addEventListener("start", () => {
-                startDelay = this.manager.getTime();
-            });
-            this.mediaRecorder.addEventListener("stop", () => {
-                resolve([startDelay, this.manager.getTime()]);
-            });
-            this.mediaRecorder.start();
-        });
+    return arr;
+};
+const isTypedArray = (TypedArray => {
+    return thing => {
+        return TypedArray && thing instanceof TypedArray;
+    };
+})(typeof Uint8Array !== 'undefined' && getPrototypeOf(Uint8Array));
+const forEachEntry = (obj, fn) => {
+    const generator = obj && obj[iterator];
+    const _iterator = generator.call(obj);
+    let result;
+    while ((result = _iterator.next()) && !result.done) {
+        const pair = result.value;
+        fn.call(obj, pair[0], pair[1]);
     }
-    pauseRecording() {
-        this.mediaRecorder.pause();
+};
+const matchAll = (regExp, str) => {
+    let matches;
+    const arr = [];
+    while ((matches = regExp.exec(str)) !== null) {
+        arr.push(matches);
     }
-    resumeRecording() {
-        this.mediaRecorder.resume();
-    }
-    async endRecording() {
-        this.mediaRecorder.stop();
-        return this.promise;
-    }
-    finalizeRecording(chunks) {
-        return new Blob(chunks, { type: "video/webm" });
-    }
-    requestRecording(constraints = { audio: true, video: true }) {
-        // be idempotent
-        if (this.requested)
-            return;
-        const request = async () => {
-            // Only need to do this once...
-            window.removeEventListener("click", request);
-            try {
-                this.stream = await navigator.mediaDevices.getUserMedia(constraints);
-            }
-            catch (e) {
-                // User said no or browser rejected request due to insecure context
-                console.log("no recording allowed");
-            }
-        };
-        // Need user interaction to request media
-        window.addEventListener("click", request);
-        this.requested = true;
-    }
-}
-function VideoSaveComponent(props) {
-    return ((0,jsx_runtime.jsx)(jsx_runtime.Fragment, { children: props.data ? ((0,jsx_runtime.jsx)("a", { download: "video.webm", href: URL.createObjectURL(props.data), children: "Download Video" })) : ("Video not yet available") }));
-}
-const video_recording_recorder = new VideoRecorder();
-const VideoRecording = {
-    enabled: () => {
-        if (typeof video_recording_recorder.stream === "undefined") {
-            if (ssr_isClient)
-                video_recording_recorder.requestRecording();
+    return arr;
+};
+const isHTMLForm = kindOfTest('HTMLFormElement');
+const toCamelCase = str => {
+    return str.toLowerCase().replace(/[-_\s]([a-z\d])(\w*)/g, function replacer(m, p1, p2) {
+        return p1.toUpperCase() + p2;
+    });
+};
+const utils_hasOwnProperty = (({ hasOwnProperty }) => (obj, prop) => hasOwnProperty.call(obj, prop))(Object.prototype);
+const isRegExp = kindOfTest('RegExp');
+const reduceDescriptors = (obj, reducer) => {
+    const descriptors = Object.getOwnPropertyDescriptors(obj);
+    const reducedDescriptors = {};
+    forEach(descriptors, (descriptor, name) => {
+        let ret;
+        if ((ret = reducer(descriptor, name, obj)) !== false) {
+            reducedDescriptors[name] = ret || descriptor;
+        }
+    });
+    Object.defineProperties(obj, reducedDescriptors);
+};
+const freezeMethods = (obj) => {
+    reduceDescriptors(obj, (descriptor, name) => {
+        if (isFunction(obj) && ['arguments', 'caller', 'callee'].indexOf(name) !== -1) {
             return false;
         }
-        return true;
-    },
-    icon: video_recording_icon,
-    key: "video",
-    name: "Video",
-    recorder: video_recording_recorder,
-    saveComponent: VideoSaveComponent,
-    title: "Record video",
-};
-
-;// ./node_modules/@liqvid/recording/dist/esm/index.mjs
-
-
-
-
-
-
-
-
-;// ./node_modules/@lqv/codemirror/dist/esm/icon.mjs
-
-const icon_icon = ((0,jsx_runtime.jsx)("g", { transform: "scale(0.5333333333)", children: (0,jsx_runtime.jsxs)("g", { transform: "translate(-138.61 -857.23)", children: [(0,jsx_runtime.jsx)("rect", { style: {
-                    strokeLinejoin: "round",
-                    stroke: "#FFF",
-                    strokeLinecap: "round",
-                    strokeWidth: 3.8521,
-                    fill: "#FFF",
-                }, rx: "9.4681", ry: "14.97", height: "58.455", width: "121.82", y: "931.93", x: "171.45" }), (0,jsx_runtime.jsx)("path", { style: {
-                    stroke: "#000",
-                    strokeDasharray: "4.9175124 4.9175124",
-                    strokeWidth: 4.9175,
-                    fill: "none",
-                }, d: "m184.06 947.36h94.08" }), (0,jsx_runtime.jsx)("path", { style: {
-                    stroke: "#000",
-                    strokeDasharray: "4.9175124 4.9175124",
-                    strokeWidth: 4.9175,
-                    fill: "none",
-                }, d: "m184.06 957.05h94.08" }), (0,jsx_runtime.jsx)("path", { style: {
-                    stroke: "#000",
-                    strokeDasharray: "4.9175124 4.9175124",
-                    strokeWidth: 4.9175,
-                    fill: "none",
-                }, d: "m184.06 966.75h94.08" }), (0,jsx_runtime.jsx)("path", { style: {
-                    stroke: "#FFF",
-                    strokeWidth: 4.9175,
-                    fill: "none",
-                }, d: "m184.06 977.23h94.08" }), (0,jsx_runtime.jsx)("path", { style: {
-                    stroke: "#FFF",
-                    strokeLinecap: "round",
-                    strokeWidth: 4.3986,
-                    fill: "none",
-                }, d: "m278.67 929.84s8.86-13.98-0.31-21.47c-10.76-8.79-20.81 8.66-36.55-3.07" })] }) }));
-
-;// ./node_modules/@lqv/codemirror/dist/esm/recording.mjs
-
-
-
-
-
-
-// the actual thingy that gets exported
-class CodeRecorder extends ReplayDataRecorder {
-    constructor() {
-        super();
-        bind(this, ["extension"]);
-    }
-    /**
-     * Get a CodeMirror extension for recording.
-     * @param specialKeys Map of key sequences to commands, e.g. {"Mod-Enter": "run"}.
-     * @returns CodeMirror extension.
-     */
-    extension(specialKeys = {}) {
-        // legacy
-        if (Array.isArray(specialKeys)) {
-            // biome-ignore lint/style/noParameterAssign: helpful for backwards compatibility
-            specialKeys = Object.fromEntries(specialKeys.map((key) => [key, key]));
+        const value = obj[name];
+        if (!isFunction(value))
+            return;
+        descriptor.enumerable = false;
+        if ('writable' in descriptor) {
+            descriptor.writable = false;
+            return;
         }
-        // eslint-disable-next-line @typescript-eslint/no-this-alias
-        const $this = this;
-        const scrollListener = ViewPlugin.fromClass(class {
-            constructor(view) {
-                view.scrollDOM.addEventListener("scroll", () => {
-                    if (!$this.manager || $this.manager.paused || !$this.manager.active)
-                        return;
-                    const time = $this.manager.getTime();
-                    const fontSize = Number.parseFloat(getComputedStyle(view.scrollDOM).getPropertyValue("font-size"));
-                    // vertical scroll is more common so we put it first and omit
-                    // horizontal scroll if it's zero
-                    const action = [
-                        scrollCmd,
-                        view.scrollDOM.scrollTop / fontSize,
-                        view.scrollDOM.scrollLeft / fontSize,
-                    ];
-                    if (action[2] === 0) {
-                        action.pop();
-                    }
-                    $this.capture(time, action);
+        if (!descriptor.set) {
+            descriptor.set = () => {
+                throw Error('Can not rewrite read-only method \'' + name + '\'');
+            };
+        }
+    });
+};
+const toObjectSet = (arrayOrString, delimiter) => {
+    const obj = {};
+    const define = (arr) => {
+        arr.forEach(value => {
+            obj[value] = true;
+        });
+    };
+    isArray(arrayOrString) ? define(arrayOrString) : define(String(arrayOrString).split(delimiter));
+    return obj;
+};
+const noop = () => { };
+const toFiniteNumber = (value, defaultValue) => {
+    return value != null && Number.isFinite(value = +value) ? value : defaultValue;
+};
+function isSpecCompliantForm(thing) {
+    return !!(thing && isFunction(thing.append) && thing[toStringTag] === 'FormData' && thing[iterator]);
+}
+const toJSONObject = (obj) => {
+    const stack = new Array(10);
+    const visit = (source, i) => {
+        if (isObject(source)) {
+            if (stack.indexOf(source) >= 0) {
+                return;
+            }
+            if (isBuffer(source)) {
+                return source;
+            }
+            if (!('toJSON' in source)) {
+                stack[i] = source;
+                const target = isArray(source) ? [] : {};
+                forEach(source, (value, key) => {
+                    const reducedValue = visit(value, i + 1);
+                    !isUndefined(reducedValue) && (target[key] = reducedValue);
                 });
+                stack[i] = undefined;
+                return target;
+            }
+        }
+        return source;
+    };
+    return visit(obj, 0);
+};
+const isAsyncFn = kindOfTest('AsyncFunction');
+const isThenable = (thing) => thing && (isObject(thing) || isFunction(thing)) && isFunction(thing.then) && isFunction(thing.catch);
+const _setImmediate = ((setImmediateSupported, postMessageSupported) => {
+    if (setImmediateSupported) {
+        return setImmediate;
+    }
+    return postMessageSupported ? ((token, callbacks) => {
+        _global.addEventListener("message", ({ source, data }) => {
+            if (source === _global && data === token) {
+                callbacks.length && callbacks.shift()();
+            }
+        }, false);
+        return (cb) => {
+            callbacks.push(cb);
+            _global.postMessage(token, "*");
+        };
+    })(`axios@${Math.random()}`, []) : (cb) => setTimeout(cb);
+})(typeof setImmediate === 'function', isFunction(_global.postMessage));
+const asap = typeof queueMicrotask !== 'undefined' ?
+    queueMicrotask.bind(_global) : (typeof process !== 'undefined' && process.nextTick || _setImmediate);
+const isIterable = (thing) => thing != null && isFunction(thing[iterator]);
+/* harmony default export */ const utils = ({
+    isArray,
+    isArrayBuffer,
+    isBuffer,
+    isFormData,
+    isArrayBufferView,
+    isString,
+    isNumber,
+    isBoolean,
+    isObject,
+    isPlainObject,
+    isEmptyObject,
+    isReadableStream,
+    isRequest,
+    isResponse,
+    isHeaders,
+    isUndefined,
+    isDate,
+    isFile,
+    isBlob,
+    isRegExp,
+    isFunction,
+    isStream,
+    isURLSearchParams,
+    isTypedArray,
+    isFileList,
+    forEach,
+    merge,
+    extend,
+    trim,
+    stripBOM,
+    inherits,
+    toFlatObject,
+    kindOf,
+    kindOfTest,
+    endsWith,
+    toArray,
+    forEachEntry,
+    matchAll,
+    isHTMLForm,
+    hasOwnProperty: utils_hasOwnProperty,
+    hasOwnProp: utils_hasOwnProperty,
+    reduceDescriptors,
+    freezeMethods,
+    toObjectSet,
+    toCamelCase,
+    noop,
+    toFiniteNumber,
+    findKey,
+    global: _global,
+    isContextDefined,
+    isSpecCompliantForm,
+    toJSONObject,
+    isAsyncFn,
+    isThenable,
+    setImmediate: _setImmediate,
+    asap,
+    isIterable
+});
+
+;// ./node_modules/axios/lib/core/AxiosError.js
+
+
+function AxiosError(message, code, config, request, response) {
+    Error.call(this);
+    if (Error.captureStackTrace) {
+        Error.captureStackTrace(this, this.constructor);
+    }
+    else {
+        this.stack = (new Error()).stack;
+    }
+    this.message = message;
+    this.name = 'AxiosError';
+    code && (this.code = code);
+    config && (this.config = config);
+    request && (this.request = request);
+    if (response) {
+        this.response = response;
+        this.status = response.status ? response.status : null;
+    }
+}
+utils.inherits(AxiosError, Error, {
+    toJSON: function toJSON() {
+        return {
+            message: this.message,
+            name: this.name,
+            description: this.description,
+            number: this.number,
+            fileName: this.fileName,
+            lineNumber: this.lineNumber,
+            columnNumber: this.columnNumber,
+            stack: this.stack,
+            config: utils.toJSONObject(this.config),
+            code: this.code,
+            status: this.status
+        };
+    }
+});
+const AxiosError_prototype = AxiosError.prototype;
+const descriptors = {};
+[
+    'ERR_BAD_OPTION_VALUE',
+    'ERR_BAD_OPTION',
+    'ECONNABORTED',
+    'ETIMEDOUT',
+    'ERR_NETWORK',
+    'ERR_FR_TOO_MANY_REDIRECTS',
+    'ERR_DEPRECATED',
+    'ERR_BAD_RESPONSE',
+    'ERR_BAD_REQUEST',
+    'ERR_CANCELED',
+    'ERR_NOT_SUPPORT',
+    'ERR_INVALID_URL'
+].forEach(code => {
+    descriptors[code] = { value: code };
+});
+Object.defineProperties(AxiosError, descriptors);
+Object.defineProperty(AxiosError_prototype, 'isAxiosError', { value: true });
+AxiosError.from = (error, code, config, request, response, customProps) => {
+    const axiosError = Object.create(AxiosError_prototype);
+    utils.toFlatObject(error, axiosError, function filter(obj) {
+        return obj !== Error.prototype;
+    }, prop => {
+        return prop !== 'isAxiosError';
+    });
+    AxiosError.call(axiosError, error.message, code, config, request, response);
+    axiosError.cause = error;
+    axiosError.name = error.name;
+    customProps && Object.assign(axiosError, customProps);
+    return axiosError;
+};
+/* harmony default export */ const core_AxiosError = (AxiosError);
+
+;// ./node_modules/axios/lib/helpers/null.js
+/* harmony default export */ const helpers_null = (null);
+
+;// ./node_modules/axios/lib/helpers/toFormData.js
+
+
+
+
+function isVisitable(thing) {
+    return utils.isPlainObject(thing) || utils.isArray(thing);
+}
+function removeBrackets(key) {
+    return utils.endsWith(key, '[]') ? key.slice(0, -2) : key;
+}
+function renderKey(path, key, dots) {
+    if (!path)
+        return key;
+    return path.concat(key).map(function each(token, i) {
+        token = removeBrackets(token);
+        return !dots && i ? '[' + token + ']' : token;
+    }).join(dots ? '.' : '');
+}
+function isFlatArray(arr) {
+    return utils.isArray(arr) && !arr.some(isVisitable);
+}
+const predicates = utils.toFlatObject(utils, {}, null, function filter(prop) {
+    return /^is[A-Z]/.test(prop);
+});
+function toFormData(obj, formData, options) {
+    if (!utils.isObject(obj)) {
+        throw new TypeError('target must be an object');
+    }
+    formData = formData || new (helpers_null || FormData)();
+    options = utils.toFlatObject(options, {
+        metaTokens: true,
+        dots: false,
+        indexes: false
+    }, false, function defined(option, source) {
+        return !utils.isUndefined(source[option]);
+    });
+    const metaTokens = options.metaTokens;
+    const visitor = options.visitor || defaultVisitor;
+    const dots = options.dots;
+    const indexes = options.indexes;
+    const _Blob = options.Blob || typeof Blob !== 'undefined' && Blob;
+    const useBlob = _Blob && utils.isSpecCompliantForm(formData);
+    if (!utils.isFunction(visitor)) {
+        throw new TypeError('visitor must be a function');
+    }
+    function convertValue(value) {
+        if (value === null)
+            return '';
+        if (utils.isDate(value)) {
+            return value.toISOString();
+        }
+        if (utils.isBoolean(value)) {
+            return value.toString();
+        }
+        if (!useBlob && utils.isBlob(value)) {
+            throw new core_AxiosError('Blob is not supported. Use a Buffer instead.');
+        }
+        if (utils.isArrayBuffer(value) || utils.isTypedArray(value)) {
+            return useBlob && typeof Blob === 'function' ? new Blob([value]) : Buffer.from(value);
+        }
+        return value;
+    }
+    function defaultVisitor(value, key, path) {
+        let arr = value;
+        if (value && !path && typeof value === 'object') {
+            if (utils.endsWith(key, '{}')) {
+                key = metaTokens ? key : key.slice(0, -2);
+                value = JSON.stringify(value);
+            }
+            else if ((utils.isArray(value) && isFlatArray(value)) ||
+                ((utils.isFileList(value) || utils.endsWith(key, '[]')) && (arr = utils.toArray(value)))) {
+                key = removeBrackets(key);
+                arr.forEach(function each(el, index) {
+                    !(utils.isUndefined(el) || el === null) && formData.append(indexes === true ? renderKey([key], index, dots) : (indexes === null ? key : key + '[]'), convertValue(el));
+                });
+                return false;
+            }
+        }
+        if (isVisitable(value)) {
+            return true;
+        }
+        formData.append(renderKey(path, key, dots), convertValue(value));
+        return false;
+    }
+    const stack = [];
+    const exposedHelpers = Object.assign(predicates, {
+        defaultVisitor,
+        convertValue,
+        isVisitable
+    });
+    function build(value, path) {
+        if (utils.isUndefined(value))
+            return;
+        if (stack.indexOf(value) !== -1) {
+            throw Error('Circular reference detected in ' + path.join('.'));
+        }
+        stack.push(value);
+        utils.forEach(value, function each(el, key) {
+            const result = !(utils.isUndefined(el) || el === null) && visitor.call(formData, el, utils.isString(key) ? key.trim() : key, path, exposedHelpers);
+            if (result === true) {
+                build(el, path ? path.concat(key) : [key]);
             }
         });
-        // record document changes
-        const updateListener = EditorView.updateListener.of((update) => {
-            if (!this.manager || this.manager.paused || !this.manager.active)
-                return;
-            // get selection change (if any)
-            const transactions = update.transactions
-                .map((t) => {
-                if (!t.selection)
-                    return null;
-                const range = t.selection.ranges[0];
-                return [range.anchor, range.head];
-            })
-                .filter(Boolean)
-                .slice(-1);
-            // empty events can break replay
-            if (update.changes.empty && transactions.length === 0)
-                return;
-            this.capture(this.manager.getTime(), [
-                update.changes.toJSON(),
-                ...transactions,
-                // biome-ignore lint/suspicious/noExplicitAny: TODO
-            ]);
+        stack.pop();
+    }
+    if (!utils.isObject(obj)) {
+        throw new TypeError('data must be an object');
+    }
+    build(obj);
+    return formData;
+}
+/* harmony default export */ const helpers_toFormData = (toFormData);
+
+;// ./node_modules/axios/lib/helpers/AxiosURLSearchParams.js
+
+
+function encode(str) {
+    const charMap = {
+        '!': '%21',
+        "'": '%27',
+        '(': '%28',
+        ')': '%29',
+        '~': '%7E',
+        '%20': '+',
+        '%00': '\x00'
+    };
+    return encodeURIComponent(str).replace(/[!'()~]|%20|%00/g, function replacer(match) {
+        return charMap[match];
+    });
+}
+function AxiosURLSearchParams(params, options) {
+    this._pairs = [];
+    params && helpers_toFormData(params, this, options);
+}
+const AxiosURLSearchParams_prototype = AxiosURLSearchParams.prototype;
+AxiosURLSearchParams_prototype.append = function append(name, value) {
+    this._pairs.push([name, value]);
+};
+AxiosURLSearchParams_prototype.toString = function toString(encoder) {
+    const _encode = encoder ? function (value) {
+        return encoder.call(this, value, encode);
+    } : encode;
+    return this._pairs.map(function each(pair) {
+        return _encode(pair[0]) + '=' + _encode(pair[1]);
+    }, '').join('&');
+};
+/* harmony default export */ const helpers_AxiosURLSearchParams = (AxiosURLSearchParams);
+
+;// ./node_modules/axios/lib/helpers/buildURL.js
+
+
+
+function buildURL_encode(val) {
+    return encodeURIComponent(val).
+        replace(/%3A/gi, ':').
+        replace(/%24/g, '$').
+        replace(/%2C/gi, ',').
+        replace(/%20/g, '+').
+        replace(/%5B/gi, '[').
+        replace(/%5D/gi, ']');
+}
+function buildURL(url, params, options) {
+    if (!params) {
+        return url;
+    }
+    const _encode = options && options.encode || buildURL_encode;
+    if (utils.isFunction(options)) {
+        options = {
+            serialize: options
+        };
+    }
+    const serializeFn = options && options.serialize;
+    let serializedParams;
+    if (serializeFn) {
+        serializedParams = serializeFn(params, options);
+    }
+    else {
+        serializedParams = utils.isURLSearchParams(params) ?
+            params.toString() :
+            new helpers_AxiosURLSearchParams(params, options).toString(_encode);
+    }
+    if (serializedParams) {
+        const hashmarkIndex = url.indexOf("#");
+        if (hashmarkIndex !== -1) {
+            url = url.slice(0, hashmarkIndex);
+        }
+        url += (url.indexOf('?') === -1 ? '?' : '&') + serializedParams;
+    }
+    return url;
+}
+
+;// ./node_modules/axios/lib/core/InterceptorManager.js
+
+
+class InterceptorManager {
+    constructor() {
+        this.handlers = [];
+    }
+    use(fulfilled, rejected, options) {
+        this.handlers.push({
+            fulfilled,
+            rejected,
+            synchronous: options ? options.synchronous : false,
+            runWhen: options ? options.runWhen : null
         });
-        // record special key presses
-        const keyListener = keymap.of(Object.keys(specialKeys).map((key) => ({
-            key,
-            run: () => {
-                if (this.manager?.active && !this.manager.paused) {
-                    this.capture(this.manager.getTime(), specialKeys[key]);
-                }
-                return false;
-            },
-        })));
-        return [scrollListener, updateListener, keyListener];
+        return this.handlers.length - 1;
+    }
+    eject(id) {
+        if (this.handlers[id]) {
+            this.handlers[id] = null;
+        }
+    }
+    clear() {
+        if (this.handlers) {
+            this.handlers = [];
+        }
+    }
+    forEach(fn) {
+        utils.forEach(this.handlers, function forEachHandler(h) {
+            if (h !== null) {
+                fn(h);
+            }
+        });
     }
 }
-const KeySaveComponent = (props) => {
-    return ((0,jsx_runtime.jsx)(jsx_runtime.Fragment, { children: (0,jsx_runtime.jsx)("textarea", { readOnly: true, value: JSON.stringify(props.data) }) }));
-};
-const recording_CodeRecording = {
-    enabled: () => true,
-    icon: icon_icon,
-    key: "codemirror",
-    name: "Code",
-    recorder: new CodeRecorder(),
-    saveComponent: KeySaveComponent,
-    title: "Record code",
-};
+/* harmony default export */ const core_InterceptorManager = (InterceptorManager);
 
-;// ./src/@development/ui.tsx
+;// ./node_modules/axios/lib/defaults/transitional.js
+
+/* harmony default export */ const defaults_transitional = ({
+    silentJSONParsing: true,
+    forcedJSONParsing: true,
+    clarifyTimeoutError: false
+});
+
+;// ./node_modules/axios/lib/platform/browser/classes/URLSearchParams.js
 
 
+/* harmony default export */ const classes_URLSearchParams = (typeof URLSearchParams !== 'undefined' ? URLSearchParams : helpers_AxiosURLSearchParams);
+
+;// ./node_modules/axios/lib/platform/browser/classes/FormData.js
+
+/* harmony default export */ const classes_FormData = (typeof FormData !== 'undefined' ? FormData : null);
+
+;// ./node_modules/axios/lib/platform/browser/classes/Blob.js
+
+/* harmony default export */ const classes_Blob = (typeof Blob !== 'undefined' ? Blob : null);
+
+;// ./node_modules/axios/lib/platform/browser/index.js
+
+
+
+/* harmony default export */ const platform_browser = ({
+    isBrowser: true,
+    classes: {
+        URLSearchParams: classes_URLSearchParams,
+        FormData: classes_FormData,
+        Blob: classes_Blob
+    },
+    protocols: ['http', 'https', 'file', 'blob', 'url', 'data']
+});
+
+;// ./node_modules/axios/lib/platform/common/utils.js
+const hasBrowserEnv = typeof window !== 'undefined' && typeof document !== 'undefined';
+const _navigator = typeof navigator === 'object' && navigator || undefined;
+const hasStandardBrowserEnv = hasBrowserEnv &&
+    (!_navigator || ['ReactNative', 'NativeScript', 'NS'].indexOf(_navigator.product) < 0);
+const hasStandardBrowserWebWorkerEnv = (() => {
+    return (typeof WorkerGlobalScope !== 'undefined' &&
+        self instanceof WorkerGlobalScope &&
+        typeof self.importScripts === 'function');
+})();
+const origin = hasBrowserEnv && window.location.href || 'http://localhost';
+
+
+;// ./node_modules/axios/lib/platform/index.js
+
+
+/* harmony default export */ const platform = (Object.assign(Object.assign({}, common_utils_namespaceObject), platform_browser));
+
+;// ./node_modules/axios/lib/helpers/toURLEncodedForm.js
 
 
 
 
-const ui_content = `
-      // The main function where the program execution begins
-    int main() {
-    // Create an instance of the Car class
-    Car myCar("Toyota", "Camry", 2023);
-
-    // Use the object's methods
-    myCar.displayInfo();
-    myCar.startEngine();
-    myCar.startEngine(); // Trying to start it again
-    myCar.stopEngine();
-
-    return 0;
+function toURLEncodedForm(data, options) {
+    return helpers_toFormData(data, new platform.classes.URLSearchParams(), Object.assign({ visitor: function (value, key, path, helpers) {
+            if (platform.isNode && utils.isBuffer(value)) {
+                this.append(key, value.toString('base64'));
+                return false;
+            }
+            return helpers.defaultVisitor.apply(this, arguments);
+        } }, options));
 }
-  `;
-function UI() {
-    const extensions = React.useMemo(() => [basicSetup, cpp(), javascript()], []);
-    return (_jsx(CodeBooth, Object.assign({ recorder: CodeRecording.recorder }, { children: _jsx(Record, { extensions: extensions, filename: 'test.ts' }) })));
+
+;// ./node_modules/axios/lib/helpers/formDataToJSON.js
+
+
+function parsePropPath(name) {
+    return utils.matchAll(/\w+|\[(\w*)]/g, name).map(match => {
+        return match[0] === '[]' ? '' : match[1] || match[0];
+    });
 }
-/* harmony default export */ const ui = ((/* unused pure expression or super */ null && (UI)));
-
-;// ./src/@production/ui.tsx
-
-
-
-
-
-console.log('Hi there');
-function ui_UI() {
-    const [data, setData] = (0,react.useState)(null);
-    (0,react.useEffect)(() => {
-        loadJSON('code')
-            .then(json => {
-            console.log('Replay data loaded:', json);
-            setData(json);
-        })
-            .catch(err => {
-            console.error('Failed to load replay data:', err);
+function arrayToObject(arr) {
+    const obj = {};
+    const keys = Object.keys(arr);
+    let i;
+    const len = keys.length;
+    let key;
+    for (i = 0; i < len; i++) {
+        key = keys[i];
+        obj[key] = arr[key];
+    }
+    return obj;
+}
+function formDataToJSON(formData) {
+    function buildPath(path, value, target, index) {
+        let name = path[index++];
+        if (name === '__proto__')
+            return true;
+        const isNumericKey = Number.isFinite(+name);
+        const isLast = index >= path.length;
+        name = !name && utils.isArray(target) ? target.length : name;
+        if (isLast) {
+            if (utils.hasOwnProp(target, name)) {
+                target[name] = [target[name], value];
+            }
+            else {
+                target[name] = value;
+            }
+            return !isNumericKey;
+        }
+        if (!target[name] || !utils.isObject(target[name])) {
+            target[name] = [];
+        }
+        const result = buildPath(path, value, target[name], index);
+        if (result && utils.isArray(target[name])) {
+            target[name] = arrayToObject(target[name]);
+        }
+        return !isNumericKey;
+    }
+    if (utils.isFormData(formData) && utils.isFunction(formData.entries)) {
+        const obj = {};
+        utils.forEachEntry(formData, (name, value) => {
+            buildPath(parsePropPath(name), value, obj, 0);
         });
-    }, []);
-    if (!data)
-        return (0,jsx_runtime.jsx)("div", { children: "Loading replay..." });
-    return ((0,jsx_runtime.jsx)(esm_CodeBooth, { children: (0,jsx_runtime.jsx)(Replay, { replay: loadJSON('code'), content: ui_content }) }));
+        return obj;
+    }
+    return null;
+}
+/* harmony default export */ const helpers_formDataToJSON = (formDataToJSON);
+
+;// ./node_modules/axios/lib/defaults/index.js
+
+
+
+
+
+
+
+
+function stringifySafely(rawValue, parser, encoder) {
+    if (utils.isString(rawValue)) {
+        try {
+            (parser || JSON.parse)(rawValue);
+            return utils.trim(rawValue);
+        }
+        catch (e) {
+            if (e.name !== 'SyntaxError') {
+                throw e;
+            }
+        }
+    }
+    return (encoder || JSON.stringify)(rawValue);
+}
+const defaults_defaults = {
+    transitional: defaults_transitional,
+    adapter: ['xhr', 'http', 'fetch'],
+    transformRequest: [function transformRequest(data, headers) {
+            const contentType = headers.getContentType() || '';
+            const hasJSONContentType = contentType.indexOf('application/json') > -1;
+            const isObjectPayload = utils.isObject(data);
+            if (isObjectPayload && utils.isHTMLForm(data)) {
+                data = new FormData(data);
+            }
+            const isFormData = utils.isFormData(data);
+            if (isFormData) {
+                return hasJSONContentType ? JSON.stringify(helpers_formDataToJSON(data)) : data;
+            }
+            if (utils.isArrayBuffer(data) ||
+                utils.isBuffer(data) ||
+                utils.isStream(data) ||
+                utils.isFile(data) ||
+                utils.isBlob(data) ||
+                utils.isReadableStream(data)) {
+                return data;
+            }
+            if (utils.isArrayBufferView(data)) {
+                return data.buffer;
+            }
+            if (utils.isURLSearchParams(data)) {
+                headers.setContentType('application/x-www-form-urlencoded;charset=utf-8', false);
+                return data.toString();
+            }
+            let isFileList;
+            if (isObjectPayload) {
+                if (contentType.indexOf('application/x-www-form-urlencoded') > -1) {
+                    return toURLEncodedForm(data, this.formSerializer).toString();
+                }
+                if ((isFileList = utils.isFileList(data)) || contentType.indexOf('multipart/form-data') > -1) {
+                    const _FormData = this.env && this.env.FormData;
+                    return helpers_toFormData(isFileList ? { 'files[]': data } : data, _FormData && new _FormData(), this.formSerializer);
+                }
+            }
+            if (isObjectPayload || hasJSONContentType) {
+                headers.setContentType('application/json', false);
+                return stringifySafely(data);
+            }
+            return data;
+        }],
+    transformResponse: [function transformResponse(data) {
+            const transitional = this.transitional || defaults_defaults.transitional;
+            const forcedJSONParsing = transitional && transitional.forcedJSONParsing;
+            const JSONRequested = this.responseType === 'json';
+            if (utils.isResponse(data) || utils.isReadableStream(data)) {
+                return data;
+            }
+            if (data && utils.isString(data) && ((forcedJSONParsing && !this.responseType) || JSONRequested)) {
+                const silentJSONParsing = transitional && transitional.silentJSONParsing;
+                const strictJSONParsing = !silentJSONParsing && JSONRequested;
+                try {
+                    return JSON.parse(data);
+                }
+                catch (e) {
+                    if (strictJSONParsing) {
+                        if (e.name === 'SyntaxError') {
+                            throw core_AxiosError.from(e, core_AxiosError.ERR_BAD_RESPONSE, this, null, this.response);
+                        }
+                        throw e;
+                    }
+                }
+            }
+            return data;
+        }],
+    timeout: 0,
+    xsrfCookieName: 'XSRF-TOKEN',
+    xsrfHeaderName: 'X-XSRF-TOKEN',
+    maxContentLength: -1,
+    maxBodyLength: -1,
+    env: {
+        FormData: platform.classes.FormData,
+        Blob: platform.classes.Blob
+    },
+    validateStatus: function validateStatus(status) {
+        return status >= 200 && status < 300;
+    },
+    headers: {
+        common: {
+            'Accept': 'application/json, text/plain, */*',
+            'Content-Type': undefined
+        }
+    }
+};
+utils.forEach(['delete', 'get', 'head', 'post', 'put', 'patch'], (method) => {
+    defaults_defaults.headers[method] = {};
+});
+/* harmony default export */ const lib_defaults = (defaults_defaults);
+
+;// ./node_modules/axios/lib/helpers/parseHeaders.js
+
+
+const ignoreDuplicateOf = utils.toObjectSet([
+    'age', 'authorization', 'content-length', 'content-type', 'etag',
+    'expires', 'from', 'host', 'if-modified-since', 'if-unmodified-since',
+    'last-modified', 'location', 'max-forwards', 'proxy-authorization',
+    'referer', 'retry-after', 'user-agent'
+]);
+/* harmony default export */ const parseHeaders = (rawHeaders => {
+    const parsed = {};
+    let key;
+    let val;
+    let i;
+    rawHeaders && rawHeaders.split('\n').forEach(function parser(line) {
+        i = line.indexOf(':');
+        key = line.substring(0, i).trim().toLowerCase();
+        val = line.substring(i + 1).trim();
+        if (!key || (parsed[key] && ignoreDuplicateOf[key])) {
+            return;
+        }
+        if (key === 'set-cookie') {
+            if (parsed[key]) {
+                parsed[key].push(val);
+            }
+            else {
+                parsed[key] = [val];
+            }
+        }
+        else {
+            parsed[key] = parsed[key] ? parsed[key] + ', ' + val : val;
+        }
+    });
+    return parsed;
+});
+
+;// ./node_modules/axios/lib/core/AxiosHeaders.js
+
+
+
+const $internals = Symbol('internals');
+function normalizeHeader(header) {
+    return header && String(header).trim().toLowerCase();
+}
+function normalizeValue(value) {
+    if (value === false || value == null) {
+        return value;
+    }
+    return utils.isArray(value) ? value.map(normalizeValue) : String(value);
+}
+function parseTokens(str) {
+    const tokens = Object.create(null);
+    const tokensRE = /([^\s,;=]+)\s*(?:=\s*([^,;]+))?/g;
+    let match;
+    while ((match = tokensRE.exec(str))) {
+        tokens[match[1]] = match[2];
+    }
+    return tokens;
+}
+const isValidHeaderName = (str) => /^[-_a-zA-Z0-9^`|~,!#$%&'*+.]+$/.test(str.trim());
+function matchHeaderValue(context, value, header, filter, isHeaderNameFilter) {
+    if (utils.isFunction(filter)) {
+        return filter.call(this, value, header);
+    }
+    if (isHeaderNameFilter) {
+        value = header;
+    }
+    if (!utils.isString(value))
+        return;
+    if (utils.isString(filter)) {
+        return value.indexOf(filter) !== -1;
+    }
+    if (utils.isRegExp(filter)) {
+        return filter.test(value);
+    }
+}
+function formatHeader(header) {
+    return header.trim()
+        .toLowerCase().replace(/([a-z\d])(\w*)/g, (w, char, str) => {
+        return char.toUpperCase() + str;
+    });
+}
+function buildAccessors(obj, header) {
+    const accessorName = utils.toCamelCase(' ' + header);
+    ['get', 'set', 'has'].forEach(methodName => {
+        Object.defineProperty(obj, methodName + accessorName, {
+            value: function (arg1, arg2, arg3) {
+                return this[methodName].call(this, header, arg1, arg2, arg3);
+            },
+            configurable: true
+        });
+    });
+}
+class AxiosHeaders {
+    constructor(headers) {
+        headers && this.set(headers);
+    }
+    set(header, valueOrRewrite, rewrite) {
+        const self = this;
+        function setHeader(_value, _header, _rewrite) {
+            const lHeader = normalizeHeader(_header);
+            if (!lHeader) {
+                throw new Error('header name must be a non-empty string');
+            }
+            const key = utils.findKey(self, lHeader);
+            if (!key || self[key] === undefined || _rewrite === true || (_rewrite === undefined && self[key] !== false)) {
+                self[key || _header] = normalizeValue(_value);
+            }
+        }
+        const setHeaders = (headers, _rewrite) => utils.forEach(headers, (_value, _header) => setHeader(_value, _header, _rewrite));
+        if (utils.isPlainObject(header) || header instanceof this.constructor) {
+            setHeaders(header, valueOrRewrite);
+        }
+        else if (utils.isString(header) && (header = header.trim()) && !isValidHeaderName(header)) {
+            setHeaders(parseHeaders(header), valueOrRewrite);
+        }
+        else if (utils.isObject(header) && utils.isIterable(header)) {
+            let obj = {}, dest, key;
+            for (const entry of header) {
+                if (!utils.isArray(entry)) {
+                    throw TypeError('Object iterator must return a key-value pair');
+                }
+                obj[key = entry[0]] = (dest = obj[key]) ?
+                    (utils.isArray(dest) ? [...dest, entry[1]] : [dest, entry[1]]) : entry[1];
+            }
+            setHeaders(obj, valueOrRewrite);
+        }
+        else {
+            header != null && setHeader(valueOrRewrite, header, rewrite);
+        }
+        return this;
+    }
+    get(header, parser) {
+        header = normalizeHeader(header);
+        if (header) {
+            const key = utils.findKey(this, header);
+            if (key) {
+                const value = this[key];
+                if (!parser) {
+                    return value;
+                }
+                if (parser === true) {
+                    return parseTokens(value);
+                }
+                if (utils.isFunction(parser)) {
+                    return parser.call(this, value, key);
+                }
+                if (utils.isRegExp(parser)) {
+                    return parser.exec(value);
+                }
+                throw new TypeError('parser must be boolean|regexp|function');
+            }
+        }
+    }
+    has(header, matcher) {
+        header = normalizeHeader(header);
+        if (header) {
+            const key = utils.findKey(this, header);
+            return !!(key && this[key] !== undefined && (!matcher || matchHeaderValue(this, this[key], key, matcher)));
+        }
+        return false;
+    }
+    delete(header, matcher) {
+        const self = this;
+        let deleted = false;
+        function deleteHeader(_header) {
+            _header = normalizeHeader(_header);
+            if (_header) {
+                const key = utils.findKey(self, _header);
+                if (key && (!matcher || matchHeaderValue(self, self[key], key, matcher))) {
+                    delete self[key];
+                    deleted = true;
+                }
+            }
+        }
+        if (utils.isArray(header)) {
+            header.forEach(deleteHeader);
+        }
+        else {
+            deleteHeader(header);
+        }
+        return deleted;
+    }
+    clear(matcher) {
+        const keys = Object.keys(this);
+        let i = keys.length;
+        let deleted = false;
+        while (i--) {
+            const key = keys[i];
+            if (!matcher || matchHeaderValue(this, this[key], key, matcher, true)) {
+                delete this[key];
+                deleted = true;
+            }
+        }
+        return deleted;
+    }
+    normalize(format) {
+        const self = this;
+        const headers = {};
+        utils.forEach(this, (value, header) => {
+            const key = utils.findKey(headers, header);
+            if (key) {
+                self[key] = normalizeValue(value);
+                delete self[header];
+                return;
+            }
+            const normalized = format ? formatHeader(header) : String(header).trim();
+            if (normalized !== header) {
+                delete self[header];
+            }
+            self[normalized] = normalizeValue(value);
+            headers[normalized] = true;
+        });
+        return this;
+    }
+    concat(...targets) {
+        return this.constructor.concat(this, ...targets);
+    }
+    toJSON(asStrings) {
+        const obj = Object.create(null);
+        utils.forEach(this, (value, header) => {
+            value != null && value !== false && (obj[header] = asStrings && utils.isArray(value) ? value.join(', ') : value);
+        });
+        return obj;
+    }
+    [Symbol.iterator]() {
+        return Object.entries(this.toJSON())[Symbol.iterator]();
+    }
+    toString() {
+        return Object.entries(this.toJSON()).map(([header, value]) => header + ': ' + value).join('\n');
+    }
+    getSetCookie() {
+        return this.get("set-cookie") || [];
+    }
+    get [Symbol.toStringTag]() {
+        return 'AxiosHeaders';
+    }
+    static from(thing) {
+        return thing instanceof this ? thing : new this(thing);
+    }
+    static concat(first, ...targets) {
+        const computed = new this(first);
+        targets.forEach((target) => computed.set(target));
+        return computed;
+    }
+    static accessor(header) {
+        const internals = this[$internals] = (this[$internals] = {
+            accessors: {}
+        });
+        const accessors = internals.accessors;
+        const prototype = this.prototype;
+        function defineAccessor(_header) {
+            const lHeader = normalizeHeader(_header);
+            if (!accessors[lHeader]) {
+                buildAccessors(prototype, _header);
+                accessors[lHeader] = true;
+            }
+        }
+        utils.isArray(header) ? header.forEach(defineAccessor) : defineAccessor(header);
+        return this;
+    }
+}
+AxiosHeaders.accessor(['Content-Type', 'Content-Length', 'Accept', 'Accept-Encoding', 'User-Agent', 'Authorization']);
+utils.reduceDescriptors(AxiosHeaders.prototype, ({ value }, key) => {
+    let mapped = key[0].toUpperCase() + key.slice(1);
+    return {
+        get: () => value,
+        set(headerValue) {
+            this[mapped] = headerValue;
+        }
+    };
+});
+utils.freezeMethods(AxiosHeaders);
+/* harmony default export */ const core_AxiosHeaders = (AxiosHeaders);
+
+;// ./node_modules/axios/lib/core/transformData.js
+
+
+
+
+function transformData(fns, response) {
+    const config = this || lib_defaults;
+    const context = response || config;
+    const headers = core_AxiosHeaders.from(context.headers);
+    let data = context.data;
+    utils.forEach(fns, function transform(fn) {
+        data = fn.call(config, data, headers.normalize(), response ? response.status : undefined);
+    });
+    headers.normalize();
+    return data;
 }
 
-;// ./src/@production/index.tsx
+;// ./node_modules/axios/lib/cancel/isCancel.js
+
+function isCancel(value) {
+    return !!(value && value.__CANCEL__);
+}
+
+;// ./node_modules/axios/lib/cancel/CanceledError.js
+
+
+
+function CanceledError(message, config, request) {
+    core_AxiosError.call(this, message == null ? 'canceled' : message, core_AxiosError.ERR_CANCELED, config, request);
+    this.name = 'CanceledError';
+}
+utils.inherits(CanceledError, core_AxiosError, {
+    __CANCEL__: true
+});
+/* harmony default export */ const cancel_CanceledError = (CanceledError);
+
+;// ./node_modules/axios/lib/core/settle.js
+
+
+function settle(resolve, reject, response) {
+    const validateStatus = response.config.validateStatus;
+    if (!response.status || !validateStatus || validateStatus(response.status)) {
+        resolve(response);
+    }
+    else {
+        reject(new core_AxiosError('Request failed with status code ' + response.status, [core_AxiosError.ERR_BAD_REQUEST, core_AxiosError.ERR_BAD_RESPONSE][Math.floor(response.status / 100) - 4], response.config, response.request, response));
+    }
+}
+
+;// ./node_modules/axios/lib/helpers/parseProtocol.js
+
+function parseProtocol(url) {
+    const match = /^([-+\w]{1,25})(:?\/\/|:)/.exec(url);
+    return match && match[1] || '';
+}
+
+;// ./node_modules/axios/lib/helpers/speedometer.js
+
+function speedometer(samplesCount, min) {
+    samplesCount = samplesCount || 10;
+    const bytes = new Array(samplesCount);
+    const timestamps = new Array(samplesCount);
+    let head = 0;
+    let tail = 0;
+    let firstSampleTS;
+    min = min !== undefined ? min : 1000;
+    return function push(chunkLength) {
+        const now = Date.now();
+        const startedAt = timestamps[tail];
+        if (!firstSampleTS) {
+            firstSampleTS = now;
+        }
+        bytes[head] = chunkLength;
+        timestamps[head] = now;
+        let i = tail;
+        let bytesCount = 0;
+        while (i !== head) {
+            bytesCount += bytes[i++];
+            i = i % samplesCount;
+        }
+        head = (head + 1) % samplesCount;
+        if (head === tail) {
+            tail = (tail + 1) % samplesCount;
+        }
+        if (now - firstSampleTS < min) {
+            return;
+        }
+        const passed = startedAt && now - startedAt;
+        return passed ? Math.round(bytesCount * 1000 / passed) : undefined;
+    };
+}
+/* harmony default export */ const helpers_speedometer = (speedometer);
+
+;// ./node_modules/axios/lib/helpers/throttle.js
+function throttle(fn, freq) {
+    let timestamp = 0;
+    let threshold = 1000 / freq;
+    let lastArgs;
+    let timer;
+    const invoke = (args, now = Date.now()) => {
+        timestamp = now;
+        lastArgs = null;
+        if (timer) {
+            clearTimeout(timer);
+            timer = null;
+        }
+        fn(...args);
+    };
+    const throttled = (...args) => {
+        const now = Date.now();
+        const passed = now - timestamp;
+        if (passed >= threshold) {
+            invoke(args, now);
+        }
+        else {
+            lastArgs = args;
+            if (!timer) {
+                timer = setTimeout(() => {
+                    timer = null;
+                    invoke(lastArgs);
+                }, threshold - passed);
+            }
+        }
+    };
+    const flush = () => lastArgs && invoke(lastArgs);
+    return [throttled, flush];
+}
+/* harmony default export */ const helpers_throttle = (throttle);
+
+;// ./node_modules/axios/lib/helpers/progressEventReducer.js
+
+
+
+const progressEventReducer = (listener, isDownloadStream, freq = 3) => {
+    let bytesNotified = 0;
+    const _speedometer = helpers_speedometer(50, 250);
+    return helpers_throttle(e => {
+        const loaded = e.loaded;
+        const total = e.lengthComputable ? e.total : undefined;
+        const progressBytes = loaded - bytesNotified;
+        const rate = _speedometer(progressBytes);
+        const inRange = loaded <= total;
+        bytesNotified = loaded;
+        const data = {
+            loaded,
+            total,
+            progress: total ? (loaded / total) : undefined,
+            bytes: progressBytes,
+            rate: rate ? rate : undefined,
+            estimated: rate && total && inRange ? (total - loaded) / rate : undefined,
+            event: e,
+            lengthComputable: total != null,
+            [isDownloadStream ? 'download' : 'upload']: true
+        };
+        listener(data);
+    }, freq);
+};
+const progressEventDecorator = (total, throttled) => {
+    const lengthComputable = total != null;
+    return [(loaded) => throttled[0]({
+            lengthComputable,
+            total,
+            loaded
+        }), throttled[1]];
+};
+const asyncDecorator = (fn) => (...args) => utils.asap(() => fn(...args));
+
+;// ./node_modules/axios/lib/helpers/isURLSameOrigin.js
+
+/* harmony default export */ const isURLSameOrigin = (platform.hasStandardBrowserEnv ? ((origin, isMSIE) => (url) => {
+    url = new URL(url, platform.origin);
+    return (origin.protocol === url.protocol &&
+        origin.host === url.host &&
+        (isMSIE || origin.port === url.port));
+})(new URL(platform.origin), platform.navigator && /(msie|trident)/i.test(platform.navigator.userAgent)) : () => true);
+
+;// ./node_modules/axios/lib/helpers/cookies.js
+
+
+/* harmony default export */ const cookies = (platform.hasStandardBrowserEnv ?
+    {
+        write(name, value, expires, path, domain, secure) {
+            const cookie = [name + '=' + encodeURIComponent(value)];
+            utils.isNumber(expires) && cookie.push('expires=' + new Date(expires).toGMTString());
+            utils.isString(path) && cookie.push('path=' + path);
+            utils.isString(domain) && cookie.push('domain=' + domain);
+            secure === true && cookie.push('secure');
+            document.cookie = cookie.join('; ');
+        },
+        read(name) {
+            const match = document.cookie.match(new RegExp('(^|;\\s*)(' + name + ')=([^;]*)'));
+            return (match ? decodeURIComponent(match[3]) : null);
+        },
+        remove(name) {
+            this.write(name, '', Date.now() - 86400000);
+        }
+    }
+    :
+        {
+            write() { },
+            read() {
+                return null;
+            },
+            remove() { }
+        });
+
+;// ./node_modules/axios/lib/helpers/isAbsoluteURL.js
+
+function isAbsoluteURL(url) {
+    return /^([a-z][a-z\d+\-.]*:)?\/\//i.test(url);
+}
+
+;// ./node_modules/axios/lib/helpers/combineURLs.js
+
+function combineURLs(baseURL, relativeURL) {
+    return relativeURL
+        ? baseURL.replace(/\/?\/$/, '') + '/' + relativeURL.replace(/^\/+/, '')
+        : baseURL;
+}
+
+;// ./node_modules/axios/lib/core/buildFullPath.js
+
+
+
+function buildFullPath(baseURL, requestedURL, allowAbsoluteUrls) {
+    let isRelativeUrl = !isAbsoluteURL(requestedURL);
+    if (baseURL && (isRelativeUrl || allowAbsoluteUrls == false)) {
+        return combineURLs(baseURL, requestedURL);
+    }
+    return requestedURL;
+}
+
+;// ./node_modules/axios/lib/core/mergeConfig.js
+
+
+
+const headersToObject = (thing) => thing instanceof core_AxiosHeaders ? Object.assign({}, thing) : thing;
+function mergeConfig(config1, config2) {
+    config2 = config2 || {};
+    const config = {};
+    function getMergedValue(target, source, prop, caseless) {
+        if (utils.isPlainObject(target) && utils.isPlainObject(source)) {
+            return utils.merge.call({ caseless }, target, source);
+        }
+        else if (utils.isPlainObject(source)) {
+            return utils.merge({}, source);
+        }
+        else if (utils.isArray(source)) {
+            return source.slice();
+        }
+        return source;
+    }
+    function mergeDeepProperties(a, b, prop, caseless) {
+        if (!utils.isUndefined(b)) {
+            return getMergedValue(a, b, prop, caseless);
+        }
+        else if (!utils.isUndefined(a)) {
+            return getMergedValue(undefined, a, prop, caseless);
+        }
+    }
+    function valueFromConfig2(a, b) {
+        if (!utils.isUndefined(b)) {
+            return getMergedValue(undefined, b);
+        }
+    }
+    function defaultToConfig2(a, b) {
+        if (!utils.isUndefined(b)) {
+            return getMergedValue(undefined, b);
+        }
+        else if (!utils.isUndefined(a)) {
+            return getMergedValue(undefined, a);
+        }
+    }
+    function mergeDirectKeys(a, b, prop) {
+        if (prop in config2) {
+            return getMergedValue(a, b);
+        }
+        else if (prop in config1) {
+            return getMergedValue(undefined, a);
+        }
+    }
+    const mergeMap = {
+        url: valueFromConfig2,
+        method: valueFromConfig2,
+        data: valueFromConfig2,
+        baseURL: defaultToConfig2,
+        transformRequest: defaultToConfig2,
+        transformResponse: defaultToConfig2,
+        paramsSerializer: defaultToConfig2,
+        timeout: defaultToConfig2,
+        timeoutMessage: defaultToConfig2,
+        withCredentials: defaultToConfig2,
+        withXSRFToken: defaultToConfig2,
+        adapter: defaultToConfig2,
+        responseType: defaultToConfig2,
+        xsrfCookieName: defaultToConfig2,
+        xsrfHeaderName: defaultToConfig2,
+        onUploadProgress: defaultToConfig2,
+        onDownloadProgress: defaultToConfig2,
+        decompress: defaultToConfig2,
+        maxContentLength: defaultToConfig2,
+        maxBodyLength: defaultToConfig2,
+        beforeRedirect: defaultToConfig2,
+        transport: defaultToConfig2,
+        httpAgent: defaultToConfig2,
+        httpsAgent: defaultToConfig2,
+        cancelToken: defaultToConfig2,
+        socketPath: defaultToConfig2,
+        responseEncoding: defaultToConfig2,
+        validateStatus: mergeDirectKeys,
+        headers: (a, b, prop) => mergeDeepProperties(headersToObject(a), headersToObject(b), prop, true)
+    };
+    utils.forEach(Object.keys(Object.assign(Object.assign({}, config1), config2)), function computeConfigValue(prop) {
+        const merge = mergeMap[prop] || mergeDeepProperties;
+        const configValue = merge(config1[prop], config2[prop], prop);
+        (utils.isUndefined(configValue) && merge !== mergeDirectKeys) || (config[prop] = configValue);
+    });
+    return config;
+}
+
+;// ./node_modules/axios/lib/helpers/resolveConfig.js
 
 
 
 
 
 
-const playback = new Playback({ duration: 45531.400000002235 });
+
+
+/* harmony default export */ const resolveConfig = ((config) => {
+    const newConfig = mergeConfig({}, config);
+    let { data, withXSRFToken, xsrfHeaderName, xsrfCookieName, headers, auth } = newConfig;
+    newConfig.headers = headers = core_AxiosHeaders.from(headers);
+    newConfig.url = buildURL(buildFullPath(newConfig.baseURL, newConfig.url, newConfig.allowAbsoluteUrls), config.params, config.paramsSerializer);
+    if (auth) {
+        headers.set('Authorization', 'Basic ' +
+            btoa((auth.username || '') + ':' + (auth.password ? unescape(encodeURIComponent(auth.password)) : '')));
+    }
+    let contentType;
+    if (utils.isFormData(data)) {
+        if (platform.hasStandardBrowserEnv || platform.hasStandardBrowserWebWorkerEnv) {
+            headers.setContentType(undefined);
+        }
+        else if ((contentType = headers.getContentType()) !== false) {
+            const [type, ...tokens] = contentType ? contentType.split(';').map(token => token.trim()).filter(Boolean) : [];
+            headers.setContentType([type || 'multipart/form-data', ...tokens].join('; '));
+        }
+    }
+    if (platform.hasStandardBrowserEnv) {
+        withXSRFToken && utils.isFunction(withXSRFToken) && (withXSRFToken = withXSRFToken(newConfig));
+        if (withXSRFToken || (withXSRFToken !== false && isURLSameOrigin(newConfig.url))) {
+            const xsrfValue = xsrfHeaderName && xsrfCookieName && cookies.read(xsrfCookieName);
+            if (xsrfValue) {
+                headers.set(xsrfHeaderName, xsrfValue);
+            }
+        }
+    }
+    return newConfig;
+});
+
+;// ./node_modules/axios/lib/adapters/xhr.js
+
+
+
+
+
+
+
+
+
+
+const isXHRAdapterSupported = typeof XMLHttpRequest !== 'undefined';
+/* harmony default export */ const xhr = (isXHRAdapterSupported && function (config) {
+    return new Promise(function dispatchXhrRequest(resolve, reject) {
+        const _config = resolveConfig(config);
+        let requestData = _config.data;
+        const requestHeaders = core_AxiosHeaders.from(_config.headers).normalize();
+        let { responseType, onUploadProgress, onDownloadProgress } = _config;
+        let onCanceled;
+        let uploadThrottled, downloadThrottled;
+        let flushUpload, flushDownload;
+        function done() {
+            flushUpload && flushUpload();
+            flushDownload && flushDownload();
+            _config.cancelToken && _config.cancelToken.unsubscribe(onCanceled);
+            _config.signal && _config.signal.removeEventListener('abort', onCanceled);
+        }
+        let request = new XMLHttpRequest();
+        request.open(_config.method.toUpperCase(), _config.url, true);
+        request.timeout = _config.timeout;
+        function onloadend() {
+            if (!request) {
+                return;
+            }
+            const responseHeaders = core_AxiosHeaders.from('getAllResponseHeaders' in request && request.getAllResponseHeaders());
+            const responseData = !responseType || responseType === 'text' || responseType === 'json' ?
+                request.responseText : request.response;
+            const response = {
+                data: responseData,
+                status: request.status,
+                statusText: request.statusText,
+                headers: responseHeaders,
+                config,
+                request
+            };
+            settle(function _resolve(value) {
+                resolve(value);
+                done();
+            }, function _reject(err) {
+                reject(err);
+                done();
+            }, response);
+            request = null;
+        }
+        if ('onloadend' in request) {
+            request.onloadend = onloadend;
+        }
+        else {
+            request.onreadystatechange = function handleLoad() {
+                if (!request || request.readyState !== 4) {
+                    return;
+                }
+                if (request.status === 0 && !(request.responseURL && request.responseURL.indexOf('file:') === 0)) {
+                    return;
+                }
+                setTimeout(onloadend);
+            };
+        }
+        request.onabort = function handleAbort() {
+            if (!request) {
+                return;
+            }
+            reject(new core_AxiosError('Request aborted', core_AxiosError.ECONNABORTED, config, request));
+            request = null;
+        };
+        request.onerror = function handleError() {
+            reject(new core_AxiosError('Network Error', core_AxiosError.ERR_NETWORK, config, request));
+            request = null;
+        };
+        request.ontimeout = function handleTimeout() {
+            let timeoutErrorMessage = _config.timeout ? 'timeout of ' + _config.timeout + 'ms exceeded' : 'timeout exceeded';
+            const transitional = _config.transitional || defaults_transitional;
+            if (_config.timeoutErrorMessage) {
+                timeoutErrorMessage = _config.timeoutErrorMessage;
+            }
+            reject(new core_AxiosError(timeoutErrorMessage, transitional.clarifyTimeoutError ? core_AxiosError.ETIMEDOUT : core_AxiosError.ECONNABORTED, config, request));
+            request = null;
+        };
+        requestData === undefined && requestHeaders.setContentType(null);
+        if ('setRequestHeader' in request) {
+            utils.forEach(requestHeaders.toJSON(), function setRequestHeader(val, key) {
+                request.setRequestHeader(key, val);
+            });
+        }
+        if (!utils.isUndefined(_config.withCredentials)) {
+            request.withCredentials = !!_config.withCredentials;
+        }
+        if (responseType && responseType !== 'json') {
+            request.responseType = _config.responseType;
+        }
+        if (onDownloadProgress) {
+            ([downloadThrottled, flushDownload] = progressEventReducer(onDownloadProgress, true));
+            request.addEventListener('progress', downloadThrottled);
+        }
+        if (onUploadProgress && request.upload) {
+            ([uploadThrottled, flushUpload] = progressEventReducer(onUploadProgress));
+            request.upload.addEventListener('progress', uploadThrottled);
+            request.upload.addEventListener('loadend', flushUpload);
+        }
+        if (_config.cancelToken || _config.signal) {
+            onCanceled = cancel => {
+                if (!request) {
+                    return;
+                }
+                reject(!cancel || cancel.type ? new cancel_CanceledError(null, config, request) : cancel);
+                request.abort();
+                request = null;
+            };
+            _config.cancelToken && _config.cancelToken.subscribe(onCanceled);
+            if (_config.signal) {
+                _config.signal.aborted ? onCanceled() : _config.signal.addEventListener('abort', onCanceled);
+            }
+        }
+        const protocol = parseProtocol(_config.url);
+        if (protocol && platform.protocols.indexOf(protocol) === -1) {
+            reject(new core_AxiosError('Unsupported protocol ' + protocol + ':', core_AxiosError.ERR_BAD_REQUEST, config));
+            return;
+        }
+        request.send(requestData || null);
+    });
+});
+
+;// ./node_modules/axios/lib/helpers/composeSignals.js
+
+
+
+const composeSignals = (signals, timeout) => {
+    const { length } = (signals = signals ? signals.filter(Boolean) : []);
+    if (timeout || length) {
+        let controller = new AbortController();
+        let aborted;
+        const onabort = function (reason) {
+            if (!aborted) {
+                aborted = true;
+                unsubscribe();
+                const err = reason instanceof Error ? reason : this.reason;
+                controller.abort(err instanceof core_AxiosError ? err : new cancel_CanceledError(err instanceof Error ? err.message : err));
+            }
+        };
+        let timer = timeout && setTimeout(() => {
+            timer = null;
+            onabort(new core_AxiosError(`timeout ${timeout} of ms exceeded`, core_AxiosError.ETIMEDOUT));
+        }, timeout);
+        const unsubscribe = () => {
+            if (signals) {
+                timer && clearTimeout(timer);
+                timer = null;
+                signals.forEach(signal => {
+                    signal.unsubscribe ? signal.unsubscribe(onabort) : signal.removeEventListener('abort', onabort);
+                });
+                signals = null;
+            }
+        };
+        signals.forEach((signal) => signal.addEventListener('abort', onabort));
+        const { signal } = controller;
+        signal.unsubscribe = () => utils.asap(unsubscribe);
+        return signal;
+    }
+};
+/* harmony default export */ const helpers_composeSignals = (composeSignals);
+
+;// ./node_modules/axios/lib/helpers/trackStream.js
+var __asyncValues = (undefined && undefined.__asyncValues) || function (o) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var m = o[Symbol.asyncIterator], i;
+    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
+    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
+    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
+};
+var __await = (undefined && undefined.__await) || function (v) { return this instanceof __await ? (this.v = v, this) : new __await(v); }
+var __asyncDelegator = (undefined && undefined.__asyncDelegator) || function (o) {
+    var i, p;
+    return i = {}, verb("next"), verb("throw", function (e) { throw e; }), verb("return"), i[Symbol.iterator] = function () { return this; }, i;
+    function verb(n, f) { i[n] = o[n] ? function (v) { return (p = !p) ? { value: __await(o[n](v)), done: n === "return" } : f ? f(v) : v; } : f; }
+};
+var __asyncGenerator = (undefined && undefined.__asyncGenerator) || function (thisArg, _arguments, generator) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var g = generator.apply(thisArg, _arguments || []), i, q = [];
+    return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i;
+    function verb(n) { if (g[n]) i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
+    function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
+    function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
+    function fulfill(value) { resume("next", value); }
+    function reject(value) { resume("throw", value); }
+    function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
+};
+const streamChunk = function* (chunk, chunkSize) {
+    let len = chunk.byteLength;
+    if (!chunkSize || len < chunkSize) {
+        yield chunk;
+        return;
+    }
+    let pos = 0;
+    let end;
+    while (pos < len) {
+        end = pos + chunkSize;
+        yield chunk.slice(pos, end);
+        pos = end;
+    }
+};
+const readBytes = function (iterable, chunkSize) {
+    return __asyncGenerator(this, arguments, function* () {
+        var _a, e_1, _b, _c;
+        try {
+            for (var _d = true, _e = __asyncValues(readStream(iterable)), _f; _f = yield __await(_e.next()), _a = _f.done, !_a;) {
+                _c = _f.value;
+                _d = false;
+                try {
+                    const chunk = _c;
+                    yield __await(yield* __asyncDelegator(__asyncValues(streamChunk(chunk, chunkSize))));
+                }
+                finally {
+                    _d = true;
+                }
+            }
+        }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
+            try {
+                if (!_d && !_a && (_b = _e.return)) yield __await(_b.call(_e));
+            }
+            finally { if (e_1) throw e_1.error; }
+        }
+    });
+};
+const readStream = function (stream) {
+    return __asyncGenerator(this, arguments, function* () {
+        if (stream[Symbol.asyncIterator]) {
+            yield __await(yield* __asyncDelegator(__asyncValues(stream)));
+            return yield __await(void 0);
+        }
+        const reader = stream.getReader();
+        try {
+            for (;;) {
+                const { done, value } = yield __await(reader.read());
+                if (done) {
+                    break;
+                }
+                yield yield __await(value);
+            }
+        }
+        finally {
+            yield __await(reader.cancel());
+        }
+    });
+};
+const trackStream = (stream, chunkSize, onProgress, onFinish) => {
+    const iterator = readBytes(stream, chunkSize);
+    let bytes = 0;
+    let done;
+    let _onFinish = (e) => {
+        if (!done) {
+            done = true;
+            onFinish && onFinish(e);
+        }
+    };
+    return new ReadableStream({
+        async pull(controller) {
+            try {
+                const { done, value } = await iterator.next();
+                if (done) {
+                    _onFinish();
+                    controller.close();
+                    return;
+                }
+                let len = value.byteLength;
+                if (onProgress) {
+                    let loadedBytes = bytes += len;
+                    onProgress(loadedBytes);
+                }
+                controller.enqueue(new Uint8Array(value));
+            }
+            catch (err) {
+                _onFinish(err);
+                throw err;
+            }
+        },
+        cancel(reason) {
+            _onFinish(reason);
+            return iterator.return();
+        }
+    }, {
+        highWaterMark: 2
+    });
+};
+
+;// ./node_modules/axios/lib/adapters/fetch.js
+
+
+
+
+
+
+
+
+
+const isFetchSupported = typeof fetch === 'function' && typeof Request === 'function' && typeof Response === 'function';
+const isReadableStreamSupported = isFetchSupported && typeof ReadableStream === 'function';
+const encodeText = isFetchSupported && (typeof TextEncoder === 'function' ?
+    ((encoder) => (str) => encoder.encode(str))(new TextEncoder()) :
+    async (str) => new Uint8Array(await new Response(str).arrayBuffer()));
+const test = (fn, ...args) => {
+    try {
+        return !!fn(...args);
+    }
+    catch (e) {
+        return false;
+    }
+};
+const supportsRequestStream = isReadableStreamSupported && test(() => {
+    let duplexAccessed = false;
+    const hasContentType = new Request(platform.origin, {
+        body: new ReadableStream(),
+        method: 'POST',
+        get duplex() {
+            duplexAccessed = true;
+            return 'half';
+        },
+    }).headers.has('Content-Type');
+    return duplexAccessed && !hasContentType;
+});
+const DEFAULT_CHUNK_SIZE = 64 * 1024;
+const supportsResponseStream = isReadableStreamSupported &&
+    test(() => utils.isReadableStream(new Response('').body));
+const resolvers = {
+    stream: supportsResponseStream && ((res) => res.body)
+};
+isFetchSupported && (((res) => {
+    ['text', 'arrayBuffer', 'blob', 'formData', 'stream'].forEach(type => {
+        !resolvers[type] && (resolvers[type] = utils.isFunction(res[type]) ? (res) => res[type]() :
+            (_, config) => {
+                throw new core_AxiosError(`Response type '${type}' is not supported`, core_AxiosError.ERR_NOT_SUPPORT, config);
+            });
+    });
+})(new Response));
+const getBodyLength = async (body) => {
+    if (body == null) {
+        return 0;
+    }
+    if (utils.isBlob(body)) {
+        return body.size;
+    }
+    if (utils.isSpecCompliantForm(body)) {
+        const _request = new Request(platform.origin, {
+            method: 'POST',
+            body,
+        });
+        return (await _request.arrayBuffer()).byteLength;
+    }
+    if (utils.isArrayBufferView(body) || utils.isArrayBuffer(body)) {
+        return body.byteLength;
+    }
+    if (utils.isURLSearchParams(body)) {
+        body = body + '';
+    }
+    if (utils.isString(body)) {
+        return (await encodeText(body)).byteLength;
+    }
+};
+const resolveBodyLength = async (headers, body) => {
+    const length = utils.toFiniteNumber(headers.getContentLength());
+    return length == null ? getBodyLength(body) : length;
+};
+/* harmony default export */ const adapters_fetch = (isFetchSupported && (async (config) => {
+    let { url, method, data, signal, cancelToken, timeout, onDownloadProgress, onUploadProgress, responseType, headers, withCredentials = 'same-origin', fetchOptions } = resolveConfig(config);
+    responseType = responseType ? (responseType + '').toLowerCase() : 'text';
+    let composedSignal = helpers_composeSignals([signal, cancelToken && cancelToken.toAbortSignal()], timeout);
+    let request;
+    const unsubscribe = composedSignal && composedSignal.unsubscribe && (() => {
+        composedSignal.unsubscribe();
+    });
+    let requestContentLength;
+    try {
+        if (onUploadProgress && supportsRequestStream && method !== 'get' && method !== 'head' &&
+            (requestContentLength = await resolveBodyLength(headers, data)) !== 0) {
+            let _request = new Request(url, {
+                method: 'POST',
+                body: data,
+                duplex: "half"
+            });
+            let contentTypeHeader;
+            if (utils.isFormData(data) && (contentTypeHeader = _request.headers.get('content-type'))) {
+                headers.setContentType(contentTypeHeader);
+            }
+            if (_request.body) {
+                const [onProgress, flush] = progressEventDecorator(requestContentLength, progressEventReducer(asyncDecorator(onUploadProgress)));
+                data = trackStream(_request.body, DEFAULT_CHUNK_SIZE, onProgress, flush);
+            }
+        }
+        if (!utils.isString(withCredentials)) {
+            withCredentials = withCredentials ? 'include' : 'omit';
+        }
+        const isCredentialsSupported = "credentials" in Request.prototype;
+        request = new Request(url, Object.assign(Object.assign({}, fetchOptions), { signal: composedSignal, method: method.toUpperCase(), headers: headers.normalize().toJSON(), body: data, duplex: "half", credentials: isCredentialsSupported ? withCredentials : undefined }));
+        let response = await fetch(request, fetchOptions);
+        const isStreamResponse = supportsResponseStream && (responseType === 'stream' || responseType === 'response');
+        if (supportsResponseStream && (onDownloadProgress || (isStreamResponse && unsubscribe))) {
+            const options = {};
+            ['status', 'statusText', 'headers'].forEach(prop => {
+                options[prop] = response[prop];
+            });
+            const responseContentLength = utils.toFiniteNumber(response.headers.get('content-length'));
+            const [onProgress, flush] = onDownloadProgress && progressEventDecorator(responseContentLength, progressEventReducer(asyncDecorator(onDownloadProgress), true)) || [];
+            response = new Response(trackStream(response.body, DEFAULT_CHUNK_SIZE, onProgress, () => {
+                flush && flush();
+                unsubscribe && unsubscribe();
+            }), options);
+        }
+        responseType = responseType || 'text';
+        let responseData = await resolvers[utils.findKey(resolvers, responseType) || 'text'](response, config);
+        !isStreamResponse && unsubscribe && unsubscribe();
+        return await new Promise((resolve, reject) => {
+            settle(resolve, reject, {
+                data: responseData,
+                headers: core_AxiosHeaders.from(response.headers),
+                status: response.status,
+                statusText: response.statusText,
+                config,
+                request
+            });
+        });
+    }
+    catch (err) {
+        unsubscribe && unsubscribe();
+        if (err && err.name === 'TypeError' && /Load failed|fetch/i.test(err.message)) {
+            throw Object.assign(new core_AxiosError('Network Error', core_AxiosError.ERR_NETWORK, config, request), {
+                cause: err.cause || err
+            });
+        }
+        throw core_AxiosError.from(err, err && err.code, config, request);
+    }
+}));
+
+;// ./node_modules/axios/lib/adapters/adapters.js
+
+
+
+
+
+const knownAdapters = {
+    http: helpers_null,
+    xhr: xhr,
+    fetch: adapters_fetch
+};
+utils.forEach(knownAdapters, (fn, value) => {
+    if (fn) {
+        try {
+            Object.defineProperty(fn, 'name', { value });
+        }
+        catch (e) {
+        }
+        Object.defineProperty(fn, 'adapterName', { value });
+    }
+});
+const renderReason = (reason) => `- ${reason}`;
+const isResolvedHandle = (adapter) => utils.isFunction(adapter) || adapter === null || adapter === false;
+/* harmony default export */ const adapters = ({
+    getAdapter: (adapters) => {
+        adapters = utils.isArray(adapters) ? adapters : [adapters];
+        const { length } = adapters;
+        let nameOrAdapter;
+        let adapter;
+        const rejectedReasons = {};
+        for (let i = 0; i < length; i++) {
+            nameOrAdapter = adapters[i];
+            let id;
+            adapter = nameOrAdapter;
+            if (!isResolvedHandle(nameOrAdapter)) {
+                adapter = knownAdapters[(id = String(nameOrAdapter)).toLowerCase()];
+                if (adapter === undefined) {
+                    throw new core_AxiosError(`Unknown adapter '${id}'`);
+                }
+            }
+            if (adapter) {
+                break;
+            }
+            rejectedReasons[id || '#' + i] = adapter;
+        }
+        if (!adapter) {
+            const reasons = Object.entries(rejectedReasons)
+                .map(([id, state]) => `adapter ${id} ` +
+                (state === false ? 'is not supported by the environment' : 'is not available in the build'));
+            let s = length ?
+                (reasons.length > 1 ? 'since :\n' + reasons.map(renderReason).join('\n') : ' ' + renderReason(reasons[0])) :
+                'as no adapter specified';
+            throw new core_AxiosError(`There is no suitable adapter to dispatch the request ` + s, 'ERR_NOT_SUPPORT');
+        }
+        return adapter;
+    },
+    adapters: knownAdapters
+});
+
+;// ./node_modules/axios/lib/core/dispatchRequest.js
+
+
+
+
+
+
+
+function throwIfCancellationRequested(config) {
+    if (config.cancelToken) {
+        config.cancelToken.throwIfRequested();
+    }
+    if (config.signal && config.signal.aborted) {
+        throw new cancel_CanceledError(null, config);
+    }
+}
+function dispatchRequest(config) {
+    throwIfCancellationRequested(config);
+    config.headers = core_AxiosHeaders.from(config.headers);
+    config.data = transformData.call(config, config.transformRequest);
+    if (['post', 'put', 'patch'].indexOf(config.method) !== -1) {
+        config.headers.setContentType('application/x-www-form-urlencoded', false);
+    }
+    const adapter = adapters.getAdapter(config.adapter || lib_defaults.adapter);
+    return adapter(config).then(function onAdapterResolution(response) {
+        throwIfCancellationRequested(config);
+        response.data = transformData.call(config, config.transformResponse, response);
+        response.headers = core_AxiosHeaders.from(response.headers);
+        return response;
+    }, function onAdapterRejection(reason) {
+        if (!isCancel(reason)) {
+            throwIfCancellationRequested(config);
+            if (reason && reason.response) {
+                reason.response.data = transformData.call(config, config.transformResponse, reason.response);
+                reason.response.headers = core_AxiosHeaders.from(reason.response.headers);
+            }
+        }
+        return Promise.reject(reason);
+    });
+}
+
+;// ./node_modules/axios/lib/env/data.js
+const VERSION = "1.11.0";
+
+;// ./node_modules/axios/lib/helpers/validator.js
+
+
+
+const validators = {};
+['object', 'boolean', 'number', 'function', 'string', 'symbol'].forEach((type, i) => {
+    validators[type] = function validator(thing) {
+        return typeof thing === type || 'a' + (i < 1 ? 'n ' : ' ') + type;
+    };
+});
+const deprecatedWarnings = {};
+validators.transitional = function transitional(validator, version, message) {
+    function formatMessage(opt, desc) {
+        return '[Axios v' + VERSION + '] Transitional option \'' + opt + '\'' + desc + (message ? '. ' + message : '');
+    }
+    return (value, opt, opts) => {
+        if (validator === false) {
+            throw new core_AxiosError(formatMessage(opt, ' has been removed' + (version ? ' in ' + version : '')), core_AxiosError.ERR_DEPRECATED);
+        }
+        if (version && !deprecatedWarnings[opt]) {
+            deprecatedWarnings[opt] = true;
+            console.warn(formatMessage(opt, ' has been deprecated since v' + version + ' and will be removed in the near future'));
+        }
+        return validator ? validator(value, opt, opts) : true;
+    };
+};
+validators.spelling = function spelling(correctSpelling) {
+    return (value, opt) => {
+        console.warn(`${opt} is likely a misspelling of ${correctSpelling}`);
+        return true;
+    };
+};
+function assertOptions(options, schema, allowUnknown) {
+    if (typeof options !== 'object') {
+        throw new core_AxiosError('options must be an object', core_AxiosError.ERR_BAD_OPTION_VALUE);
+    }
+    const keys = Object.keys(options);
+    let i = keys.length;
+    while (i-- > 0) {
+        const opt = keys[i];
+        const validator = schema[opt];
+        if (validator) {
+            const value = options[opt];
+            const result = value === undefined || validator(value, opt, options);
+            if (result !== true) {
+                throw new core_AxiosError('option ' + opt + ' must be ' + result, core_AxiosError.ERR_BAD_OPTION_VALUE);
+            }
+            continue;
+        }
+        if (allowUnknown !== true) {
+            throw new core_AxiosError('Unknown option ' + opt, core_AxiosError.ERR_BAD_OPTION);
+        }
+    }
+}
+/* harmony default export */ const validator = ({
+    assertOptions,
+    validators
+});
+
+;// ./node_modules/axios/lib/core/Axios.js
+
+
+
+
+
+
+
+
+
+const Axios_validators = validator.validators;
+class Axios {
+    constructor(instanceConfig) {
+        this.defaults = instanceConfig || {};
+        this.interceptors = {
+            request: new core_InterceptorManager(),
+            response: new core_InterceptorManager()
+        };
+    }
+    async request(configOrUrl, config) {
+        try {
+            return await this._request(configOrUrl, config);
+        }
+        catch (err) {
+            if (err instanceof Error) {
+                let dummy = {};
+                Error.captureStackTrace ? Error.captureStackTrace(dummy) : (dummy = new Error());
+                const stack = dummy.stack ? dummy.stack.replace(/^.+\n/, '') : '';
+                try {
+                    if (!err.stack) {
+                        err.stack = stack;
+                    }
+                    else if (stack && !String(err.stack).endsWith(stack.replace(/^.+\n.+\n/, ''))) {
+                        err.stack += '\n' + stack;
+                    }
+                }
+                catch (e) {
+                }
+            }
+            throw err;
+        }
+    }
+    _request(configOrUrl, config) {
+        if (typeof configOrUrl === 'string') {
+            config = config || {};
+            config.url = configOrUrl;
+        }
+        else {
+            config = configOrUrl || {};
+        }
+        config = mergeConfig(this.defaults, config);
+        const { transitional, paramsSerializer, headers } = config;
+        if (transitional !== undefined) {
+            validator.assertOptions(transitional, {
+                silentJSONParsing: Axios_validators.transitional(Axios_validators.boolean),
+                forcedJSONParsing: Axios_validators.transitional(Axios_validators.boolean),
+                clarifyTimeoutError: Axios_validators.transitional(Axios_validators.boolean)
+            }, false);
+        }
+        if (paramsSerializer != null) {
+            if (utils.isFunction(paramsSerializer)) {
+                config.paramsSerializer = {
+                    serialize: paramsSerializer
+                };
+            }
+            else {
+                validator.assertOptions(paramsSerializer, {
+                    encode: Axios_validators.function,
+                    serialize: Axios_validators.function
+                }, true);
+            }
+        }
+        if (config.allowAbsoluteUrls !== undefined) {
+        }
+        else if (this.defaults.allowAbsoluteUrls !== undefined) {
+            config.allowAbsoluteUrls = this.defaults.allowAbsoluteUrls;
+        }
+        else {
+            config.allowAbsoluteUrls = true;
+        }
+        validator.assertOptions(config, {
+            baseUrl: Axios_validators.spelling('baseURL'),
+            withXsrfToken: Axios_validators.spelling('withXSRFToken')
+        }, true);
+        config.method = (config.method || this.defaults.method || 'get').toLowerCase();
+        let contextHeaders = headers && utils.merge(headers.common, headers[config.method]);
+        headers && utils.forEach(['delete', 'get', 'head', 'post', 'put', 'patch', 'common'], (method) => {
+            delete headers[method];
+        });
+        config.headers = core_AxiosHeaders.concat(contextHeaders, headers);
+        const requestInterceptorChain = [];
+        let synchronousRequestInterceptors = true;
+        this.interceptors.request.forEach(function unshiftRequestInterceptors(interceptor) {
+            if (typeof interceptor.runWhen === 'function' && interceptor.runWhen(config) === false) {
+                return;
+            }
+            synchronousRequestInterceptors = synchronousRequestInterceptors && interceptor.synchronous;
+            requestInterceptorChain.unshift(interceptor.fulfilled, interceptor.rejected);
+        });
+        const responseInterceptorChain = [];
+        this.interceptors.response.forEach(function pushResponseInterceptors(interceptor) {
+            responseInterceptorChain.push(interceptor.fulfilled, interceptor.rejected);
+        });
+        let promise;
+        let i = 0;
+        let len;
+        if (!synchronousRequestInterceptors) {
+            const chain = [dispatchRequest.bind(this), undefined];
+            chain.unshift(...requestInterceptorChain);
+            chain.push(...responseInterceptorChain);
+            len = chain.length;
+            promise = Promise.resolve(config);
+            while (i < len) {
+                promise = promise.then(chain[i++], chain[i++]);
+            }
+            return promise;
+        }
+        len = requestInterceptorChain.length;
+        let newConfig = config;
+        i = 0;
+        while (i < len) {
+            const onFulfilled = requestInterceptorChain[i++];
+            const onRejected = requestInterceptorChain[i++];
+            try {
+                newConfig = onFulfilled(newConfig);
+            }
+            catch (error) {
+                onRejected.call(this, error);
+                break;
+            }
+        }
+        try {
+            promise = dispatchRequest.call(this, newConfig);
+        }
+        catch (error) {
+            return Promise.reject(error);
+        }
+        i = 0;
+        len = responseInterceptorChain.length;
+        while (i < len) {
+            promise = promise.then(responseInterceptorChain[i++], responseInterceptorChain[i++]);
+        }
+        return promise;
+    }
+    getUri(config) {
+        config = mergeConfig(this.defaults, config);
+        const fullPath = buildFullPath(config.baseURL, config.url, config.allowAbsoluteUrls);
+        return buildURL(fullPath, config.params, config.paramsSerializer);
+    }
+}
+utils.forEach(['delete', 'get', 'head', 'options'], function forEachMethodNoData(method) {
+    Axios.prototype[method] = function (url, config) {
+        return this.request(mergeConfig(config || {}, {
+            method,
+            url,
+            data: (config || {}).data
+        }));
+    };
+});
+utils.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
+    function generateHTTPMethod(isForm) {
+        return function httpMethod(url, data, config) {
+            return this.request(mergeConfig(config || {}, {
+                method,
+                headers: isForm ? {
+                    'Content-Type': 'multipart/form-data'
+                } : {},
+                url,
+                data
+            }));
+        };
+    }
+    Axios.prototype[method] = generateHTTPMethod();
+    Axios.prototype[method + 'Form'] = generateHTTPMethod(true);
+});
+/* harmony default export */ const core_Axios = (Axios);
+
+;// ./node_modules/axios/lib/cancel/CancelToken.js
+
+
+class CancelToken {
+    constructor(executor) {
+        if (typeof executor !== 'function') {
+            throw new TypeError('executor must be a function.');
+        }
+        let resolvePromise;
+        this.promise = new Promise(function promiseExecutor(resolve) {
+            resolvePromise = resolve;
+        });
+        const token = this;
+        this.promise.then(cancel => {
+            if (!token._listeners)
+                return;
+            let i = token._listeners.length;
+            while (i-- > 0) {
+                token._listeners[i](cancel);
+            }
+            token._listeners = null;
+        });
+        this.promise.then = onfulfilled => {
+            let _resolve;
+            const promise = new Promise(resolve => {
+                token.subscribe(resolve);
+                _resolve = resolve;
+            }).then(onfulfilled);
+            promise.cancel = function reject() {
+                token.unsubscribe(_resolve);
+            };
+            return promise;
+        };
+        executor(function cancel(message, config, request) {
+            if (token.reason) {
+                return;
+            }
+            token.reason = new cancel_CanceledError(message, config, request);
+            resolvePromise(token.reason);
+        });
+    }
+    throwIfRequested() {
+        if (this.reason) {
+            throw this.reason;
+        }
+    }
+    subscribe(listener) {
+        if (this.reason) {
+            listener(this.reason);
+            return;
+        }
+        if (this._listeners) {
+            this._listeners.push(listener);
+        }
+        else {
+            this._listeners = [listener];
+        }
+    }
+    unsubscribe(listener) {
+        if (!this._listeners) {
+            return;
+        }
+        const index = this._listeners.indexOf(listener);
+        if (index !== -1) {
+            this._listeners.splice(index, 1);
+        }
+    }
+    toAbortSignal() {
+        const controller = new AbortController();
+        const abort = (err) => {
+            controller.abort(err);
+        };
+        this.subscribe(abort);
+        controller.signal.unsubscribe = () => this.unsubscribe(abort);
+        return controller.signal;
+    }
+    static source() {
+        let cancel;
+        const token = new CancelToken(function executor(c) {
+            cancel = c;
+        });
+        return {
+            token,
+            cancel
+        };
+    }
+}
+/* harmony default export */ const cancel_CancelToken = (CancelToken);
+
+;// ./node_modules/axios/lib/helpers/spread.js
+
+function spread(callback) {
+    return function wrap(arr) {
+        return callback.apply(null, arr);
+    };
+}
+
+;// ./node_modules/axios/lib/helpers/isAxiosError.js
+
+
+function isAxiosError(payload) {
+    return utils.isObject(payload) && (payload.isAxiosError === true);
+}
+
+;// ./node_modules/axios/lib/helpers/HttpStatusCode.js
+const HttpStatusCode = {
+    Continue: 100,
+    SwitchingProtocols: 101,
+    Processing: 102,
+    EarlyHints: 103,
+    Ok: 200,
+    Created: 201,
+    Accepted: 202,
+    NonAuthoritativeInformation: 203,
+    NoContent: 204,
+    ResetContent: 205,
+    PartialContent: 206,
+    MultiStatus: 207,
+    AlreadyReported: 208,
+    ImUsed: 226,
+    MultipleChoices: 300,
+    MovedPermanently: 301,
+    Found: 302,
+    SeeOther: 303,
+    NotModified: 304,
+    UseProxy: 305,
+    Unused: 306,
+    TemporaryRedirect: 307,
+    PermanentRedirect: 308,
+    BadRequest: 400,
+    Unauthorized: 401,
+    PaymentRequired: 402,
+    Forbidden: 403,
+    NotFound: 404,
+    MethodNotAllowed: 405,
+    NotAcceptable: 406,
+    ProxyAuthenticationRequired: 407,
+    RequestTimeout: 408,
+    Conflict: 409,
+    Gone: 410,
+    LengthRequired: 411,
+    PreconditionFailed: 412,
+    PayloadTooLarge: 413,
+    UriTooLong: 414,
+    UnsupportedMediaType: 415,
+    RangeNotSatisfiable: 416,
+    ExpectationFailed: 417,
+    ImATeapot: 418,
+    MisdirectedRequest: 421,
+    UnprocessableEntity: 422,
+    Locked: 423,
+    FailedDependency: 424,
+    TooEarly: 425,
+    UpgradeRequired: 426,
+    PreconditionRequired: 428,
+    TooManyRequests: 429,
+    RequestHeaderFieldsTooLarge: 431,
+    UnavailableForLegalReasons: 451,
+    InternalServerError: 500,
+    NotImplemented: 501,
+    BadGateway: 502,
+    ServiceUnavailable: 503,
+    GatewayTimeout: 504,
+    HttpVersionNotSupported: 505,
+    VariantAlsoNegotiates: 506,
+    InsufficientStorage: 507,
+    LoopDetected: 508,
+    NotExtended: 510,
+    NetworkAuthenticationRequired: 511,
+};
+Object.entries(HttpStatusCode).forEach(([key, value]) => {
+    HttpStatusCode[value] = key;
+});
+/* harmony default export */ const helpers_HttpStatusCode = (HttpStatusCode);
+
+;// ./node_modules/axios/lib/axios.js
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function createInstance(defaultConfig) {
+    const context = new core_Axios(defaultConfig);
+    const instance = bind_bind(core_Axios.prototype.request, context);
+    utils.extend(instance, core_Axios.prototype, context, { allOwnKeys: true });
+    utils.extend(instance, context, null, { allOwnKeys: true });
+    instance.create = function create(instanceConfig) {
+        return createInstance(mergeConfig(defaultConfig, instanceConfig));
+    };
+    return instance;
+}
+const axios = createInstance(lib_defaults);
+axios.Axios = core_Axios;
+axios.CanceledError = cancel_CanceledError;
+axios.CancelToken = cancel_CancelToken;
+axios.isCancel = isCancel;
+axios.VERSION = VERSION;
+axios.toFormData = helpers_toFormData;
+axios.AxiosError = core_AxiosError;
+axios.Cancel = axios.CanceledError;
+axios.all = function all(promises) {
+    return Promise.all(promises);
+};
+axios.spread = spread;
+axios.isAxiosError = isAxiosError;
+axios.mergeConfig = mergeConfig;
+axios.AxiosHeaders = core_AxiosHeaders;
+axios.formToJSON = thing => helpers_formDataToJSON(utils.isHTMLForm(thing) ? new FormData(thing) : thing);
+axios.getAdapter = adapters.getAdapter;
+axios.HttpStatusCode = helpers_HttpStatusCode;
+axios.default = axios;
+/* harmony default export */ const lib_axios = (axios);
+
+// EXTERNAL MODULE: ./node_modules/dotenv/lib/main.js
+var main = __webpack_require__(608);
+;// ./src/utils/executeCode.js
+
+
+(0,main.config)();
+const encodeBase64 = str => btoa(unescape(encodeURIComponent(str)));
+const decodeBase64 = str => decodeURIComponent(escape(atob(str)));
+const handleCompile = async (language_id, code) => {
+    try {
+        const formData = {
+            language_id,
+            source_code: encodeBase64(code)
+        };
+        const options = {
+            method: 'POST',
+            url: process.env.RAPID_API_URL,
+            params: { base64_encoded: 'true', fields: '*', wait: 'false' },
+            headers: {
+                'Content-Type': 'application/json',
+                'x-rapidapi-host': process.env.RAPID_API_HOST,
+                'x-rapidapi-key': process.env.RAPID_API_KEY
+            },
+            data: formData
+        };
+        const response = await lib_axios.request(options);
+        const token = response.data.token;
+        return await checkStatus(token);
+    }
+    catch (err) {
+        console.error('Compilation error:', err);
+        throw err;
+    }
+};
+const checkStatus = async (token) => {
+    var _a;
+    const options = {
+        method: 'GET',
+        url: process.env.RAPID_API_URL + '/' + token,
+        params: { base64_encoded: 'true', fields: '*' },
+        headers: {
+            'x-rapidapi-key': process.env.RAPID_API_KEY,
+            'x-rapidapi-host': process.env.RAPID_API_HOST
+        }
+    };
+    try {
+        let response = await lib_axios.request(options);
+        let statusId = (_a = response.data.status) === null || _a === void 0 ? void 0 : _a.id;
+        if (statusId === 1 || statusId === 2) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            return await checkStatus(token);
+        }
+        else {
+            response.data.stdout = decodeBase64(response.data.stdout);
+            return response.data;
+        }
+    }
+    catch (err) {
+        console.error('Status check error:', err);
+        throw err;
+    }
+};
+
+;// ./src/components/RunCode.tsx
+
+
+
+
+function RunCode({ language_id }) {
+    const store = store_useBoothStore();
+    (0,react.useEffect)(() => {
+        return store.subscribe(state => state.run, async () => {
+            var _a, _b;
+            const state = store.getState();
+            console.log(state);
+            const view = state === null || state === void 0 ? void 0 : state.getActiveView();
+            console.log(view);
+            const code = (_b = (_a = view === null || view === void 0 ? void 0 : view.state) === null || _a === void 0 ? void 0 : _a.doc) === null || _b === void 0 ? void 0 : _b.toString();
+            console.log(code);
+            let output = [];
+            try {
+                const res = handleCompile(language_id, code);
+                console.log(res);
+            }
+            finally {
+            }
+        });
+    }, [store, language_id]);
+    return (0,jsx_runtime.jsx)("div", { children: "Run Code" });
+}
+/* harmony default export */ const components_RunCode = (RunCode);
+
+;// ./src/components/RecordCode.tsx
+
+
+
+
+
+function RecordCode({ content, extensions }) {
+    const [language, setLanguage] = react.useState(63);
+    const handleSelectChange = e => {
+        console.log(e.target.value);
+        setLanguage(e.target.value);
+    };
+    return ((0,jsx_runtime.jsx)(jsx_runtime.Fragment, { children: (0,jsx_runtime.jsxs)(CodeBooth, Object.assign({ recorder: CodeRecording.recorder }, { children: [(0,jsx_runtime.jsxs)("select", Object.assign({ className: 'lang-dropdown', value: language, onChange: handleSelectChange, style: {
+                        width: '200px',
+                        height: '30px',
+                        position: 'absolute',
+                        right: '0px'
+                    } }, { children: [(0,jsx_runtime.jsx)("option", Object.assign({ value: '71' }, { children: "Python" })), (0,jsx_runtime.jsx)("option", Object.assign({ value: '63' }, { children: "JavaScript" })), (0,jsx_runtime.jsx)("option", Object.assign({ value: '54' }, { children: "C++" })), (0,jsx_runtime.jsx)("option", Object.assign({ value: '62' }, { children: "Java" })), (0,jsx_runtime.jsx)("option", Object.assign({ value: '54' }, { children: "C" }))] })), (0,jsx_runtime.jsx)(Record, { content: content, extensions: [...extensions], filename: '' }), (0,jsx_runtime.jsx)(Resize, {}), (0,jsx_runtime.jsx)(Console, {}), (0,jsx_runtime.jsx)(Resize, {}), (0,jsx_runtime.jsx)(components_RunCode, { language_id: language }), (0,jsx_runtime.jsxs)(Buttons, Object.assign({ style: {
+                        zIndex: '100'
+                    } }, { children: [(0,jsx_runtime.jsx)(Run, { onClick: () => console.log('Run Clicked') }), (0,jsx_runtime.jsx)(Clear, { onClick: () => console.log('Clear Clicked') })] }))] })) }));
+}
+/* harmony default export */ const components_RecordCode = (RecordCode);
+
+;// ./node_modules/@lezer/lr/dist/index.js
+
+class Stack {
+    constructor(p, stack, state, reducePos, pos, score, buffer, bufferBase, curContext, lookAhead = 0, parent) {
+        this.p = p;
+        this.stack = stack;
+        this.state = state;
+        this.reducePos = reducePos;
+        this.pos = pos;
+        this.score = score;
+        this.buffer = buffer;
+        this.bufferBase = bufferBase;
+        this.curContext = curContext;
+        this.lookAhead = lookAhead;
+        this.parent = parent;
+    }
+    toString() {
+        return `[${this.stack.filter((_, i) => i % 3 == 0).concat(this.state)}]@${this.pos}${this.score ? "!" + this.score : ""}`;
+    }
+    static start(p, state, pos = 0) {
+        let cx = p.parser.context;
+        return new Stack(p, [], state, pos, pos, 0, [], 0, cx ? new StackContext(cx, cx.start) : null, 0, null);
+    }
+    get context() { return this.curContext ? this.curContext.context : null; }
+    pushState(state, start) {
+        this.stack.push(this.state, start, this.bufferBase + this.buffer.length);
+        this.state = state;
+    }
+    reduce(action) {
+        var _a;
+        let depth = action >> 19, type = action & 65535;
+        let { parser } = this.p;
+        let lookaheadRecord = this.reducePos < this.pos - 25;
+        if (lookaheadRecord)
+            this.setLookAhead(this.pos);
+        let dPrec = parser.dynamicPrecedence(type);
+        if (dPrec)
+            this.score += dPrec;
+        if (depth == 0) {
+            this.pushState(parser.getGoto(this.state, type, true), this.reducePos);
+            if (type < parser.minRepeatTerm)
+                this.storeNode(type, this.reducePos, this.reducePos, lookaheadRecord ? 8 : 4, true);
+            this.reduceContext(type, this.reducePos);
+            return;
+        }
+        let base = this.stack.length - ((depth - 1) * 3) - (action & 262144 ? 6 : 0);
+        let start = base ? this.stack[base - 2] : this.p.ranges[0].from, size = this.reducePos - start;
+        if (size >= 2000 && !((_a = this.p.parser.nodeSet.types[type]) === null || _a === void 0 ? void 0 : _a.isAnonymous)) {
+            if (start == this.p.lastBigReductionStart) {
+                this.p.bigReductionCount++;
+                this.p.lastBigReductionSize = size;
+            }
+            else if (this.p.lastBigReductionSize < size) {
+                this.p.bigReductionCount = 1;
+                this.p.lastBigReductionStart = start;
+                this.p.lastBigReductionSize = size;
+            }
+        }
+        let bufferBase = base ? this.stack[base - 1] : 0, count = this.bufferBase + this.buffer.length - bufferBase;
+        if (type < parser.minRepeatTerm || (action & 131072)) {
+            let pos = parser.stateFlag(this.state, 1) ? this.pos : this.reducePos;
+            this.storeNode(type, start, pos, count + 4, true);
+        }
+        if (action & 262144) {
+            this.state = this.stack[base];
+        }
+        else {
+            let baseStateID = this.stack[base - 3];
+            this.state = parser.getGoto(baseStateID, type, true);
+        }
+        while (this.stack.length > base)
+            this.stack.pop();
+        this.reduceContext(type, start);
+    }
+    storeNode(term, start, end, size = 4, mustSink = false) {
+        if (term == 0 &&
+            (!this.stack.length || this.stack[this.stack.length - 1] < this.buffer.length + this.bufferBase)) {
+            let cur = this, top = this.buffer.length;
+            if (top == 0 && cur.parent) {
+                top = cur.bufferBase - cur.parent.bufferBase;
+                cur = cur.parent;
+            }
+            if (top > 0 && cur.buffer[top - 4] == 0 && cur.buffer[top - 1] > -1) {
+                if (start == end)
+                    return;
+                if (cur.buffer[top - 2] >= start) {
+                    cur.buffer[top - 2] = end;
+                    return;
+                }
+            }
+        }
+        if (!mustSink || this.pos == end) {
+            this.buffer.push(term, start, end, size);
+        }
+        else {
+            let index = this.buffer.length;
+            if (index > 0 && this.buffer[index - 4] != 0) {
+                let mustMove = false;
+                for (let scan = index; scan > 0 && this.buffer[scan - 2] > end; scan -= 4) {
+                    if (this.buffer[scan - 1] >= 0) {
+                        mustMove = true;
+                        break;
+                    }
+                }
+                if (mustMove)
+                    while (index > 0 && this.buffer[index - 2] > end) {
+                        this.buffer[index] = this.buffer[index - 4];
+                        this.buffer[index + 1] = this.buffer[index - 3];
+                        this.buffer[index + 2] = this.buffer[index - 2];
+                        this.buffer[index + 3] = this.buffer[index - 1];
+                        index -= 4;
+                        if (size > 4)
+                            size -= 4;
+                    }
+            }
+            this.buffer[index] = term;
+            this.buffer[index + 1] = start;
+            this.buffer[index + 2] = end;
+            this.buffer[index + 3] = size;
+        }
+    }
+    shift(action, type, start, end) {
+        if (action & 131072) {
+            this.pushState(action & 65535, this.pos);
+        }
+        else if ((action & 262144) == 0) {
+            let nextState = action, { parser } = this.p;
+            if (end > this.pos || type <= parser.maxNode) {
+                this.pos = end;
+                if (!parser.stateFlag(nextState, 1))
+                    this.reducePos = end;
+            }
+            this.pushState(nextState, start);
+            this.shiftContext(type, start);
+            if (type <= parser.maxNode)
+                this.buffer.push(type, start, end, 4);
+        }
+        else {
+            this.pos = end;
+            this.shiftContext(type, start);
+            if (type <= this.p.parser.maxNode)
+                this.buffer.push(type, start, end, 4);
+        }
+    }
+    apply(action, next, nextStart, nextEnd) {
+        if (action & 65536)
+            this.reduce(action);
+        else
+            this.shift(action, next, nextStart, nextEnd);
+    }
+    useNode(value, next) {
+        let index = this.p.reused.length - 1;
+        if (index < 0 || this.p.reused[index] != value) {
+            this.p.reused.push(value);
+            index++;
+        }
+        let start = this.pos;
+        this.reducePos = this.pos = start + value.length;
+        this.pushState(next, start);
+        this.buffer.push(index, start, this.reducePos, -1);
+        if (this.curContext)
+            this.updateContext(this.curContext.tracker.reuse(this.curContext.context, value, this, this.p.stream.reset(this.pos - value.length)));
+    }
+    split() {
+        let parent = this;
+        let off = parent.buffer.length;
+        while (off > 0 && parent.buffer[off - 2] > parent.reducePos)
+            off -= 4;
+        let buffer = parent.buffer.slice(off), base = parent.bufferBase + off;
+        while (parent && base == parent.bufferBase)
+            parent = parent.parent;
+        return new Stack(this.p, this.stack.slice(), this.state, this.reducePos, this.pos, this.score, buffer, base, this.curContext, this.lookAhead, parent);
+    }
+    recoverByDelete(next, nextEnd) {
+        let isNode = next <= this.p.parser.maxNode;
+        if (isNode)
+            this.storeNode(next, this.pos, nextEnd, 4);
+        this.storeNode(0, this.pos, nextEnd, isNode ? 8 : 4);
+        this.pos = this.reducePos = nextEnd;
+        this.score -= 190;
+    }
+    canShift(term) {
+        for (let sim = new SimulatedStack(this);;) {
+            let action = this.p.parser.stateSlot(sim.state, 4) || this.p.parser.hasAction(sim.state, term);
+            if (action == 0)
+                return false;
+            if ((action & 65536) == 0)
+                return true;
+            sim.reduce(action);
+        }
+    }
+    recoverByInsert(next) {
+        if (this.stack.length >= 300)
+            return [];
+        let nextStates = this.p.parser.nextStates(this.state);
+        if (nextStates.length > 4 << 1 || this.stack.length >= 120) {
+            let best = [];
+            for (let i = 0, s; i < nextStates.length; i += 2) {
+                if ((s = nextStates[i + 1]) != this.state && this.p.parser.hasAction(s, next))
+                    best.push(nextStates[i], s);
+            }
+            if (this.stack.length < 120)
+                for (let i = 0; best.length < 4 << 1 && i < nextStates.length; i += 2) {
+                    let s = nextStates[i + 1];
+                    if (!best.some((v, i) => (i & 1) && v == s))
+                        best.push(nextStates[i], s);
+                }
+            nextStates = best;
+        }
+        let result = [];
+        for (let i = 0; i < nextStates.length && result.length < 4; i += 2) {
+            let s = nextStates[i + 1];
+            if (s == this.state)
+                continue;
+            let stack = this.split();
+            stack.pushState(s, this.pos);
+            stack.storeNode(0, stack.pos, stack.pos, 4, true);
+            stack.shiftContext(nextStates[i], this.pos);
+            stack.reducePos = this.pos;
+            stack.score -= 200;
+            result.push(stack);
+        }
+        return result;
+    }
+    forceReduce() {
+        let { parser } = this.p;
+        let reduce = parser.stateSlot(this.state, 5);
+        if ((reduce & 65536) == 0)
+            return false;
+        if (!parser.validAction(this.state, reduce)) {
+            let depth = reduce >> 19, term = reduce & 65535;
+            let target = this.stack.length - depth * 3;
+            if (target < 0 || parser.getGoto(this.stack[target], term, false) < 0) {
+                let backup = this.findForcedReduction();
+                if (backup == null)
+                    return false;
+                reduce = backup;
+            }
+            this.storeNode(0, this.pos, this.pos, 4, true);
+            this.score -= 100;
+        }
+        this.reducePos = this.pos;
+        this.reduce(reduce);
+        return true;
+    }
+    findForcedReduction() {
+        let { parser } = this.p, seen = [];
+        let explore = (state, depth) => {
+            if (seen.includes(state))
+                return;
+            seen.push(state);
+            return parser.allActions(state, (action) => {
+                if (action & (262144 | 131072))
+                    ;
+                else if (action & 65536) {
+                    let rDepth = (action >> 19) - depth;
+                    if (rDepth > 1) {
+                        let term = action & 65535, target = this.stack.length - rDepth * 3;
+                        if (target >= 0 && parser.getGoto(this.stack[target], term, false) >= 0)
+                            return (rDepth << 19) | 65536 | term;
+                    }
+                }
+                else {
+                    let found = explore(action, depth + 1);
+                    if (found != null)
+                        return found;
+                }
+            });
+        };
+        return explore(this.state, 0);
+    }
+    forceAll() {
+        while (!this.p.parser.stateFlag(this.state, 2)) {
+            if (!this.forceReduce()) {
+                this.storeNode(0, this.pos, this.pos, 4, true);
+                break;
+            }
+        }
+        return this;
+    }
+    get deadEnd() {
+        if (this.stack.length != 3)
+            return false;
+        let { parser } = this.p;
+        return parser.data[parser.stateSlot(this.state, 1)] == 65535 &&
+            !parser.stateSlot(this.state, 4);
+    }
+    restart() {
+        this.storeNode(0, this.pos, this.pos, 4, true);
+        this.state = this.stack[0];
+        this.stack.length = 0;
+    }
+    sameState(other) {
+        if (this.state != other.state || this.stack.length != other.stack.length)
+            return false;
+        for (let i = 0; i < this.stack.length; i += 3)
+            if (this.stack[i] != other.stack[i])
+                return false;
+        return true;
+    }
+    get parser() { return this.p.parser; }
+    dialectEnabled(dialectID) { return this.p.parser.dialect.flags[dialectID]; }
+    shiftContext(term, start) {
+        if (this.curContext)
+            this.updateContext(this.curContext.tracker.shift(this.curContext.context, term, this, this.p.stream.reset(start)));
+    }
+    reduceContext(term, start) {
+        if (this.curContext)
+            this.updateContext(this.curContext.tracker.reduce(this.curContext.context, term, this, this.p.stream.reset(start)));
+    }
+    emitContext() {
+        let last = this.buffer.length - 1;
+        if (last < 0 || this.buffer[last] != -3)
+            this.buffer.push(this.curContext.hash, this.pos, this.pos, -3);
+    }
+    emitLookAhead() {
+        let last = this.buffer.length - 1;
+        if (last < 0 || this.buffer[last] != -4)
+            this.buffer.push(this.lookAhead, this.pos, this.pos, -4);
+    }
+    updateContext(context) {
+        if (context != this.curContext.context) {
+            let newCx = new StackContext(this.curContext.tracker, context);
+            if (newCx.hash != this.curContext.hash)
+                this.emitContext();
+            this.curContext = newCx;
+        }
+    }
+    setLookAhead(lookAhead) {
+        if (lookAhead > this.lookAhead) {
+            this.emitLookAhead();
+            this.lookAhead = lookAhead;
+        }
+    }
+    close() {
+        if (this.curContext && this.curContext.tracker.strict)
+            this.emitContext();
+        if (this.lookAhead > 0)
+            this.emitLookAhead();
+    }
+}
+class StackContext {
+    constructor(tracker, context) {
+        this.tracker = tracker;
+        this.context = context;
+        this.hash = tracker.strict ? tracker.hash(context) : 0;
+    }
+}
+class SimulatedStack {
+    constructor(start) {
+        this.start = start;
+        this.state = start.state;
+        this.stack = start.stack;
+        this.base = this.stack.length;
+    }
+    reduce(action) {
+        let term = action & 65535, depth = action >> 19;
+        if (depth == 0) {
+            if (this.stack == this.start.stack)
+                this.stack = this.stack.slice();
+            this.stack.push(this.state, 0, 0);
+            this.base += 3;
+        }
+        else {
+            this.base -= (depth - 1) * 3;
+        }
+        let goto = this.start.p.parser.getGoto(this.stack[this.base - 3], term, true);
+        this.state = goto;
+    }
+}
+class StackBufferCursor {
+    constructor(stack, pos, index) {
+        this.stack = stack;
+        this.pos = pos;
+        this.index = index;
+        this.buffer = stack.buffer;
+        if (this.index == 0)
+            this.maybeNext();
+    }
+    static create(stack, pos = stack.bufferBase + stack.buffer.length) {
+        return new StackBufferCursor(stack, pos, pos - stack.bufferBase);
+    }
+    maybeNext() {
+        let next = this.stack.parent;
+        if (next != null) {
+            this.index = this.stack.bufferBase - next.bufferBase;
+            this.stack = next;
+            this.buffer = next.buffer;
+        }
+    }
+    get id() { return this.buffer[this.index - 4]; }
+    get start() { return this.buffer[this.index - 3]; }
+    get end() { return this.buffer[this.index - 2]; }
+    get size() { return this.buffer[this.index - 1]; }
+    next() {
+        this.index -= 4;
+        this.pos -= 4;
+        if (this.index == 0)
+            this.maybeNext();
+    }
+    fork() {
+        return new StackBufferCursor(this.stack, this.pos, this.index);
+    }
+}
+function decodeArray(input, Type = Uint16Array) {
+    if (typeof input != "string")
+        return input;
+    let array = null;
+    for (let pos = 0, out = 0; pos < input.length;) {
+        let value = 0;
+        for (;;) {
+            let next = input.charCodeAt(pos++), stop = false;
+            if (next == 126) {
+                value = 65535;
+                break;
+            }
+            if (next >= 92)
+                next--;
+            if (next >= 34)
+                next--;
+            let digit = next - 32;
+            if (digit >= 46) {
+                digit -= 46;
+                stop = true;
+            }
+            value += digit;
+            if (stop)
+                break;
+            value *= 46;
+        }
+        if (array)
+            array[out++] = value;
+        else
+            array = new Type(value);
+    }
+    return array;
+}
+class CachedToken {
+    constructor() {
+        this.start = -1;
+        this.value = -1;
+        this.end = -1;
+        this.extended = -1;
+        this.lookAhead = 0;
+        this.mask = 0;
+        this.context = 0;
+    }
+}
+const nullToken = new CachedToken;
+class InputStream {
+    constructor(input, ranges) {
+        this.input = input;
+        this.ranges = ranges;
+        this.chunk = "";
+        this.chunkOff = 0;
+        this.chunk2 = "";
+        this.chunk2Pos = 0;
+        this.next = -1;
+        this.token = nullToken;
+        this.rangeIndex = 0;
+        this.pos = this.chunkPos = ranges[0].from;
+        this.range = ranges[0];
+        this.end = ranges[ranges.length - 1].to;
+        this.readNext();
+    }
+    resolveOffset(offset, assoc) {
+        let range = this.range, index = this.rangeIndex;
+        let pos = this.pos + offset;
+        while (pos < range.from) {
+            if (!index)
+                return null;
+            let next = this.ranges[--index];
+            pos -= range.from - next.to;
+            range = next;
+        }
+        while (assoc < 0 ? pos > range.to : pos >= range.to) {
+            if (index == this.ranges.length - 1)
+                return null;
+            let next = this.ranges[++index];
+            pos += next.from - range.to;
+            range = next;
+        }
+        return pos;
+    }
+    clipPos(pos) {
+        if (pos >= this.range.from && pos < this.range.to)
+            return pos;
+        for (let range of this.ranges)
+            if (range.to > pos)
+                return Math.max(pos, range.from);
+        return this.end;
+    }
+    peek(offset) {
+        let idx = this.chunkOff + offset, pos, result;
+        if (idx >= 0 && idx < this.chunk.length) {
+            pos = this.pos + offset;
+            result = this.chunk.charCodeAt(idx);
+        }
+        else {
+            let resolved = this.resolveOffset(offset, 1);
+            if (resolved == null)
+                return -1;
+            pos = resolved;
+            if (pos >= this.chunk2Pos && pos < this.chunk2Pos + this.chunk2.length) {
+                result = this.chunk2.charCodeAt(pos - this.chunk2Pos);
+            }
+            else {
+                let i = this.rangeIndex, range = this.range;
+                while (range.to <= pos)
+                    range = this.ranges[++i];
+                this.chunk2 = this.input.chunk(this.chunk2Pos = pos);
+                if (pos + this.chunk2.length > range.to)
+                    this.chunk2 = this.chunk2.slice(0, range.to - pos);
+                result = this.chunk2.charCodeAt(0);
+            }
+        }
+        if (pos >= this.token.lookAhead)
+            this.token.lookAhead = pos + 1;
+        return result;
+    }
+    acceptToken(token, endOffset = 0) {
+        let end = endOffset ? this.resolveOffset(endOffset, -1) : this.pos;
+        if (end == null || end < this.token.start)
+            throw new RangeError("Token end out of bounds");
+        this.token.value = token;
+        this.token.end = end;
+    }
+    acceptTokenTo(token, endPos) {
+        this.token.value = token;
+        this.token.end = endPos;
+    }
+    getChunk() {
+        if (this.pos >= this.chunk2Pos && this.pos < this.chunk2Pos + this.chunk2.length) {
+            let { chunk, chunkPos } = this;
+            this.chunk = this.chunk2;
+            this.chunkPos = this.chunk2Pos;
+            this.chunk2 = chunk;
+            this.chunk2Pos = chunkPos;
+            this.chunkOff = this.pos - this.chunkPos;
+        }
+        else {
+            this.chunk2 = this.chunk;
+            this.chunk2Pos = this.chunkPos;
+            let nextChunk = this.input.chunk(this.pos);
+            let end = this.pos + nextChunk.length;
+            this.chunk = end > this.range.to ? nextChunk.slice(0, this.range.to - this.pos) : nextChunk;
+            this.chunkPos = this.pos;
+            this.chunkOff = 0;
+        }
+    }
+    readNext() {
+        if (this.chunkOff >= this.chunk.length) {
+            this.getChunk();
+            if (this.chunkOff == this.chunk.length)
+                return this.next = -1;
+        }
+        return this.next = this.chunk.charCodeAt(this.chunkOff);
+    }
+    advance(n = 1) {
+        this.chunkOff += n;
+        while (this.pos + n >= this.range.to) {
+            if (this.rangeIndex == this.ranges.length - 1)
+                return this.setDone();
+            n -= this.range.to - this.pos;
+            this.range = this.ranges[++this.rangeIndex];
+            this.pos = this.range.from;
+        }
+        this.pos += n;
+        if (this.pos >= this.token.lookAhead)
+            this.token.lookAhead = this.pos + 1;
+        return this.readNext();
+    }
+    setDone() {
+        this.pos = this.chunkPos = this.end;
+        this.range = this.ranges[this.rangeIndex = this.ranges.length - 1];
+        this.chunk = "";
+        return this.next = -1;
+    }
+    reset(pos, token) {
+        if (token) {
+            this.token = token;
+            token.start = pos;
+            token.lookAhead = pos + 1;
+            token.value = token.extended = -1;
+        }
+        else {
+            this.token = nullToken;
+        }
+        if (this.pos != pos) {
+            this.pos = pos;
+            if (pos == this.end) {
+                this.setDone();
+                return this;
+            }
+            while (pos < this.range.from)
+                this.range = this.ranges[--this.rangeIndex];
+            while (pos >= this.range.to)
+                this.range = this.ranges[++this.rangeIndex];
+            if (pos >= this.chunkPos && pos < this.chunkPos + this.chunk.length) {
+                this.chunkOff = pos - this.chunkPos;
+            }
+            else {
+                this.chunk = "";
+                this.chunkOff = 0;
+            }
+            this.readNext();
+        }
+        return this;
+    }
+    read(from, to) {
+        if (from >= this.chunkPos && to <= this.chunkPos + this.chunk.length)
+            return this.chunk.slice(from - this.chunkPos, to - this.chunkPos);
+        if (from >= this.chunk2Pos && to <= this.chunk2Pos + this.chunk2.length)
+            return this.chunk2.slice(from - this.chunk2Pos, to - this.chunk2Pos);
+        if (from >= this.range.from && to <= this.range.to)
+            return this.input.read(from, to);
+        let result = "";
+        for (let r of this.ranges) {
+            if (r.from >= to)
+                break;
+            if (r.to > from)
+                result += this.input.read(Math.max(r.from, from), Math.min(r.to, to));
+        }
+        return result;
+    }
+}
+class TokenGroup {
+    constructor(data, id) {
+        this.data = data;
+        this.id = id;
+    }
+    token(input, stack) {
+        let { parser } = stack.p;
+        dist_readToken(this.data, input, stack, this.id, parser.data, parser.tokenPrecTable);
+    }
+}
+TokenGroup.prototype.contextual = TokenGroup.prototype.fallback = TokenGroup.prototype.extend = false;
+class LocalTokenGroup {
+    constructor(data, precTable, elseToken) {
+        this.precTable = precTable;
+        this.elseToken = elseToken;
+        this.data = typeof data == "string" ? decodeArray(data) : data;
+    }
+    token(input, stack) {
+        let start = input.pos, skipped = 0;
+        for (;;) {
+            let atEof = input.next < 0, nextPos = input.resolveOffset(1, 1);
+            dist_readToken(this.data, input, stack, 0, this.data, this.precTable);
+            if (input.token.value > -1)
+                break;
+            if (this.elseToken == null)
+                return;
+            if (!atEof)
+                skipped++;
+            if (nextPos == null)
+                break;
+            input.reset(nextPos, input.token);
+        }
+        if (skipped) {
+            input.reset(start, input.token);
+            input.acceptToken(this.elseToken, skipped);
+        }
+    }
+}
+LocalTokenGroup.prototype.contextual = TokenGroup.prototype.fallback = TokenGroup.prototype.extend = false;
+class ExternalTokenizer {
+    constructor(token, options = {}) {
+        this.token = token;
+        this.contextual = !!options.contextual;
+        this.fallback = !!options.fallback;
+        this.extend = !!options.extend;
+    }
+}
+function dist_readToken(data, input, stack, group, precTable, precOffset) {
+    let state = 0, groupMask = 1 << group, { dialect } = stack.p.parser;
+    scan: for (;;) {
+        if ((groupMask & data[state]) == 0)
+            break;
+        let accEnd = data[state + 1];
+        for (let i = state + 3; i < accEnd; i += 2)
+            if ((data[i + 1] & groupMask) > 0) {
+                let term = data[i];
+                if (dialect.allows(term) &&
+                    (input.token.value == -1 || input.token.value == term ||
+                        overrides(term, input.token.value, precTable, precOffset))) {
+                    input.acceptToken(term);
+                    break;
+                }
+            }
+        let next = input.next, low = 0, high = data[state + 2];
+        if (input.next < 0 && high > low && data[accEnd + high * 3 - 3] == 65535) {
+            state = data[accEnd + high * 3 - 1];
+            continue scan;
+        }
+        for (; low < high;) {
+            let mid = (low + high) >> 1;
+            let index = accEnd + mid + (mid << 1);
+            let from = data[index], to = data[index + 1] || 0x10000;
+            if (next < from)
+                high = mid;
+            else if (next >= to)
+                low = mid + 1;
+            else {
+                state = data[index + 2];
+                input.advance();
+                continue scan;
+            }
+        }
+        break;
+    }
+}
+function findOffset(data, start, term) {
+    for (let i = start, next; (next = data[i]) != 65535; i++)
+        if (next == term)
+            return i - start;
+    return -1;
+}
+function overrides(token, prev, tableData, tableOffset) {
+    let iPrev = findOffset(tableData, tableOffset, prev);
+    return iPrev < 0 || findOffset(tableData, tableOffset, token) < iPrev;
+}
+const verbose = typeof process != "undefined" && process.env && /\bparse\b/.test(process.env.LOG);
+let stackIDs = null;
+function cutAt(tree, pos, side) {
+    let cursor = tree.cursor(IterMode.IncludeAnonymous);
+    cursor.moveTo(pos);
+    for (;;) {
+        if (!(side < 0 ? cursor.childBefore(pos) : cursor.childAfter(pos)))
+            for (;;) {
+                if ((side < 0 ? cursor.to < pos : cursor.from > pos) && !cursor.type.isError)
+                    return side < 0 ? Math.max(0, Math.min(cursor.to - 1, pos - 25))
+                        : Math.min(tree.length, Math.max(cursor.from + 1, pos + 25));
+                if (side < 0 ? cursor.prevSibling() : cursor.nextSibling())
+                    break;
+                if (!cursor.parent())
+                    return side < 0 ? 0 : tree.length;
+            }
+    }
+}
+class dist_FragmentCursor {
+    constructor(fragments, nodeSet) {
+        this.fragments = fragments;
+        this.nodeSet = nodeSet;
+        this.i = 0;
+        this.fragment = null;
+        this.safeFrom = -1;
+        this.safeTo = -1;
+        this.trees = [];
+        this.start = [];
+        this.index = [];
+        this.nextFragment();
+    }
+    nextFragment() {
+        let fr = this.fragment = this.i == this.fragments.length ? null : this.fragments[this.i++];
+        if (fr) {
+            this.safeFrom = fr.openStart ? cutAt(fr.tree, fr.from + fr.offset, 1) - fr.offset : fr.from;
+            this.safeTo = fr.openEnd ? cutAt(fr.tree, fr.to + fr.offset, -1) - fr.offset : fr.to;
+            while (this.trees.length) {
+                this.trees.pop();
+                this.start.pop();
+                this.index.pop();
+            }
+            this.trees.push(fr.tree);
+            this.start.push(-fr.offset);
+            this.index.push(0);
+            this.nextStart = this.safeFrom;
+        }
+        else {
+            this.nextStart = 1e9;
+        }
+    }
+    nodeAt(pos) {
+        if (pos < this.nextStart)
+            return null;
+        while (this.fragment && this.safeTo <= pos)
+            this.nextFragment();
+        if (!this.fragment)
+            return null;
+        for (;;) {
+            let last = this.trees.length - 1;
+            if (last < 0) {
+                this.nextFragment();
+                return null;
+            }
+            let top = this.trees[last], index = this.index[last];
+            if (index == top.children.length) {
+                this.trees.pop();
+                this.start.pop();
+                this.index.pop();
+                continue;
+            }
+            let next = top.children[index];
+            let start = this.start[last] + top.positions[index];
+            if (start > pos) {
+                this.nextStart = start;
+                return null;
+            }
+            if (next instanceof Tree) {
+                if (start == pos) {
+                    if (start < this.safeFrom)
+                        return null;
+                    let end = start + next.length;
+                    if (end <= this.safeTo) {
+                        let lookAhead = next.prop(NodeProp.lookAhead);
+                        if (!lookAhead || end + lookAhead < this.fragment.to)
+                            return next;
+                    }
+                }
+                this.index[last]++;
+                if (start + next.length >= Math.max(this.safeFrom, pos)) {
+                    this.trees.push(next);
+                    this.start.push(start);
+                    this.index.push(0);
+                }
+            }
+            else {
+                this.index[last]++;
+                this.nextStart = start + next.length;
+            }
+        }
+    }
+}
+class TokenCache {
+    constructor(parser, stream) {
+        this.stream = stream;
+        this.tokens = [];
+        this.mainToken = null;
+        this.actions = [];
+        this.tokens = parser.tokenizers.map(_ => new CachedToken);
+    }
+    getActions(stack) {
+        let actionIndex = 0;
+        let main = null;
+        let { parser } = stack.p, { tokenizers } = parser;
+        let mask = parser.stateSlot(stack.state, 3);
+        let context = stack.curContext ? stack.curContext.hash : 0;
+        let lookAhead = 0;
+        for (let i = 0; i < tokenizers.length; i++) {
+            if (((1 << i) & mask) == 0)
+                continue;
+            let tokenizer = tokenizers[i], token = this.tokens[i];
+            if (main && !tokenizer.fallback)
+                continue;
+            if (tokenizer.contextual || token.start != stack.pos || token.mask != mask || token.context != context) {
+                this.updateCachedToken(token, tokenizer, stack);
+                token.mask = mask;
+                token.context = context;
+            }
+            if (token.lookAhead > token.end + 25)
+                lookAhead = Math.max(token.lookAhead, lookAhead);
+            if (token.value != 0) {
+                let startIndex = actionIndex;
+                if (token.extended > -1)
+                    actionIndex = this.addActions(stack, token.extended, token.end, actionIndex);
+                actionIndex = this.addActions(stack, token.value, token.end, actionIndex);
+                if (!tokenizer.extend) {
+                    main = token;
+                    if (actionIndex > startIndex)
+                        break;
+                }
+            }
+        }
+        while (this.actions.length > actionIndex)
+            this.actions.pop();
+        if (lookAhead)
+            stack.setLookAhead(lookAhead);
+        if (!main && stack.pos == this.stream.end) {
+            main = new CachedToken;
+            main.value = stack.p.parser.eofTerm;
+            main.start = main.end = stack.pos;
+            actionIndex = this.addActions(stack, main.value, main.end, actionIndex);
+        }
+        this.mainToken = main;
+        return this.actions;
+    }
+    getMainToken(stack) {
+        if (this.mainToken)
+            return this.mainToken;
+        let main = new CachedToken, { pos, p } = stack;
+        main.start = pos;
+        main.end = Math.min(pos + 1, p.stream.end);
+        main.value = pos == p.stream.end ? p.parser.eofTerm : 0;
+        return main;
+    }
+    updateCachedToken(token, tokenizer, stack) {
+        let start = this.stream.clipPos(stack.pos);
+        tokenizer.token(this.stream.reset(start, token), stack);
+        if (token.value > -1) {
+            let { parser } = stack.p;
+            for (let i = 0; i < parser.specialized.length; i++)
+                if (parser.specialized[i] == token.value) {
+                    let result = parser.specializers[i](this.stream.read(token.start, token.end), stack);
+                    if (result >= 0 && stack.p.parser.dialect.allows(result >> 1)) {
+                        if ((result & 1) == 0)
+                            token.value = result >> 1;
+                        else
+                            token.extended = result >> 1;
+                        break;
+                    }
+                }
+        }
+        else {
+            token.value = 0;
+            token.end = this.stream.clipPos(start + 1);
+        }
+    }
+    putAction(action, token, end, index) {
+        for (let i = 0; i < index; i += 3)
+            if (this.actions[i] == action)
+                return index;
+        this.actions[index++] = action;
+        this.actions[index++] = token;
+        this.actions[index++] = end;
+        return index;
+    }
+    addActions(stack, token, end, index) {
+        let { state } = stack, { parser } = stack.p, { data } = parser;
+        for (let set = 0; set < 2; set++) {
+            for (let i = parser.stateSlot(state, set ? 2 : 1);; i += 3) {
+                if (data[i] == 65535) {
+                    if (data[i + 1] == 1) {
+                        i = pair(data, i + 2);
+                    }
+                    else {
+                        if (index == 0 && data[i + 1] == 2)
+                            index = this.putAction(pair(data, i + 2), token, end, index);
+                        break;
+                    }
+                }
+                if (data[i] == token)
+                    index = this.putAction(pair(data, i + 1), token, end, index);
+            }
+        }
+        return index;
+    }
+}
+class dist_Parse {
+    constructor(parser, input, fragments, ranges) {
+        this.parser = parser;
+        this.input = input;
+        this.ranges = ranges;
+        this.recovering = 0;
+        this.nextStackID = 0x2654;
+        this.minStackPos = 0;
+        this.reused = [];
+        this.stoppedAt = null;
+        this.lastBigReductionStart = -1;
+        this.lastBigReductionSize = 0;
+        this.bigReductionCount = 0;
+        this.stream = new InputStream(input, ranges);
+        this.tokens = new TokenCache(parser, this.stream);
+        this.topTerm = parser.top[1];
+        let { from } = ranges[0];
+        this.stacks = [Stack.start(this, parser.top[0], from)];
+        this.fragments = fragments.length && this.stream.end - from > parser.bufferLength * 4
+            ? new dist_FragmentCursor(fragments, parser.nodeSet) : null;
+    }
+    get parsedPos() {
+        return this.minStackPos;
+    }
+    advance() {
+        let stacks = this.stacks, pos = this.minStackPos;
+        let newStacks = this.stacks = [];
+        let stopped, stoppedTokens;
+        if (this.bigReductionCount > 300 && stacks.length == 1) {
+            let [s] = stacks;
+            while (s.forceReduce() && s.stack.length && s.stack[s.stack.length - 2] >= this.lastBigReductionStart) { }
+            this.bigReductionCount = this.lastBigReductionSize = 0;
+        }
+        for (let i = 0; i < stacks.length; i++) {
+            let stack = stacks[i];
+            for (;;) {
+                this.tokens.mainToken = null;
+                if (stack.pos > pos) {
+                    newStacks.push(stack);
+                }
+                else if (this.advanceStack(stack, newStacks, stacks)) {
+                    continue;
+                }
+                else {
+                    if (!stopped) {
+                        stopped = [];
+                        stoppedTokens = [];
+                    }
+                    stopped.push(stack);
+                    let tok = this.tokens.getMainToken(stack);
+                    stoppedTokens.push(tok.value, tok.end);
+                }
+                break;
+            }
+        }
+        if (!newStacks.length) {
+            let finished = stopped && findFinished(stopped);
+            if (finished) {
+                if (verbose)
+                    console.log("Finish with " + this.stackID(finished));
+                return this.stackToTree(finished);
+            }
+            if (this.parser.strict) {
+                if (verbose && stopped)
+                    console.log("Stuck with token " + (this.tokens.mainToken ? this.parser.getName(this.tokens.mainToken.value) : "none"));
+                throw new SyntaxError("No parse at " + pos);
+            }
+            if (!this.recovering)
+                this.recovering = 5;
+        }
+        if (this.recovering && stopped) {
+            let finished = this.stoppedAt != null && stopped[0].pos > this.stoppedAt ? stopped[0]
+                : this.runRecovery(stopped, stoppedTokens, newStacks);
+            if (finished) {
+                if (verbose)
+                    console.log("Force-finish " + this.stackID(finished));
+                return this.stackToTree(finished.forceAll());
+            }
+        }
+        if (this.recovering) {
+            let maxRemaining = this.recovering == 1 ? 1 : this.recovering * 3;
+            if (newStacks.length > maxRemaining) {
+                newStacks.sort((a, b) => b.score - a.score);
+                while (newStacks.length > maxRemaining)
+                    newStacks.pop();
+            }
+            if (newStacks.some(s => s.reducePos > pos))
+                this.recovering--;
+        }
+        else if (newStacks.length > 1) {
+            outer: for (let i = 0; i < newStacks.length - 1; i++) {
+                let stack = newStacks[i];
+                for (let j = i + 1; j < newStacks.length; j++) {
+                    let other = newStacks[j];
+                    if (stack.sameState(other) ||
+                        stack.buffer.length > 500 && other.buffer.length > 500) {
+                        if (((stack.score - other.score) || (stack.buffer.length - other.buffer.length)) > 0) {
+                            newStacks.splice(j--, 1);
+                        }
+                        else {
+                            newStacks.splice(i--, 1);
+                            continue outer;
+                        }
+                    }
+                }
+            }
+            if (newStacks.length > 12)
+                newStacks.splice(12, newStacks.length - 12);
+        }
+        this.minStackPos = newStacks[0].pos;
+        for (let i = 1; i < newStacks.length; i++)
+            if (newStacks[i].pos < this.minStackPos)
+                this.minStackPos = newStacks[i].pos;
+        return null;
+    }
+    stopAt(pos) {
+        if (this.stoppedAt != null && this.stoppedAt < pos)
+            throw new RangeError("Can't move stoppedAt forward");
+        this.stoppedAt = pos;
+    }
+    advanceStack(stack, stacks, split) {
+        let start = stack.pos, { parser } = this;
+        let base = verbose ? this.stackID(stack) + " -> " : "";
+        if (this.stoppedAt != null && start > this.stoppedAt)
+            return stack.forceReduce() ? stack : null;
+        if (this.fragments) {
+            let strictCx = stack.curContext && stack.curContext.tracker.strict, cxHash = strictCx ? stack.curContext.hash : 0;
+            for (let cached = this.fragments.nodeAt(start); cached;) {
+                let match = this.parser.nodeSet.types[cached.type.id] == cached.type ? parser.getGoto(stack.state, cached.type.id) : -1;
+                if (match > -1 && cached.length && (!strictCx || (cached.prop(NodeProp.contextHash) || 0) == cxHash)) {
+                    stack.useNode(cached, match);
+                    if (verbose)
+                        console.log(base + this.stackID(stack) + ` (via reuse of ${parser.getName(cached.type.id)})`);
+                    return true;
+                }
+                if (!(cached instanceof Tree) || cached.children.length == 0 || cached.positions[0] > 0)
+                    break;
+                let inner = cached.children[0];
+                if (inner instanceof Tree && cached.positions[0] == 0)
+                    cached = inner;
+                else
+                    break;
+            }
+        }
+        let defaultReduce = parser.stateSlot(stack.state, 4);
+        if (defaultReduce > 0) {
+            stack.reduce(defaultReduce);
+            if (verbose)
+                console.log(base + this.stackID(stack) + ` (via always-reduce ${parser.getName(defaultReduce & 65535)})`);
+            return true;
+        }
+        if (stack.stack.length >= 8400) {
+            while (stack.stack.length > 6000 && stack.forceReduce()) { }
+        }
+        let actions = this.tokens.getActions(stack);
+        for (let i = 0; i < actions.length;) {
+            let action = actions[i++], term = actions[i++], end = actions[i++];
+            let last = i == actions.length || !split;
+            let localStack = last ? stack : stack.split();
+            let main = this.tokens.mainToken;
+            localStack.apply(action, term, main ? main.start : localStack.pos, end);
+            if (verbose)
+                console.log(base + this.stackID(localStack) + ` (via ${(action & 65536) == 0 ? "shift"
+                    : `reduce of ${parser.getName(action & 65535)}`} for ${parser.getName(term)} @ ${start}${localStack == stack ? "" : ", split"})`);
+            if (last)
+                return true;
+            else if (localStack.pos > start)
+                stacks.push(localStack);
+            else
+                split.push(localStack);
+        }
+        return false;
+    }
+    advanceFully(stack, newStacks) {
+        let pos = stack.pos;
+        for (;;) {
+            if (!this.advanceStack(stack, null, null))
+                return false;
+            if (stack.pos > pos) {
+                pushStackDedup(stack, newStacks);
+                return true;
+            }
+        }
+    }
+    runRecovery(stacks, tokens, newStacks) {
+        let finished = null, restarted = false;
+        for (let i = 0; i < stacks.length; i++) {
+            let stack = stacks[i], token = tokens[i << 1], tokenEnd = tokens[(i << 1) + 1];
+            let base = verbose ? this.stackID(stack) + " -> " : "";
+            if (stack.deadEnd) {
+                if (restarted)
+                    continue;
+                restarted = true;
+                stack.restart();
+                if (verbose)
+                    console.log(base + this.stackID(stack) + " (restarted)");
+                let done = this.advanceFully(stack, newStacks);
+                if (done)
+                    continue;
+            }
+            let force = stack.split(), forceBase = base;
+            for (let j = 0; force.forceReduce() && j < 10; j++) {
+                if (verbose)
+                    console.log(forceBase + this.stackID(force) + " (via force-reduce)");
+                let done = this.advanceFully(force, newStacks);
+                if (done)
+                    break;
+                if (verbose)
+                    forceBase = this.stackID(force) + " -> ";
+            }
+            for (let insert of stack.recoverByInsert(token)) {
+                if (verbose)
+                    console.log(base + this.stackID(insert) + " (via recover-insert)");
+                this.advanceFully(insert, newStacks);
+            }
+            if (this.stream.end > stack.pos) {
+                if (tokenEnd == stack.pos) {
+                    tokenEnd++;
+                    token = 0;
+                }
+                stack.recoverByDelete(token, tokenEnd);
+                if (verbose)
+                    console.log(base + this.stackID(stack) + ` (via recover-delete ${this.parser.getName(token)})`);
+                pushStackDedup(stack, newStacks);
+            }
+            else if (!finished || finished.score < stack.score) {
+                finished = stack;
+            }
+        }
+        return finished;
+    }
+    stackToTree(stack) {
+        stack.close();
+        return Tree.build({ buffer: StackBufferCursor.create(stack),
+            nodeSet: this.parser.nodeSet,
+            topID: this.topTerm,
+            maxBufferLength: this.parser.bufferLength,
+            reused: this.reused,
+            start: this.ranges[0].from,
+            length: stack.pos - this.ranges[0].from,
+            minRepeatType: this.parser.minRepeatTerm });
+    }
+    stackID(stack) {
+        let id = (stackIDs || (stackIDs = new WeakMap)).get(stack);
+        if (!id)
+            stackIDs.set(stack, id = String.fromCodePoint(this.nextStackID++));
+        return id + stack;
+    }
+}
+function pushStackDedup(stack, newStacks) {
+    for (let i = 0; i < newStacks.length; i++) {
+        let other = newStacks[i];
+        if (other.pos == stack.pos && other.sameState(stack)) {
+            if (newStacks[i].score < stack.score)
+                newStacks[i] = stack;
+            return;
+        }
+    }
+    newStacks.push(stack);
+}
+class Dialect {
+    constructor(source, flags, disabled) {
+        this.source = source;
+        this.flags = flags;
+        this.disabled = disabled;
+    }
+    allows(term) { return !this.disabled || this.disabled[term] == 0; }
+}
+const dist_id = x => x;
+class ContextTracker {
+    constructor(spec) {
+        this.start = spec.start;
+        this.shift = spec.shift || dist_id;
+        this.reduce = spec.reduce || dist_id;
+        this.reuse = spec.reuse || dist_id;
+        this.hash = spec.hash || (() => 0);
+        this.strict = spec.strict !== false;
+    }
+}
+class LRParser extends Parser {
+    constructor(spec) {
+        super();
+        this.wrappers = [];
+        if (spec.version != 14)
+            throw new RangeError(`Parser version (${spec.version}) doesn't match runtime version (${14})`);
+        let nodeNames = spec.nodeNames.split(" ");
+        this.minRepeatTerm = nodeNames.length;
+        for (let i = 0; i < spec.repeatNodeCount; i++)
+            nodeNames.push("");
+        let topTerms = Object.keys(spec.topRules).map(r => spec.topRules[r][1]);
+        let nodeProps = [];
+        for (let i = 0; i < nodeNames.length; i++)
+            nodeProps.push([]);
+        function setProp(nodeID, prop, value) {
+            nodeProps[nodeID].push([prop, prop.deserialize(String(value))]);
+        }
+        if (spec.nodeProps)
+            for (let propSpec of spec.nodeProps) {
+                let prop = propSpec[0];
+                if (typeof prop == "string")
+                    prop = NodeProp[prop];
+                for (let i = 1; i < propSpec.length;) {
+                    let next = propSpec[i++];
+                    if (next >= 0) {
+                        setProp(next, prop, propSpec[i++]);
+                    }
+                    else {
+                        let value = propSpec[i + -next];
+                        for (let j = -next; j > 0; j--)
+                            setProp(propSpec[i++], prop, value);
+                        i++;
+                    }
+                }
+            }
+        this.nodeSet = new NodeSet(nodeNames.map((name, i) => NodeType.define({
+            name: i >= this.minRepeatTerm ? undefined : name,
+            id: i,
+            props: nodeProps[i],
+            top: topTerms.indexOf(i) > -1,
+            error: i == 0,
+            skipped: spec.skippedNodes && spec.skippedNodes.indexOf(i) > -1
+        })));
+        if (spec.propSources)
+            this.nodeSet = this.nodeSet.extend(...spec.propSources);
+        this.strict = false;
+        this.bufferLength = DefaultBufferLength;
+        let tokenArray = decodeArray(spec.tokenData);
+        this.context = spec.context;
+        this.specializerSpecs = spec.specialized || [];
+        this.specialized = new Uint16Array(this.specializerSpecs.length);
+        for (let i = 0; i < this.specializerSpecs.length; i++)
+            this.specialized[i] = this.specializerSpecs[i].term;
+        this.specializers = this.specializerSpecs.map(getSpecializer);
+        this.states = decodeArray(spec.states, Uint32Array);
+        this.data = decodeArray(spec.stateData);
+        this.goto = decodeArray(spec.goto);
+        this.maxTerm = spec.maxTerm;
+        this.tokenizers = spec.tokenizers.map(value => typeof value == "number" ? new TokenGroup(tokenArray, value) : value);
+        this.topRules = spec.topRules;
+        this.dialects = spec.dialects || {};
+        this.dynamicPrecedences = spec.dynamicPrecedences || null;
+        this.tokenPrecTable = spec.tokenPrec;
+        this.termNames = spec.termNames || null;
+        this.maxNode = this.nodeSet.types.length - 1;
+        this.dialect = this.parseDialect();
+        this.top = this.topRules[Object.keys(this.topRules)[0]];
+    }
+    createParse(input, fragments, ranges) {
+        let parse = new dist_Parse(this, input, fragments, ranges);
+        for (let w of this.wrappers)
+            parse = w(parse, input, fragments, ranges);
+        return parse;
+    }
+    getGoto(state, term, loose = false) {
+        let table = this.goto;
+        if (term >= table[0])
+            return -1;
+        for (let pos = table[term + 1];;) {
+            let groupTag = table[pos++], last = groupTag & 1;
+            let target = table[pos++];
+            if (last && loose)
+                return target;
+            for (let end = pos + (groupTag >> 1); pos < end; pos++)
+                if (table[pos] == state)
+                    return target;
+            if (last)
+                return -1;
+        }
+    }
+    hasAction(state, terminal) {
+        let data = this.data;
+        for (let set = 0; set < 2; set++) {
+            for (let i = this.stateSlot(state, set ? 2 : 1), next;; i += 3) {
+                if ((next = data[i]) == 65535) {
+                    if (data[i + 1] == 1)
+                        next = data[i = pair(data, i + 2)];
+                    else if (data[i + 1] == 2)
+                        return pair(data, i + 2);
+                    else
+                        break;
+                }
+                if (next == terminal || next == 0)
+                    return pair(data, i + 1);
+            }
+        }
+        return 0;
+    }
+    stateSlot(state, slot) {
+        return this.states[(state * 6) + slot];
+    }
+    stateFlag(state, flag) {
+        return (this.stateSlot(state, 0) & flag) > 0;
+    }
+    validAction(state, action) {
+        return !!this.allActions(state, a => a == action ? true : null);
+    }
+    allActions(state, action) {
+        let deflt = this.stateSlot(state, 4);
+        let result = deflt ? action(deflt) : undefined;
+        for (let i = this.stateSlot(state, 1); result == null; i += 3) {
+            if (this.data[i] == 65535) {
+                if (this.data[i + 1] == 1)
+                    i = pair(this.data, i + 2);
+                else
+                    break;
+            }
+            result = action(pair(this.data, i + 1));
+        }
+        return result;
+    }
+    nextStates(state) {
+        let result = [];
+        for (let i = this.stateSlot(state, 1);; i += 3) {
+            if (this.data[i] == 65535) {
+                if (this.data[i + 1] == 1)
+                    i = pair(this.data, i + 2);
+                else
+                    break;
+            }
+            if ((this.data[i + 2] & (65536 >> 16)) == 0) {
+                let value = this.data[i + 1];
+                if (!result.some((v, i) => (i & 1) && v == value))
+                    result.push(this.data[i], value);
+            }
+        }
+        return result;
+    }
+    configure(config) {
+        let copy = Object.assign(Object.create(LRParser.prototype), this);
+        if (config.props)
+            copy.nodeSet = this.nodeSet.extend(...config.props);
+        if (config.top) {
+            let info = this.topRules[config.top];
+            if (!info)
+                throw new RangeError(`Invalid top rule name ${config.top}`);
+            copy.top = info;
+        }
+        if (config.tokenizers)
+            copy.tokenizers = this.tokenizers.map(t => {
+                let found = config.tokenizers.find(r => r.from == t);
+                return found ? found.to : t;
+            });
+        if (config.specializers) {
+            copy.specializers = this.specializers.slice();
+            copy.specializerSpecs = this.specializerSpecs.map((s, i) => {
+                let found = config.specializers.find(r => r.from == s.external);
+                if (!found)
+                    return s;
+                let spec = Object.assign(Object.assign({}, s), { external: found.to });
+                copy.specializers[i] = getSpecializer(spec);
+                return spec;
+            });
+        }
+        if (config.contextTracker)
+            copy.context = config.contextTracker;
+        if (config.dialect)
+            copy.dialect = this.parseDialect(config.dialect);
+        if (config.strict != null)
+            copy.strict = config.strict;
+        if (config.wrap)
+            copy.wrappers = copy.wrappers.concat(config.wrap);
+        if (config.bufferLength != null)
+            copy.bufferLength = config.bufferLength;
+        return copy;
+    }
+    hasWrappers() {
+        return this.wrappers.length > 0;
+    }
+    getName(term) {
+        return this.termNames ? this.termNames[term] : String(term <= this.maxNode && this.nodeSet.types[term].name || term);
+    }
+    get eofTerm() { return this.maxNode + 1; }
+    get topNode() { return this.nodeSet.types[this.top[1]]; }
+    dynamicPrecedence(term) {
+        let prec = this.dynamicPrecedences;
+        return prec == null ? 0 : prec[term] || 0;
+    }
+    parseDialect(dialect) {
+        let values = Object.keys(this.dialects), flags = values.map(() => false);
+        if (dialect)
+            for (let part of dialect.split(" ")) {
+                let id = values.indexOf(part);
+                if (id >= 0)
+                    flags[id] = true;
+            }
+        let disabled = null;
+        for (let i = 0; i < values.length; i++)
+            if (!flags[i]) {
+                for (let j = this.dialects[values[i]], id; (id = this.data[j++]) != 65535;)
+                    (disabled || (disabled = new Uint8Array(this.maxTerm + 1)))[id] = 1;
+            }
+        return new Dialect(dialect, flags, disabled);
+    }
+    static deserialize(spec) {
+        return new LRParser(spec);
+    }
+}
+function pair(data, off) { return data[off] | (data[off + 1] << 16); }
+function findFinished(stacks) {
+    let best = null;
+    for (let stack of stacks) {
+        let stopped = stack.p.stoppedAt;
+        if ((stack.pos == stack.p.stream.end || stopped != null && stack.pos > stopped) &&
+            stack.p.parser.stateFlag(stack.state, 2) &&
+            (!best || best.score < stack.score))
+            best = stack;
+    }
+    return best;
+}
+function getSpecializer(spec) {
+    if (spec.external) {
+        let mask = spec.extend ? 1 : 0;
+        return (value, stack) => (spec.external(value, stack) << 1) | mask;
+    }
+    return spec.get;
+}
+
+
+;// ./node_modules/@lezer/cpp/dist/index.js
+
+
+const RawString = 1, templateArgsEndFallback = 2, MacroName = 3;
+const R = 82, L = 76, u = 117, U = 85, a = 97, z = 122, A = 65, Z = 90, Underscore = 95, Zero = 48, Quote = 34, ParenL = 40, ParenR = 41, Space = 32, GreaterThan = 62;
+const rawString = new ExternalTokenizer(input => {
+    if (input.next == L || input.next == U) {
+        input.advance();
+    }
+    else if (input.next == u) {
+        input.advance();
+        if (input.next == Zero + 8)
+            input.advance();
+    }
+    if (input.next != R)
+        return;
+    input.advance();
+    if (input.next != Quote)
+        return;
+    input.advance();
+    let marker = "";
+    while (input.next != ParenL) {
+        if (input.next == Space || input.next <= 13 || input.next == ParenR)
+            return;
+        marker += String.fromCharCode(input.next);
+        input.advance();
+    }
+    input.advance();
+    for (;;) {
+        if (input.next < 0)
+            return input.acceptToken(RawString);
+        if (input.next == ParenR) {
+            let match = true;
+            for (let i = 0; match && i < marker.length; i++)
+                if (input.peek(i + 1) != marker.charCodeAt(i))
+                    match = false;
+            if (match && input.peek(marker.length + 1) == Quote)
+                return input.acceptToken(RawString, 2 + marker.length);
+        }
+        input.advance();
+    }
+});
+const fallback = new ExternalTokenizer(input => {
+    if (input.next == GreaterThan) {
+        if (input.peek(1) == GreaterThan)
+            input.acceptToken(templateArgsEndFallback, 1);
+    }
+    else {
+        let sawLetter = false, i = 0;
+        for (;; i++) {
+            if (input.next >= A && input.next <= Z)
+                sawLetter = true;
+            else if (input.next >= a && input.next <= z)
+                return;
+            else if (input.next != Underscore && !(input.next >= Zero && input.next <= Zero + 9))
+                break;
+            input.advance();
+        }
+        if (sawLetter && i > 1)
+            input.acceptToken(MacroName);
+    }
+}, { extend: true });
+const cppHighlighting = styleTags({
+    "typedef struct union enum class typename decltype auto template operator friend noexcept namespace using requires concept import export module __attribute__ __declspec __based": tags.definitionKeyword,
+    "extern MsCallModifier MsPointerModifier extern static register thread_local inline const volatile restrict _Atomic mutable constexpr constinit consteval virtual explicit VirtualSpecifier Access": tags.modifier,
+    "if else switch for while do case default return break continue goto throw try catch": tags.controlKeyword,
+    "co_return co_yield co_await": tags.controlKeyword,
+    "new sizeof delete static_assert": tags.operatorKeyword,
+    "NULL nullptr": tags.null,
+    this: tags.self,
+    "True False": tags.bool,
+    "TypeSize PrimitiveType": tags.standard(tags.typeName),
+    TypeIdentifier: tags.typeName,
+    FieldIdentifier: tags.propertyName,
+    "CallExpression/FieldExpression/FieldIdentifier": tags.function(tags.propertyName),
+    "ModuleName/Identifier": tags.namespace,
+    "PartitionName": tags.labelName,
+    StatementIdentifier: tags.labelName,
+    "Identifier DestructorName": tags.variableName,
+    "CallExpression/Identifier": tags.function(tags.variableName),
+    "CallExpression/ScopedIdentifier/Identifier": tags.function(tags.variableName),
+    "FunctionDeclarator/Identifier FunctionDeclarator/DestructorName": tags.function(tags.definition(tags.variableName)),
+    NamespaceIdentifier: tags.namespace,
+    OperatorName: tags.operator,
+    ArithOp: tags.arithmeticOperator,
+    LogicOp: tags.logicOperator,
+    BitOp: tags.bitwiseOperator,
+    CompareOp: tags.compareOperator,
+    AssignOp: tags.definitionOperator,
+    UpdateOp: tags.updateOperator,
+    LineComment: tags.lineComment,
+    BlockComment: tags.blockComment,
+    Number: tags.number,
+    String: tags.string,
+    "RawString SystemLibString": tags.special(tags.string),
+    CharLiteral: tags.character,
+    EscapeSequence: tags.escape,
+    "UserDefinedLiteral/Identifier": tags.literal,
+    PreProcArg: tags.meta,
+    "PreprocDirectiveName #include #ifdef #ifndef #if #define #else #endif #elif": tags.processingInstruction,
+    MacroName: tags.special(tags.name),
+    "( )": tags.paren,
+    "[ ]": tags.squareBracket,
+    "{ }": tags.brace,
+    "< >": tags.angleBracket,
+    ". ->": tags.derefOperator,
+    ", ;": tags.separator
+});
+const spec_identifier = { __proto__: null, bool: 36, char: 36, int: 36, float: 36, double: 36, void: 36, size_t: 36, ssize_t: 36, intptr_t: 36, uintptr_t: 36, charptr_t: 36, int8_t: 36, int16_t: 36, int32_t: 36, int64_t: 36, uint8_t: 36, uint16_t: 36, uint32_t: 36, uint64_t: 36, char8_t: 36, char16_t: 36, char32_t: 36, char64_t: 36, const: 70, volatile: 72, restrict: 74, _Atomic: 76, mutable: 78, constexpr: 80, constinit: 82, consteval: 84, struct: 88, __declspec: 92, final: 148, override: 148, public: 152, private: 152, protected: 152, virtual: 154, extern: 160, static: 162, register: 164, inline: 166, thread_local: 168, __attribute__: 172, __based: 178, __restrict: 180, __uptr: 180, __sptr: 180, _unaligned: 180, __unaligned: 180, noexcept: 194, requires: 198, TRUE: 784, true: 784, FALSE: 786, false: 786, typename: 218, class: 220, template: 234, throw: 248, __cdecl: 256, __clrcall: 256, __stdcall: 256, __fastcall: 256, __thiscall: 256, __vectorcall: 256, try: 260, catch: 264, export: 282, import: 286, case: 296, default: 298, if: 308, else: 314, switch: 318, do: 322, while: 324, for: 330, return: 334, break: 338, continue: 342, goto: 346, co_return: 350, co_yield: 354, using: 362, typedef: 366, namespace: 380, new: 398, delete: 400, co_await: 402, concept: 406, enum: 410, static_assert: 414, friend: 422, union: 424, explicit: 430, operator: 444, module: 456, signed: 518, unsigned: 518, long: 518, short: 518, decltype: 528, auto: 530, sizeof: 566, NULL: 572, nullptr: 586, this: 588 };
+const spec_ = { __proto__: null, "<": 131 };
+const spec_templateArgsEnd = { __proto__: null, ">": 135 };
+const spec_scopedIdentifier = { __proto__: null, operator: 388, new: 576, delete: 582 };
+const parser = LRParser.deserialize({
+    version: 14,
+    states: "$:|Q!QQVOOP'gOUOOO(XOWO'#CdO,RQUO'#CgO,]QUO'#FjO-sQbO'#CxO.UQUO'#CxO0TQUO'#KZO0[QUO'#CwO0gOpO'#DvO0oQ!dO'#D]OOQR'#JO'#JOO5XQVO'#GUO5fQUO'#JVOOQQ'#JV'#JVO8zQUO'#KmO<eQUO'#KmO>{QVO'#E^O?]QUO'#E^OOQQ'#Ed'#EdOOQQ'#Ee'#EeO?bQVO'#EfO@XQVO'#EiOBUQUO'#FPOBvQUO'#FhOOQR'#Fj'#FjOB{QUO'#FjOOQR'#LQ'#LQOOQR'#LP'#LPOETQVO'#KQOFxQUO'#LVOGVQUO'#KqOGkQUO'#LVOH]QUO'#LXOOQR'#HU'#HUOOQR'#HV'#HVOOQR'#HW'#HWOOQR'#K|'#K|OOQR'#J_'#J_Q!QQVOOOHkQVO'#FOOIWQUO'#EhOI_QUOOOKZQVO'#HgOKkQUO'#HgONVQUO'#KqONaQUO'#KqOOQQ'#Kq'#KqO!!_QUO'#KqOOQQ'#Jq'#JqO!!lQUO'#HxOOQQ'#KZ'#KZO!&^QUO'#KZO!&zQUO'#KQO!(zQVO'#I]O!(zQVO'#I`OCQQUO'#KQOOQQ'#Ip'#IpOOQQ'#KQ'#KQO!,}QUO'#KZOOQR'#KY'#KYO!-UQUO'#DZO!/mQUO'#KnOOQQ'#Kn'#KnO!/tQUO'#KnO!/{QUO'#ETO!0QQUO'#EWO!0VQUO'#FRO8zQUO'#FPO!QQVO'#F^O!0[Q#vO'#F`O!0gQUO'#FkO!0oQUO'#FpO!0tQVO'#FrO!0oQUO'#FuO!3sQUO'#FvO!3xQVO'#FxO!4SQUO'#FzO!4XQUO'#F|O!4^QUO'#GOO!4cQVO'#GQO!(zQVO'#GSO!4jQUO'#GpO!4xQUO'#GYO!(zQVO'#FeO!6VQUO'#FeO!6[QVO'#G`O!6cQUO'#GaO!6nQUO'#GnO!6sQUO'#GrO!6xQUO'#GzO!7jQ&lO'#HiO!:mQUO'#GuO!:}QUO'#HXO!;YQUO'#HZO!;bQUO'#DXO!;bQUO'#HuO!;bQUO'#HvO!;yQUO'#HwO!<[QUO'#H|O!=PQUO'#H}O!>uQVO'#IbO!(zQVO'#IdO!?PQUO'#IgO!?WQVO'#IjP!@}{,UO'#CbP!6n{,UO'#CbP!AY{7[O'#CbP!6n{,UO'#CbP!A_{,UO'#CbP!AjOSO'#IzPOOO)CEn)CEnOOOO'#I|'#I|O!AtOWO,59OOOQR,59O,59OO!(zQVO,59VOOQQ,59X,59XO!(zQVO,5;ROOQR,5<U,5<UO!BPQUO,59ZO!(zQVO,5>qOOQR'#IX'#IXOOQR'#IY'#IYOOQR'#IZ'#IZOOQR'#I['#I[O!(zQVO,5>rO!(zQVO,5>rO!(zQVO,5>rO!(zQVO,5>rO!(zQVO,5>rO!(zQVO,5>rO!(zQVO,5>rO!(zQVO,5>rO!(zQVO,5>rO!(zQVO,5>rO!DOQVO,5>zOOQQ,5?W,5?WO!EqQVO'#CjO!IjQUO'#CzOOQQ,59d,59dOOQQ,59c,59cOOQQ,5<},5<}O!IwQ&lO,5=mO!?PQUO,5?RO!LkQVO,5?UO!LrQbO,59dO!L}QVO'#FYOOQQ,5?P,5?PO!M_QVO,59WO!MfO`O,5:bO!MkQbO'#D^O!M|QbO'#K_O!N[QbO,59wO!NdQbO'#CxO!NuQUO'#CxO!NzQUO'#KZO# UQUO'#CwOOQR-E<|-E<|O# aQUO,5AoO# hQVO'#EfO@XQVO'#EiOBUQUO,5;kOOQR,5<p,5<pO#$aQUO'#KQO#$hQUO'#KQO!(zQVO'#IUO8zQUO,5;kO#${Q&lO'#HiO#(SQUO'#CtO#*wQbO'#CxO#*|QUO'#CwO#.jQUO'#KZOOQQ-E=T-E=TO#0}QUO,5AXO#1XQUO'#KZO#1cQUO,5AXOOQR,5Ao,5AoOOQQ,5>l,5>lO#3gQUO'#CgO#4]QUO,5>pO#6OQUO'#IeOOQR'#I}'#I}O#6WQUO,5:xO#6tQUO,5:xO#7eQUO,5:xO#8YQUO'#CuO!0QQUO'#CmOOQQ'#JW'#JWO#6tQUO,5:xO#8bQUO,5;QO!4xQUO'#DOO#9kQUO,5;QO#9pQUO,5>QO#:|QUO'#DOO#;dQUO,5>{O#;iQUO'#KwO#<rQUO,5;TO#<zQVO,5;TO#=UQUO,5;TOOQQ,5;T,5;TO#>}QUO'#L[O#?UQUO,5>UO#?ZQbO'#CxO#?fQUO'#GcO#?kQUO'#E^O#@[QUO,5;kO#@sQUO'#K}O#@{QUO,5;rOKkQUO'#HfOBUQUO'#HgO#AQQUO'#KqO!6nQUO'#HjO#AxQUO'#CuO!0tQVO,5<SOOQQ'#Cg'#CgOOQR'#Jh'#JhO#A}QVO,5=`OOQQ,5?Z,5?ZO#DWQbO'#CxO#DcQUO'#GcOOQQ'#Ji'#JiOOQQ-E=g-E=gOGVQUO,5AqOGkQUO,5AqO#DhQUO,5AsO#DsQUO'#G|OOQR,5Aq,5AqO#DhQUO,5AqO#EOQUO'#HOO#EWQUO,5AsOOQR,5As,5AsOOQR,5At,5AtO#EfQVO,5AtOOQR-E=]-E=]O#G`QVO,5;jOOQR,5;j,5;jO#IaQUO'#EjO#JfQUO'#EwO#K]QVO'#ExO#MoQUO'#EvO#MwQUO'#EyO#NvQUO'#EzOOQQ'#Kz'#KzO$ mQUO,5;SO$!sQUO'#EvOOQQ,5;S,5;SO$#pQUO,5;SO$%cQUO,5:yO$'|QVO,5>PO$(WQUO'#E[O$(eQUO,5>ROOQQ,5>S,5>SO$,RQVO'#C|OOQQ-E=o-E=oOOQQ,5>d,5>dOOQQ,59a,59aO$,]QUO,5>wO$.]QUO,5>zO!6nQUO,59uO$.pQUO,5;qO$.}QUO,5<{O!0QQUO,5:oOOQQ,5:r,5:rO$/YQUO,5;mO$/_QUO'#KmOBUQUO,5;kOOQR,5;x,5;xO$0OQUO'#FbO$0^QUO'#FbO$0cQUO,5;zO$3|QVO'#FmO!0tQVO,5<VO!0oQUO,5<VO!0VQUO,5<[O$4TQVO'#GUO$7PQUO,5<^O!0tQVO,5<aO$:gQVO,5<bO$:tQUO,5<dOOQR,5<d,5<dO$;}QUO,5<dOOQR,5<f,5<fOOQR,5<h,5<hOOQQ'#Fi'#FiO$<SQUO,5<jO$<XQUO,5<lOOQR,5<l,5<lO$=_QUO,5<nO$>eQUO,5<rO$>pQUO,5=[O$>uQUO,5=[O!4xQUO,5<tO$>}QUO,5<tO$?cQUO,5<PO$@iQVO,5<PO$BzQUO,5<zOOQR,5<z,5<zOOQR,5<{,5<{O$>uQUO,5<{O$DQQUO,5<{O$D]QUO,5=YO!(zQVO,5=^O!(zQVO,5=fO#NeQUO,5=mOOQQ,5>T,5>TO$FbQUO,5>TO$FlQUO,5>TO$FqQUO,5>TO$FvQUO,5>TO!6nQUO,5>TO$HtQUO'#KZO$H{QUO,5=oO$IWQUO,5=aOKkQUO,5=oO$JQQUO,5=sOOQR,5=s,5=sO$JYQUO,5=sO$LeQVO'#H[OOQQ,5=u,5=uO!;]QUO,5=uO%#`QUO'#KjO%#gQUO'#K[O%#{QUO'#KjO%$VQUO'#DyO%$hQUO'#D|O%'eQUO'#K[OOQQ'#K['#K[O%)WQUO'#K[O%#gQUO'#K[O%)]QUO'#K[OOQQ,59s,59sOOQQ,5>a,5>aOOQQ,5>b,5>bO%)eQUO'#HzO%)mQUO,5>cOOQQ,5>c,5>cO%-XQUO,5>cO%-dQUO,5>hO%1OQVO,5>iO%1VQUO,5>|O# hQVO'#EfO%4]QUO,5>|OOQQ,5>|,5>|O%4|QUO,5?OO%7QQUO,5?RO!<[QUO,5?RO%8|QUO,5?UO%<iQVO,5?UP!A_{,UO,58|P%<p{,UO,58|P%=O{7[O,58|P%=U{,UO,58|PO{O'#Ju'#JuP%=Z{,UO'#LcPOOO'#Lc'#LcP%=a{,UO'#LcPOOO,58|,58|POOO,5?f,5?fP%=fOSO,5?fOOOO-E<z-E<zOOQR1G.j1G.jO%=mQUO1G.qO%>sQUO1G0mOOQQ1G0m1G0mO%@PQUO'#CpO%B`QbO'#CxO%BkQUO'#CsO%BpQUO'#CsO%BuQUO1G.uO#AxQUO'#CrOOQQ1G.u1G.uO%DxQUO1G4]O%FOQUO1G4^O%GqQUO1G4^O%IdQUO1G4^O%KVQUO1G4^O%LxQUO1G4^O%NkQUO1G4^O&!^QUO1G4^O&$PQUO1G4^O&%rQUO1G4^O&'eQUO1G4^O&)WQUO1G4^O&*yQUO'#KPO&,SQUO'#KPO&,[QUO,59UOOQQ,5=P,5=PO&.dQUO,5=PO&.nQUO,5=PO&.sQUO,5=PO&.xQUO,5=PO!6nQUO,5=PO#NeQUO1G3XO&/SQUO1G4mO!<[QUO1G4mO&1OQUO1G4pO&2qQVO1G4pOOQQ1G/O1G/OOOQQ1G.}1G.}OOQQ1G2i1G2iO!IwQ&lO1G3XO&2xQUO'#LOO@XQVO'#EiO&4RQUO'#F]OOQQ'#Ja'#JaO&4WQUO'#FZO&4cQUO'#LOO&4kQUO,5;tO&4pQUO1G.rOOQQ1G.r1G.rOOQR1G/|1G/|O&6cQ!dO'#JPO&6hQbO,59xO&8yQ!eO'#D`O&9QQ!dO'#JRO&9VQbO,5@yO&9VQbO,5@yOOQR1G/c1G/cO&9bQbO1G/cO&9gQ&lO'#GeO&:eQbO,59dOOQR1G7Z1G7ZO#@[QUO1G1VO&:pQUO1G1^OBUQUO1G1VO&=RQUO'#CzO#*wQbO,59dO&@tQUO1G6sOOQR-E<{-E<{O&BWQUO1G0dO#6WQUO1G0dOOQQ-E=U-E=UO#6tQUO1G0dOOQQ1G0l1G0lO&B{QUO,59jOOQQ1G3l1G3lO&CcQUO,59jO&CyQUO,59jO!M_QVO1G4gO!(zQVO'#JYO&DeQUO,5AcOOQQ1G0o1G0oO!(zQVO1G0oO!6nQUO'#JnO&DmQUO,5AvOOQQ1G3p1G3pOOQR1G1V1G1VO&HjQVO'#FOO!M_QVO,5;sOOQQ,5;s,5;sOBUQUO'#JcO&JfQUO,5AiO&JnQVO'#E[OOQR1G1^1G1^O&M]QUO'#L[OOQR1G1n1G1nOOQR-E=f-E=fOOQR1G7]1G7]O#DhQUO1G7]OGVQUO1G7]O#DhQUO1G7_OOQR1G7_1G7_O&MeQUO'#G}O&MmQUO'#LWOOQQ,5=h,5=hO&M{QUO,5=jO&NQQUO,5=kOOQR1G7`1G7`O#EfQVO1G7`O&NVQUO1G7`O' ]QVO,5=kOOQR1G1U1G1UO$.vQUO'#E]O'!RQUO'#E]OOQQ'#Ky'#KyO'!lQUO'#KxO'!wQUO,5;UO'#PQUO'#ElO'#dQUO'#ElO'#wQUO'#EtOOQQ'#J['#J[O'#|QUO,5;cO'$sQUO,5;cO'%nQUO,5;dO'&tQVO,5;dOOQQ,5;d,5;dO''OQVO,5;dO'&tQVO,5;dO''VQUO,5;bO'(SQUO,5;eO'(_QUO'#KpO'(gQUO,5:vO'(lQUO,5;fOOQQ1G0n1G0nOOQQ'#J]'#J]O''VQUO,5;bO!4xQUO'#E}OOQQ,5;b,5;bO')gQUO'#E`O'+aQUO'#E{OHrQUO1G0nO'+fQUO'#EbOOQQ'#JX'#JXO'-OQUO'#KrOOQQ'#Kr'#KrO'-xQUO1G0eO'.pQUO1G3kO'/vQVO1G3kOOQQ1G3k1G3kO'0QQVO1G3kO'0XQUO'#L_O'1eQUO'#KXO'1sQUO'#KWO'2OQUO,59hO'2WQUO1G/aO'2]QUO'#FPOOQR1G1]1G1]OOQR1G2g1G2gO$>uQUO1G2gO'2gQUO1G2gO'2rQUO1G0ZOOQR'#J`'#J`O'2wQVO1G1XO'8pQUO'#FTO'8uQUO1G1VO!6nQUO'#JdO'9TQUO,5;|O$0^QUO,5;|OOQQ'#Fc'#FcOOQQ,5;|,5;|O'9cQUO1G1fOOQR1G1f1G1fO'9kQUO,5<XO$.vQUO'#FWOBUQUO'#FWO'9rQUO,5<XO!(zQVO,5<XO'9zQUO,5<XO':PQVO1G1qO!0tQVO1G1qOOQR1G1v1G1vO'?oQUO1G1xOOQR1G1{1G1{O'?tQUO1G1|OBUQUO1G2]O'@}QVO1G1|O'CcQUO1G1|O'ChQUO'#GWO8zQUO1G2]OOQR1G2O1G2OOOQR1G2U1G2UOOQR1G2W1G2WOOQR1G2Y1G2YO'CmQUO1G2^O!4xQUO1G2^OOQR1G2v1G2vO'CuQUO1G2vO$>}QUO1G2`OOQQ'#Cv'#CvO'CzQUO'#G[O'DuQUO'#G[O'DzQUO'#LRO'EYQUO'#G_OOQQ'#LS'#LSO'EhQUO1G2`O'EmQVO1G1kO'HOQVO'#GUOBUQUO'#FWOOQR'#Je'#JeO'EmQVO1G1kO'HYQUO'#FvOOQR1G2f1G2fO'H_QUO1G2gO'HdQUO'#JgO'2gQUO1G2gO!(zQVO1G2tO'HlQUO1G2xO'IuQUO1G3QO'J{QUO1G3XOOQQ1G3o1G3oO'KaQUO1G3oOOQR1G3Z1G3ZO'KfQUO'#KZO'2]QUO'#LTOGkQUO'#LVOOQR'#Gy'#GyO#DhQUO'#LXOOQR'#HQ'#HQO'KpQUO'#GvO'#wQUO'#GuOOQR1G2{1G2{O'LmQUO1G2{O'MdQUO1G3ZO'MoQUO1G3_O'MtQUO1G3_OOQR1G3_1G3_O'M|QUO'#H]OOQR'#H]'#H]O( VQUO'#H]O!(zQVO'#H`O!(zQVO'#H_OOQR'#LZ'#LZO( [QUO'#LZOOQR'#Jk'#JkO( aQVO,5=vOOQQ,5=v,5=vO( hQUO'#H^O( pQUO'#HZOOQQ1G3a1G3aO( zQUO,5@vOOQQ,5@v,5@vO%)WQUO,5@vO%)]QUO,5@vO%$VQUO,5:eO(%iQUO'#KkO(%wQUO'#KkOOQQ,5:e,5:eOOQQ'#JS'#JSO(&SQUO'#D}O(&^QUO'#KqOGkQUO'#LVO('YQUO'#D}OOQQ'#Hp'#HpOOQQ'#Hr'#HrOOQQ'#Hs'#HsOOQQ'#Kl'#KlOOQQ'#JU'#JUO('dQUO,5:hOOQQ,5:h,5:hO((aQUO'#LVO((nQUO'#HtO()UQUO,5@vO()]QUO'#H{O()hQUO'#L^O()pQUO,5>fO()uQUO'#L]OOQQ1G3}1G3}O(-lQUO1G3}O(-sQUO1G3}O(-zQUO1G4TO(/QQUO1G4TO(/VQUO,5A|O!6nQUO1G4hO!(zQVO'#IiOOQQ1G4m1G4mO(/[QUO1G4mO(1_QVO1G4pPOOO1G.h1G.hP!A_{,UO1G.hP(3_QUO'#LeP(3j{,UO1G.hP(3o{7[O1G.hPO{O-E=s-E=sPOOO,5A},5A}P(3w{,UO,5A}POOO1G5Q1G5QO!(zQVO7+$]O(3|QUO'#CzOOQQ,59_,59_O(4XQbO,59dO(4dQbO,59_OOQQ,59^,59^OOQQ7+)w7+)wO!M_QVO'#JtO(4oQUO,5@kOOQQ1G.p1G.pOOQQ1G2k1G2kO(4wQUO1G2kO(4|QUO7+(sOOQQ7+*X7+*XO(7bQUO7+*XO(7iQUO7+*XO(1_QVO7+*[O#NeQUO7+(sO(7vQVO'#JbO(8ZQUO,5AjO(8cQUO,5;vOOQQ'#Cp'#CpOOQQ,5;w,5;wO!(zQVO'#F[OOQQ-E=_-E=_O!M_QVO,5;uOOQQ1G1`1G1`OOQQ,5?k,5?kOOQQ-E<}-E<}OOQR'#Dg'#DgOOQR'#Di'#DiOOQR'#Dl'#DlO(9lQ!eO'#K`O(9sQMkO'#K`O(9zQ!eO'#K`OOQR'#K`'#K`OOQR'#JQ'#JQO(:RQ!eO,59zOOQQ,59z,59zO(:YQbO,5?mOOQQ-E=P-E=PO(:hQbO1G6eOOQR7+$}7+$}OOQR7+&q7+&qOOQR7+&x7+&xO'8uQUO7+&qO(:sQUO7+&OO#6WQUO7+&OO(;hQUO1G/UO(<OQUO1G/UO(<jQUO7+*ROOQQ7+*V7+*VO(>]QUO,5?tOOQQ-E=W-E=WO(?fQUO7+&ZOOQQ,5@Y,5@YOOQQ-E=l-E=lO(?kQUO'#LOO@XQVO'#EiO(@wQUO1G1_OOQQ1G1_1G1_O(BQQUO,5?}OOQQ,5?},5?}OOQQ-E=a-E=aO(BfQUO'#KpOOQR7+,w7+,wO#DhQUO7+,wOOQR7+,y7+,yO(BsQUO,5=iO#DsQUO'#JjO(CUQUO,5ArOOQR1G3U1G3UOOQR1G3V1G3VO(CdQUO7+,zOOQR7+,z7+,zO(E[QUO,5:wO(FyQUO'#EwO!(zQVO,5;VO(GlQUO,5:wO(GvQUO'#EpO(HXQUO'#EzOOQQ,5;Z,5;ZO#K]QVO'#ExO(HoQUO,5:wO(HvQUO'#EyO#GgQUO'#JZO(J`QUO,5AdOOQQ1G0p1G0pO(JkQUO,5;WO!<[QUO,5;^O(KUQUO,5;_O(KdQUO,5;WO(MvQUO,5;`OOQQ-E=Y-E=YO(NOQUO1G0}OOQQ1G1O1G1OO(NyQUO1G1OO)!PQVO1G1OO)!WQVO1G1OO)!bQUO1G0|OOQQ1G0|1G0|OOQQ1G1P1G1PO)#_QUO'#JoO)#iQUO,5A[OOQQ1G0b1G0bOOQQ-E=Z-E=ZO)#qQUO,5;iO!<[QUO,5;iO)$nQVO,5:zO)$uQUO,5;gO$ mQUO7+&YOOQQ7+&Y7+&YO!(zQVO'#EfO)$|QUO,5:|OOQQ'#Ks'#KsOOQQ-E=V-E=VOOQQ,5A^,5A^OOQQ'#Jl'#JlO)(qQUO7+&PPOQQ7+&P7+&POOQQ7+)V7+)VO))iQUO7+)VO)*oQVO7+)VOOQQ,5>m,5>mO$)YQVO'#JsO)*vQUO,5@rOOQQ1G/S1G/SOOQQ7+${7+${O)+RQUO7+(RO)+WQUO7+(ROOQR7+(R7+(RO$>uQUO7+(ROOQQ7+%u7+%uOOQR-E=^-E=^O!0VQUO,5;oOOQQ,5@O,5@OOOQQ-E=b-E=bO$0^QUO1G1hOOQQ1G1h1G1hOOQR7+'Q7+'QOOQR1G1s1G1sOBUQUO,5;rO)+tQUO,5<YO)+{QUO1G1sO)-UQUO1G1sO!0tQVO7+']O)-ZQVO7+']O)2yQUO7+'dO)3OQVO7+'hO)5dQUO7+'wO)5nQUO7+'hO)6tQVO7+'hOKkQUO7+'wO$>hQUO,5<rO!4xQUO7+'xO)6{QUO7+'xOOQR7+(b7+(bO)7QQUO7+'zO)7VQUO,5<vO'CzQUO,5<vO)7}QUO,5<vO'CzQUO,5<vOOQQ,5<w,5<wO)8`QVO,5<xO'EYQUO'#JfO)8jQUO,5AmO)8rQUO,5<yOOQR7+'z7+'zO)8}QVO7+'VO)5gQUO'#K}OOQR-E=c-E=cO);`QVO,5<bOOQQ,5@R,5@RO!6nQUO,5@ROOQQ-E=e-E=eO)=wQUO7+(`O)>}QUO7+(dO)?SQVO7+(dOOQQ7+(l7+(lOOQQ7+)Z7+)ZO)?[QUO'#KjO)?fQUO'#KjOOQR,5=b,5=bO)?sQUO,5=bO!;bQUO,5=bO!;bQUO,5=bO!;bQUO,5=bOOQR7+(g7+(gOOQR7+(u7+(uOOQR7+(y7+(yOOQR,5=w,5=wO)?xQUO,5=zO)AOQUO,5=yOOQR,5Au,5AuOOQR-E=i-E=iOOQQ1G3b1G3bO)BUQUO,5=xO)BZQVO'#EfOOQQ1G6b1G6bO%)WQUO1G6bO%)]QUO1G6bOOQQ1G0P1G0POOQQ-E=Q-E=QO)DrQUO,5AVO(%iQUO'#JTO)D}QUO,5AVO)D}QUO,5AVO)EVQUO,5:iO8zQUO,5:iOOQQ,5>],5>]O)EaQUO,5AqO)EhQUO'#EVO)FrQUO'#EVO)G]QUO,5:iO)GgQUO'#HlO)GgQUO'#HmOOQQ'#Ko'#KoO)HUQUO'#KoO!(zQVO'#HnOOQQ,5:i,5:iO)HvQUO,5:iO!M_QVO,5:iOOQQ-E=S-E=SOOQQ1G0S1G0SOOQQ,5>`,5>`O)H{QUO1G6bO!(zQVO,5>gO)LjQUO'#JrO)LuQUO,5AxOOQQ1G4Q1G4QO)L}QUO,5AwOOQQ,5Aw,5AwOOQQ7+)i7+)iO*!lQUO7+)iOOQQ7+)o7+)oO*'kQVO1G7hO*)mQUO7+*SO*)rQUO,5?TO**xQUO7+*[POOO7+$S7+$SP*,kQUO'#LfP*,sQUO,5BPP*,x{,UO7+$SPOOO1G7i1G7iO*,}QUO<<GwOOQQ1G.y1G.yOOQQ'#IT'#ITO*.pQUO,5@`OOQQ,5@`,5@`OOQQ-E=r-E=rOOQQ7+(V7+(VOOQQ<<Ms<<MsO*/yQUO<<MsO*1|QUO<<MvO*3oQUO<<L_O*4TQUO,5?|OOQQ,5?|,5?|OOQQ-E=`-E=`OOQQ1G1b1G1bO*5^QUO,5;vO*6dQUO1G1aOOQQ1G1a1G1aOOQR,5@z,5@zO*7mQ!eO,5@zO*7tQMkO,5@zO*7{Q!eO,5@zOOQR-E=O-E=OOOQQ1G/f1G/fO*8SQ!eO'#DwOOQQ1G5X1G5XOOQR<<J]<<J]O*8ZQUO<<IjO*9OQUO7+$pOOQQ<<Iu<<IuO(7vQVO,5;ROOQR<=!c<=!cOOQQ1G3T1G3TOOQQ,5@U,5@UOOQQ-E=h-E=hOOQR<=!f<=!fO*9{QUO1G0cO*:SQUO'#EzO*:dQUO1G0cO*:kQUO'#I}O*<RQUO1G0qO!(zQVO1G0qOOQQ,5;[,5;[OOQQ,5;],5;]OOQQ,5?u,5?uOOQQ-E=X-E=XO!<[QUO1G0xO*=bQUO1G0xOOQQ1G0y1G0yO*=sQUO'#ElOOQQ1G0z1G0zOOQQ7+&j7+&jO*>XQUO7+&jO*?_QVO7+&jOOQQ7+&h7+&hOOQQ,5@Z,5@ZOOQQ-E=m-E=mO*@ZQUO1G1TO*@eQUO1G1TO*AOQUO1G0fOOQQ1G0f1G0fO*BUQUO'#K{O*B^QUO1G1ROOQQ<<It<<ItOOQQ'#Hb'#HbO'+fQUO,5={OOQQ'#Hd'#HdO'+fQUO,5=}OOQQ-E=j-E=jPOQQ<<Ik<<IkPOQQ-E=k-E=kOOQQ<<Lq<<LqO*BcQUO'#LaO*CoQUO'#L`OOQQ,5@_,5@_OOQQ-E=q-E=qOOQR<<Km<<KmO$>uQUO<<KmO*C}QUO<<KmOOQR1G1Z1G1ZOOQQ7+'S7+'SO!M_QVO1G1tO*DSQUO1G1tOOQR7+'_7+'_OOQR<<Jw<<JwO!0tQVO<<JwOOQR<<KO<<KOO*D_QUO<<KSO*EeQVO<<KSOKkQUO<<KcO!M_QVO<<KcO*ElQUO<<KSO!0tQVO<<KSO*FuQUO<<KSO*FzQUO<<KcO*GVQUO<<KdOOQR<<Kd<<KdOOQR<<Kf<<KfO*G[QUO1G2bO)7VQUO1G2bO'CzQUO1G2bO*GmQUO1G2dO*HsQVO1G2dOOQQ1G2d1G2dO*H}QVO1G2dO*IUQUO,5@QOOQQ-E=d-E=dOOQQ1G2e1G2eO*IdQUO1G1|O*JmQVO1G1|O*JtQUO1G1|OOQQ1G5m1G5mOOQR<<Kz<<KzOOQR<<LO<<LOO*JyQVO<<LOO*KUQUO<<LOOOQR1G2|1G2|O*KZQUO1G2|O*KbQUO1G3eOOQR1G3d1G3dOOQQ7++|7++|O%)WQUO7++|O*KmQUO1G6qO*KmQUO1G6qO(%iQUO,5?oO*KuQUO,5?oOOQQ-E=R-E=RO*LQQUO1G0TOOQQ1G0T1G0TO*L[QUO1G0TO!M_QVO1G0TO*LaQUO1G0TOOQQ1G3w1G3wO*LkQUO,5:qO)EhQUO,5:qO*MXQUO,5:qO)EhQUO,5:qO$#uQUO,5:uO*MvQVO,5>VO)GgQUO'#JpO*NQQUO1G0TO*NcQVO1G0TOOQQ1G3u1G3uO*NjQUO,5>WO*NuQUO,5>XO+ dQUO,5>YO+!jQUO1G0TO%)]QUO7++|O+#pQUO1G4ROOQQ,5@^,5@^OOQQ-E=p-E=pOOQQ<<MT<<MTOOQQ<<Mn<<MnO+$yQUO1G4oP+&|QUO'#JvP+'UQUO,5BQPO{O1G7k1G7kPOOO<<Gn<<GnOOQQANC_ANC_OOQR1G6f1G6fO+'^Q!eO,5:cOOQQ,5:c,5:cO+'eQUO1G0mO+(qQUO7+&]O+*QQUO7+&dO+*cQUO,5;WOOQQ<<JU<<JUO+*qQUO7+&oOOQQ7+&Q7+&QO!4xQUO'#J^O++lQUO,5AgOOQQ7+&m7+&mOOQQ1G3g1G3gO++tQUO1G3iOOQQ,5>n,5>nO+/iQUOANAXOOQRANAXANAXO+/nQUO7+'`OOQRAN@cAN@cO+0zQVOAN@nO+1RQUOAN@nO!0tQVOAN@nO+2[QUOAN@nO+2aQUOAN@}O+2lQUOAN@}O+3rQUOAN@}OOQRAN@nAN@nO!M_QVOAN@}OOQRANAOANAOO+3wQUO7+'|O)7VQUO7+'|OOQQ7+(O7+(OO+4YQUO7+(OO+5`QVO7+(OO+5gQVO7+'hO+5nQUOANAjOOQR7+(h7+(hOOQR7+)P7+)PO+5sQUO7+)PO+5xQUO7+)POOQQ<= h<= hO+6QQUO7+,]O+6YQUO1G5ZOOQQ1G5Z1G5ZO+6eQUO7+%oOOQQ7+%o7+%oO+6vQUO7+%oO*NcQVO7+%oOOQQ7+)a7+)aO+6{QUO7+%oO+8RQUO7+%oO!M_QVO7+%oO+8]QUO1G0]O*LkQUO1G0]O)EhQUO1G0]OOQQ1G0a1G0aO+8zQUO1G3qO+:QQVO1G3qOOQQ1G3q1G3qO+:[QVO1G3qO+:cQUO,5@[OOQQ-E=n-E=nOOQQ1G3r1G3rO%)WQUO<= hOOQQ7+*Z7+*ZPOQQ,5@b,5@bPOQQ-E=t-E=tOOQQ1G/}1G/}OOQQ,5?x,5?xOOQQ-E=[-E=[OOQRG26sG26sO+:zQUOG26YO!0tQVOG26YO+<TQUOG26YOOQRG26YG26YO!M_QVOG26iO!0tQVOG26iO+<YQUOG26iO+=`QUOG26iO+=eQUO<<KhOOQQ<<Kj<<KjOOQRG27UG27UOOQR<<Lk<<LkO+=vQUO<<LkOOQQ7+*u7+*uOOQQ<<IZ<<IZO+={QUO<<IZO!M_QVO<<IZO+>QQUO<<IZO+?WQUO<<IZO*NcQVO<<IZOOQQ<<L{<<L{O+?iQUO7+%wO*LkQUO7+%wOOQQ7+)]7+)]O+@WQUO7+)]O+A^QVO7+)]OOQQANESANESO!0tQVOLD+tOOQRLD+tLD+tO+AeQUOLD,TO+BkQUOLD,TOOQRLD,TLD,TO!0tQVOLD,TOOQRANBVANBVOOQQAN>uAN>uO+BpQUOAN>uO+CvQUOAN>uO!M_QVOAN>uO+C{QUO<<IcOOQQ<<Lw<<LwOOQR!$( `!$( `O!0tQVO!$( oOOQR!$( o!$( oOOQQG24aG24aO+DjQUOG24aO+EpQUOG24aOOQR!)9EZ!)9EZOOQQLD){LD){O+EuQUO'#CgO(dQUO'#CgO+IrQUO'#CzO+LcQUO'#CzO!E{QUO'#CzO+M[QUO'#CzO+MoQUO'#CzO,#bQUO'#CzO,#rQUO'#CzO,$PQUO'#CzO,$[QbO,59dO,$gQbO,59dO,$rQbO,59dO,$}QbO'#CxO,%`QbO'#CxO,%qQbO'#CxO,&SQUO'#CgO,(gQUO'#CgO,(tQUO'#CgO,+iQUO'#CgO,.lQUO'#CgO,.|QUO'#CgO,2uQUO'#CgO,2|QUO'#CgO,3|QUO'#CgO,6VQUO,5:xO#?kQUO,5:xO#?kQUO,5:xO#=ZQUO'#L[O,6sQbO'#CxO,7OQbO'#CxO,7ZQbO'#CxO,7fQbO'#CxO#6tQUO'#E^O,7qQUO'#E^O,9OQUO'#HgO,9pQbO'#CxO,9{QbO'#CxO,:WQUO'#CwO,:]QUO'#CwO,:bQUO'#CpO,:pQbO,59dO,:{QbO,59dO,;WQbO,59dO,;cQbO,59dO,;nQbO,59dO,;yQbO,59dO,<UQbO,59dO,6VQUO1G0dO,<aQUO1G0dO#?kQUO1G0dO,7qQUO1G0dO,>nQUO'#KZO,?OQUO'#CzO,?^QbO,59dO,6VQUO7+&OO,<aQUO7+&OO,?iQUO'#EwO,@[QUO'#EzO,@{QUO'#E^O,AQQUO'#GcO,AVQUO'#CwO,A[QUO'#CxO,AaQUO'#CxO,AfQUO'#CwO,AkQUO'#GcO,ApQUO'#KZO,B^QUO'#KZO,BhQUO'#CwO,BsQUO'#CwO,COQUO'#CwO,<aQUO,5:xO,7qQUO,5:xO,7qQUO,5:xO,CZQUO'#KZO,CnQbO'#CxO,CyQUO'#CsO,DOQUO'#E^",
+    stateData: ",Dt~O(nOSSOSTOSRPQVPQ'ePQ'gPQ'hPQ'iPQ'jPQ'kPQ'lPQ'mPQ~O*ZOS~OPmO]eOb!]Oe!POmTOs!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O|#RO!O!_O!TxO!VfO!X!XO!Y!WO!i!YO!opO!r!`O!s!aO!t!aO!u!bO!v!aO!x!cO!{!dO#V#QO#a#VO#b#TO#i#OO#p!xO#t!fO#v!eO$R!gO$T!hO$Y!vO$Z!wO$`!iO$e!jO$g!kO$h!lO$k!mO$m!nO$o!oO$q!pO$s!qO$u!rO$w!sO${!tO$}!uO%U!yO%_#ZO%`#[O%a#YO%c!zO%e#UO%g!{O%l#SO%o!|O%v!}O%|#PO&m!RO&r#WO&s!TO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO(rRO)QYO)TaO)V|O)W{O)XiO)Y!ZO)[XO)hcO)idO~OR#bOV#]O'e#^O'g#_O'h#`O'i#`O'j#aO'k#aO'l#_O'm#_O~OX#dO(o#fO(q#dO~O]ZX]jXejXmhXqZXqjXsjXtjXujXvjXwjXxjXyjXzjX!OjX!TjX!VZX!VjX!XZX!YZX![ZX!^ZX!_ZX!aZX!bZX!cZX!eZX!fZX!gZX!hZX!rjX!sjX!tjX!ujX!vjX!xjX!{jX%vjX&rjX&sjX(rjX(uZX(v$]X(wZX(xZX)TZX)TjX)UZX)VZX)VjX)WZX)WjX)XZX)YZX)jZX~O)XjX!UZX~P(dO]#}O!V#lO!X#{O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO!h#iO(u#gO(w#kO(x#kO)T#mO)U#oO)V#nO)W#pO)X#jO)Y#|O~Oe$RO%Y$SO'[$TO'_$UO(y$OO~Om$VO~O!T$WO](}Xe(}Xs(}Xt(}Xu(}Xv(}Xw(}Xx(}Xy(}Xz(}X!O(}X!V(}X!r(}X!s(}X!t(}X!u(}X!v(}X!x(}X!{(}X%v(}X&r(}X&s(}X(r(}X)T(}X)V(}X)W(}X)X(}X~Om$VO~P.ZOm$VO!g$YO)j$YO~OX$ZO)]$ZO~O!R$[O)P)RP)Y)RP~OPmO]$eOb!]Os!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O|#RO!O!_O!TxO!V$fO!X!XO!Y!WO!i!YO!r!aO!s!aO!t!aO!u!aO!v!aO!x!cO#V#QO#a#VO#b#TO#v!eO$Y!vO$Z!wO$`!iO$e!jO$g!kO$h!lO$k!mO$m!nO$o!oO$q!pO$s!qO$u!rO$w!sO%_#ZO%`#[O%a#YO%e#UO%l#SO%v$mO&m!RO&r#WO&s!TO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO)QYO)T$kO)W$kO)XiO)Y!ZO)[XO)hcO)idO~Om$_O#t$lO(rRO~P0zO](]Xb'yXe(]Xm'yXm(]Xs'yXs(]Xt'yXt(]Xu'yXu(]Xv'yXv(]Xw'yXw(]Xx'yXx(]Xy'yXy(]Xz'yXz(]X|'yX!O'yX!V(]X!o(]X!r'yX!r(]X!s'yX!s(]X!t'yX!t(]X!u'yX!u(]X!v'yX!v(]X!x'yX!x(]X!{(]X#a'yX#b'yX%e'yX%l'yX%o(]X%v(]X&m'yX&r'yX&s'yX(r'yX(r(]X)T(]X)V(]X)W(]X~Ob!TOm$oOs!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O|#RO!O!_O!r!aO!s!aO!t!aO!u!aO!v!aO!x!cO#a#VO#b#TO%e#UO%l#SO&m!RO&r#WO&s!TO(r$nO~Os!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O!O!_O!r!aO!s!aO!t!aO!u!aO!v!aO!x!cO&r#WO&s$wO])aXe)aXm)aX!V)aX!{)aX%v)aX(r)aX)T)aX)V)aX)W)aX~O)X$vO~P:nOPmO]eOe!POs!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O!VfO!X!XO!Y!WO!i!YO!{!dO#V#QO%_#ZO%`#[O%a#YO%v$mO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO)TaO)V|O)W{O)Y!ZO)[XO)hcO)idO~Ob%QOm:zO!|%RO(r$xO~P<lO)T%SO~Ob!]Om$_O|#RO#a#VO#b#TO%e#UO%l#SO&m!RO&r#WO&s!TO(r:}O~P<lOPmO]$eOb%QOm:zO!V$fO!W%_O!X!XO!Y!WO!i!YO#V#QO%_#ZO%`#[O%a#YO%v$mO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO(r$xO)T$kO)W%]O)Y!ZO)[XO)hcO)idO)j%[O~O]%hOe!POm%bO!V%kO!{!dO%v$mO(r;OO)T%dO)V%iO)W%iO~O(v%mO~O)X#jO~O(r%nO](tX!V(tX!X(tX!Y(tX![(tX!^(tX!_(tX!a(tX!b(tX!c(tX!e(tX!f(tX!h(tX(u(tX(w(tX(x(tX)T(tX)U(tX)V(tX)W(tX)X(tX)Y(tX!g(tX)j(tX[(tX!W(tX(v(tX!U(tXQ(tX!d(tX~OP%oO(pQO~PCQO]%hOe!POs!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O!V%kO!r!aO!s!aO!t!aO!u!aO!v!aO!x!cO!{!dO%o!|O%v!}O)T;`O)V|O)W|O~Om%rO!o%wO(r$xO~PE_O!TxO#v!eO(v%yO)j%|O])eX!V)eX~O]%hOe!POm%rO!V%kO!{!dO%v!}O(r$xO)T;`O)V|O)W|O~O!TxO#v!eO)X&PO)j&QO~O!U&TO~P!QO]&YO!TxO!V&WO)T&VO)V&ZO)W&ZO~Oq&UO~PHrO]&cO!V&bO~OPmO]eOe!PO!VfO!X!XO!Y!WO!i!YO!{!dO#V#QO%_#ZO%`#[O%a#YO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO)TaO)V|O)W{O)Y!ZO)[XO)hcO)idO~Ob%QOm:zO%v$mO(r$xO~PIgO]%hOe!POm;[O!V%kO!{!dO%v$mO(r$xO)T;`O)V|O)W|O~Oq&fO](tX])eX!V(tX!V)eX!X(tX!Y(tX![(tX!^(tX!_(tX!a(tX!b(tX!c(tX!e(tX!f(tX!h(tX(u(tX(w(tX(x(tX)T(tX)U(tX)V(tX)W(tX)X(tX)Y(tX[(tX[)eX!U(tX~O!g$YO)j$YO~PL]O!g(tX)j(tX~PL]O](tX!V(tX!X(tX!Y(tX![(tX!^(tX!_(tX!a(tX!b(tX!c(tX!e(tX!f(tX!h(tX(u(tX(w(tX(x(tX)T(tX)U(tX)V(tX)W(tX)X(tX)Y(tX!g(tX)j(tX[(tX!U(tX~O])eX!V)eX[)eX~PNkOb&hO&m!RO]&lXe&lXm&lXs&lXt&lXu&lXv&lXw&lXx&lXy&lXz&lX!O&lX!V&lX!r&lX!s&lX!t&lX!u&lX!v&lX!x&lX!{&lX%v&lX&r&lX&s&lX(r&lX)T&lX)V&lX)W&lX)X&lX[&lX!T&lX!X&lX!Y&lX![&lX!^&lX!_&lX!a&lX!b&lX!c&lX!e&lX!f&lX!h&lX(u&lX(w&lX(x&lX)U&lX)Y&lX!g&lX)j&lX!W&lXQ&lX!d&lX(v&lX!U&lX#v&lX~Oq&fOm(}X[(}XQ(}X!d(}X!h(}X)Y(}X)j(}X~P.ZO!g$YO)j$YO](tX!V(tX!X(tX!Y(tX![(tX!^(tX!_(tX!a(tX!b(tX!c(tX!e(tX!f(tX!h(tX(u(tX(w(tX(x(tX)T(tX)U(tX)V(tX)W(tX)X(tX)Y(tX[(tX!W(tX(v(tX!U(tXQ(tX!d(tX~OPmO]$eOb%QOm:zO!V$fO!X!XO!Y!WO!i!YO#V#QO%_#ZO%`#[O%a#YO%v$mO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO(r$xO)T$kO)W$kO)Y!ZO)[XO)hcO)idO~O](}Xe(}Xm(}Xs(}Xt(}Xu(}Xv(}Xw(}Xx(}Xy(}Xz(}X!O(}X!V(}X!r(}X!s(}X!t(}X!u(}X!v(}X!x(}X!{(}X%v(}X&r(}X&s(}X(r(}X)T(}X)V(}X)W(}X)X(}X[(}XQ(}X!d(}X!h(}X)Y(}X)j(}X~O]#}O~P!*qO]&lO~O])bXb)bXe)bXm)bXs)bXt)bXu)bXv)bXw)bXx)bXy)bXz)bX|)bX!O)bX!V)bX!o)bX!r)bX!s)bX!t)bX!u)bX!v)bX!x)bX!{)bX#a)bX#b)bX%e)bX%l)bX%o)bX%v)bX&m)bX&r)bX&s)bX(r)bX)T)bX)V)bX)W)bX~O(pQO~P!-ZO%U&nO~P!-ZO]&oO~O]#}O~O!TxO~O$W&wO(r%nO(v&vO~O]&xOx&zO~O]&xO~OPmO]$eOb%QOm:zO!TxO!V$fO!X!XO!Y!WO!i!YO#V#QO#p!xO#v!eO$Y!vO$Z!wO$`!iO$e!jO$g!kO$h!lO$k!mO$m!nO$o!oO$q!pO$s!qO$u!rO$w!sO%_#ZO%`#[O%a#YO%v$mO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO(r:mO)QYO)T$kO)W$kO)XiO)Y!ZO)[XO)hcO)idO~O]'PO~O!T$WO)X'RO~P!(zO)X'TO~O)X'UO~O(r'VO~O)X'YO~P!(zOm;^O%U'^O%e'^O(r;PO~Ob!TOm$oOs!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O|#RO#a#VO#b#TO%e#UO%l#SO&m!RO&r#WO&s!TO(r$nO~O(v'bO~O)X'dO~P!(zO!TxO(r%nO)j'fO~O(r%nO~O]'iO~O]'jOe%nXm%nX!V%nX!{%nX%v%nX(r%nX)T%nX)V%nX)W%nX~O]'nO!V'oO!X'lO!g'lO%Z'lO%['lO%]'lO%^'lO%_'pO%`'pO%a'lO(x'mO)j'lO)x'qO~P8zO]%hOb!TOe!POs!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O|#RO!O!_O!V%kO!r!aO!s!aO!t!aO!u!aO!v!aO!x!cO!{!dO#a#VO#b#TO%e#UO%l#SO&m!RO&r#WO&s!TO)T;`O)V|O)W|O~Om;_Oq&UO%v$mO(r;QO~P!8jO(r%nO(v'vO)X'wO~O]&cO!T'yO~Om$oO!O!_O!T(QO!l(VO(r$nO(v(PO)QYO~Om$oO|(^O!T(ZO#b(^O(r$nO~Ob!TOm$oO|#RO#a#VO#b#TO%e#UO%l#SO&m!RO&r#WO&s!TO(r$nO~O](`O~OPmOb%QOm:zO!V$fO!X!XO!Y!WO!i!YO#V#QO%_#ZO%`#[O%a#YO%v$mO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO(r$xO)T$kO)W$kO)[XO)hcO)idO~O](bO)Y(cO~P!=UO]#}O~P!<[OPmO]$eOb%QOm:zO!V(iO!X!XO!Y!WO!i!YO#V#QO%_#ZO%`#[O%a#YO%v$mO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO(r$xO)T$kO)W$kO)Y!ZO)[XO)hcO)idO~OY(jO(pQO(r%nO~O'f(mO~OS(qOT(nO*W(pO~O]#}O(n(tO~Q'nXX#dO(o(vO(q#dO~Oe)QOm({O&r#WO(r(zO~O!Y'Sa!['Sa!^'Sa!_'Sa!a'Sa!b'Sa!c'Sa!e'Sa!f'Sa!h'Sa(u'Sa)T'Sa)U'Sa)V'Sa)W'Sa)X'Sa)Y'Sa!g'Sa)j'Sa['Sa!W'Sa(v'Sa!U'SaQ'Sa!d'Sa~OPmOb%QOm:zO!i!YO#V#QO%_#ZO%`#[O%a#YO%v$mO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO(r$xO)[XO)hcO)idO]'Sa!V'Sa!X'Sa(w'Sa(x'Sa~P!B_O!T$WO[(sP~P!(zO]oX]%WXeoXmnXqoXq%WXsoXtoXuoXvoXwoXxoXyoXzoX!OoX!ToX!VoX!V%WX!X%WX!Y%WX![%WX!^%WX!_%WX!a%WX!b%WX!c%WX!e%WX!f%WX!gnX!h%WX!roX!soX!toX!uoX!voX!xoX!{oX%voX&roX&soX(roX(u%WX(w%WX(x%WX)ToX)T%WX)U%WX)VoX)V%WX)WoX)W%WX)X%WX)Y%WX)jnX[%WX~O)XoX[oX!U%WX~P!E{O])dO!V)eO!X)bO!g)bO%Z)bO%[)bO%])bO%^)bO%_)fO%`)fO%a)bO(x)cO)j)bO)x)gO~P8zOPmO]$eOb%QOm:zO!X!XO!Y!WO!i!YO#V#QO%_#ZO%`#[O%a#YO%v$mO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO(r$xO)T$kO)W$kO)Y!ZO)[XO)hcO)idO~O!V)lO~P!JwOe)oO%Y)pO(y$OO~O!T$WO!V)rO(w)sO!U)rP~P!JwO!T$WO~P!(zO)Z)zO~Om){O]!QX!h!QX)P!QX)Y!QX~O])}O!h*OO)P)RX)Y)RX~O)P*RO)Y*SO~Oe$RO%Y*TO'[$TO'_$UO(y$OO~Om*UO~Om*UO[(}X~P.ZOm*UO!g$YO)j$YO~O)X*VO~P:nOPmO]$eOb!]Om$_Os!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O|#RO!V$fO!X!XO!Y!WO!i!YO#V#QO#a#VO#b#TO%_#ZO%`#[O%a#YO%e#UO%l#SO%v$mO&m!RO&r#WO&s!TO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO(r:}O)T$kO)W$kO)Y!ZO)[XO)hcO)idO~Oq&fO~P!&zOq&fO!W(tX(v(tXQ(tX!d(tX~PNkO]'nO!V'oO!X'lO!g'lO%Z'lO%['lO%]'lO%^'lO%_'pO%`'pO%a'lO(x'mO)j'lO)x'qO~O]jXejXmhXqjXsjXtjXujXvjXwjXxjXyjXzjX!OjX!VjX!rjX!sjX!tjX!ujX!vjX!xjX!{jX%vjX&rjX&sjX(rjX)TjX)VjX)WjX!TjX!hjX)YjX)jjX[jX~O!ljX(vjX)XjX!XjX!YjX![jX!^jX!_jX!ajX!bjX!cjX!ejX!fjX(ujX(wjX(xjX)UjX!gjX!WjXQjX!djX!UjX#vjX#TjX#VjX#pjXbjX|jX!ojX#ajX#bjX#ijX#tjX${jX%cjX%ejX%kjX%ljX%ojX&mjX)QjX~P#%yO(y*ZO~Om*[O~O](}Xe(}Xs(}Xt(}Xu(}Xv(}Xw(}Xx(}Xy(}Xz(}X!O(}X!V(}X!r(}X!s(}X!t(}X!u(}X!v(}X!x(}X!{(}X%v(}X&r(}X&s(}X(r(}X)T(}X)V(}X)W(}X)X(}X!T(}X!X(}X!Y(}X![(}X!^(}X!_(}X!a(}X!b(}X!c(}X!e(}X!f(}X!h(}X(u(}X(w(}X(x(}X)U(}X)Y(}X!g(}X)j(}X[(}X!W(}XQ(}X!d(}X(v(}X!U(}X#v(}X~Om*[O~P#+ROs!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O!O!_O!r!aO!s!aO!t!aO!u!aO!v!aO!x!cO])aae)aam)aa!V)aa!{)aa%v)aa(r)aa)T)aa)V)aa)W)aaQ)aa!d)aa!h)aa)Y)aa)j)aa[)aa!T)aa(v)aa)X)aa~O&r#WO&s$wO~P#.qOq&fOm(}X~P#+RO&r)aa~P#.qO]ZXmhXqZXqjX!TjX!VZX!XZX!YZX![ZX!^ZX!_ZX!aZX!bZX!cZX!eZX!fZX!gZX!hZX(uZX(wZX(xZX)TZX)UZX)VZX)WZX)XZX)YZX)jZX[ZX~O!WZX(vZX!UZXQZX!dZX~P#1jO]#}O!V#lO!X#{O(w#kO(x#kO~O!Y&xa![&xa!^&xa!_&xa!a&xa!b&xa!c&xa!e&xa!f&xa!g&xa!h&xa(u&xa)T&xa)U&xa)V&xa)W&xa)X&xa)Y&xa)j&xa[&xa!W&xa(v&xa!U&xaQ&xa!d&xa~P#3zOm;hO!T$WO~Os!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O~PKkOs!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O!|%RO~PKkO]&cO!V&bO[#Qa!T#Qa!h#Qa#v#Qa)X#Qa)j#QaQ#Qa!d#Qa(v#Qa~Oq&fO!T$WO~O[*cO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO!h#iO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO[*cO~O[*eO]&cO!V&bO~O]&YOs!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O!V&WO&r#WO&s$wO)T&VO)V&ZO)W&ZO~O[rXQrX!drX!hrX)YrX)XrX~P#9{O[*hO~O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO!h*iO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O!W)kX~P#3zO!W*kO!h*lO~O!W*kO!h*lO~P!(zO!W*kO~Oq&fO!g$YO!h*mO)j$YO](tX!V(tX!W(tX!W*OX!X(tX!Y(tX![(tX!^(tX!_(tX!a(tX!b(tX!c(tX!e(tX!f(tX(u(tX(w(tX(x(tX)T(tX)U(tX)V(tX)W(tX)Y(tX~O!h(tX~P#=ZO!W*oO~Oe$RO%Y*TO(y:rO~Om;kO~Os!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O!|%RO~PBUO]*vO!T*qO!V&bO!h*tO#v!eO)j*rO)X)qX~O!h*tO)X)qX~O)X*wO~Oq&fO])eX!T)eX!V)eX!h)eX#v)eX)X)eX)j)eX[)eXQ)eX!d)eX(v)eX~Oq&fO~OP%oO(pQO]%ha!V%ha!X%ha!Y%ha![%ha!^%ha!_%ha!a%ha!b%ha!c%ha!e%ha!f%ha!h%ha(r%ha(u%ha(w%ha(x%ha)T%ha)U%ha)V%ha)W%ha)X%ha)Y%ha!g%ha)j%ha[%ha!W%ha(v%ha!U%haQ%ha!d%ha~Oe$RO%Y$SO(y:oO~Om:wO~O!TxO#v!eO)j%|O~Om<[O&r#WO(r;gO~O$Z+TO%`+UO~O!TxO#v!eO)X+VO)j+WO~OPmO]$eOb%QOm:zO!V$fO!X!XO!Y!WO!i!YO#V#QO$Z+TO%_#ZO%`+YO%a#YO%v$mO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO(r$xO)T$kO)W$kO)Y!ZO)[XO)hcO)idO~O!U+ZO~P!QOb!TOm$oOs!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O|#RO!O!_O!r!aO!s!aO!t!aO!u!aO!v!aO!x!cO#a+aO#b+bO#i+cO%e#UO%l#SO&m!RO&r#WO&s!TO(r$nO)QYO~OQ)lP!d)lP~P#GgO]&YOs!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O!V&WO)T&VO)V&ZO)W&ZO~O[#kX!T#kX#v#kX)X#kX)j#kXQ#kX!d#kX!h#kX)Y#kX!x#kX(v#kX~P#IkOPmO]$eOb%QOm:zOs!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O!V$fO!W+iO!X!XO!Y!WO!i!YO#V#QO%_#ZO%`#[O%a#YO%v$mO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO(r$xO)T+jO)W$kO)Y!ZO)[XO)hcO)idO~O]&cO!V+kO~O]&YO!V&WO)QYO)T&VO)V&ZO)W&ZO)Y+nO[)dP~P8zO]&YO!V&WO)T&VO)V&ZO)W&ZO~O[#nX!T#nX#v#nX)X#nX)j#nXQ#nX!d#nX!h#nX)Y#nX!x#nX(v#nX~P#NeO!TxO])nX!V)nX~Os!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O#T+vO#p+wO(x+tO)V+rO)W+rO~O]#jX!T#jX!V#jX[#jX#v#jX)X#jX)j#jXQ#jX!d#jX!h#jX)Y#jX!x#jX(v#jX~P$ xO#V+yO~Os!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O!l+zO#T+vO#V+yO#p+wO(x+tO)V+zO)W+zO])fP!T)fP!V)fP#v)fP(v)fP)j)fP[)fP!h)fP)X)fP~O!x)fPQ)fP!d)fP~P$#uOPmO]$eOb%QOm:zOs!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O!V$fO!X!XO!Y!WO!i!YO#V#QO%_#ZO%`#[O%a#YO%v$mO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO(r$xO)W$kO)Y!ZO)[XO)hcO)idO~O!W,QO)T,RO~P$%pO)QYO)Y+nO[)dP~P8zO]&cO!V&bO[&Za!T&Za!h&Za#v&Za)X&Za)j&ZaQ&Za!d&Za(v&Za~OPmO]$eOb!]Om:|Os!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O|#RO!V$fO!X!XO!Y!WO!i!YO#V#QO#a#VO#b#TO%_#ZO%`#[O%a#YO%e#UO%l#SO%v$mO&m!RO&r#WO&s!TO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO(r;RO)T$kO)W$kO)Y!ZO)[XO)hcO)idO~OQ(zP!d(zP~P$)YO]#}O!V#lO(w#kO(x#kO!X'Pa!Y'Pa!['Pa!^'Pa!_'Pa!a'Pa!b'Pa!c'Pa!e'Pa!f'Pa!h'Pa(u'Pa)T'Pa)U'Pa)V'Pa)W'Pa)X'Pa)Y'Pa!g'Pa)j'Pa['Pa!W'Pa(v'Pa!U'PaQ'Pa!d'Pa~O]#}O!V#lO!X#{O(w#kO(x#kO~P!B_O!TxO#t!fO)QYO~P8zO!TxO(r%nO)j,[O~O#x,aO~OQ)aX!d)aX!h)aX)Y)aX)j)aX[)aX!T)aX(v)aX)X)aX~P:nO(v,eO(w,cO)Q$UX)X$UX~O(r,fO~O)QYO)X,iO~OPmO]$eOb!]Om:{Os!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O|#RO!O!_O!V$fO!X!XO!Y!WO!i!YO!r!aO!s!aO!t!aO!u!aO!v!aO!x!cO#V#QO#a#VO#b#TO%_#ZO%`#[O%a#YO%e#UO%l#SO%v$mO&m!RO&r#WO&s!TO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO)QYO)T$kO)W$kO)XiO)Y!ZO)[XO)hcO)idO~O(r;SO~P$0kOPmO]$eOb%QOm:zO!TxO!V$fO!X!XO!Y!WO!i!YO#V#QO#v!eO$Y!vO$Z!wO$`!iO$e!jO$g!kO$h!lO$k!mO$m!nO$o!oO$q!pO$s!qO$u!rO$w!sO%_#ZO%`#[O%a#YO%v$mO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO(r:mO)QYO)T$kO)W$kO)XiO)Y!ZO)[XO)hcO)idO~O$h,sO~OPmO]$eOb!]Om:{Os!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O|#RO!O!_O!V$fO!X!XO!Y!WO!i!YO!r!aO!s!aO!t!aO!u!aO!v!aO!x!cO#V#QO#a#VO#b#TO$}!uO%_#ZO%`#[O%a#YO%e#UO%l#SO%v$mO&m!RO&r#WO&s!TO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO)QYO)T$kO)W$kO)Y!ZO)[XO)hcO)idO~O${,yO(r:}O)X,wO~P$7UO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO!h#iO(u#gO)T#mO)U#oO)V#nO)W#pO)X,{O)Y#|O~P#3zO)X,{O~O)X,|O~O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)X,}O)Y#|O~P#3zO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)X-OO)Y#|O~P#3zOq&fO)QYO)j-QO~O)X-RO~Om;^O(r;PO~O]-YO!{!dO&r#WO&s$wO(r-UO)T-VO~O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO(v-]O)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO!TxO$`!iO$e!jO$g!kO$h!lO$k-bO$m!nO$o!oO$q!pO$s!qO$u!rO$w!sO$}!uO(r:nOe$Xa!o$Xa!{$Xa#i$Xa#p$Xa#t$Xa#v$Xa$R$Xa$T$Xa$Y$Xa$Z$Xa${$Xa%U$Xa%c$Xa%g$Xa%o$Xa%|$Xa(k$Xa)V$Xa!U$Xa$c$Xa~P$0kO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)X-cO)Y#|O~P#3zOm-eO!TxO)j,[O~O)j-gO~O]&]a!X&]a!Y&]a![&]a!^&]a!_&]a!a&]a!b&]a!c&]a!e&]a!f&]a!h&]a(u&]a(w&]a(x&]a)U&]a)V&]a)W&]a)X&]a)Y&]a!g&]a)j&]a[&]a!W&]a!T&]a#v&]a(v&]a!U&]aQ&]a!d&]a~O)T-kO!V&]a~P$DbO[-kO~O!W-kO~O!V-lO)T&]a~P$DbO](}Xe(}Xs(}Xt(}Xu(}Xv(}Xw(}Xx(}Xy(}Xz(}X!O(}X!V(}X!r(}X!s(}X!t(}X!u(}X!v(}X!x(}X!{(}X%v(}X&r(}X&s(}X(r(}X)T(}X)V(}X)W(}X~Om;mO~P$GQO]&cO!V&bO)X-mO~Om;cO!o-pO#V+yO#i-uO#t!fO${,yO%c!zO%k-tO%o!|O%v!}O(r;TO)QYO~P!8jO!n-yO(r,fO~O)QYO)X-{O~OPmO]$eOb%QOm:zO!T.QO!V$fO!X!XO!Y!WO!i!YO#V.XO#a.WO%_#ZO%`#[O%a#YO%v$mO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO(r$xO(x.PO)T$kO)W$kO)X-}O)Y!ZO)[XO)hcO)idO~O!U.VO~P$JbO])^Xe)^Xs)^Xt)^Xu)^Xv)^Xw)^Xx)^Xy)^Xz)^X!O)^X!T)^X!V)^X!l)^X!r)^X!s)^X!t)^X!u)^X!v)^X!x)^X!{)^X%v)^X&r)^X&s)^X(r)^X(v)^X)T)^X)V)^X)W)^X)X)^X[)^X!h)^X)Y)^X!X)^X!Y)^X![)^X!^)^X!_)^X!a)^X!b)^X!c)^X!e)^X!f)^X(u)^X(w)^X(x)^X)U)^X!g)^X)j)^X!W)^XQ)^X!d)^X#T)^X#V)^X#p)^X#v)^Xb)^X|)^X!o)^X#a)^X#b)^X#i)^X#t)^X${)^X%c)^X%e)^X%k)^X%l)^X%o)^X&m)^X)Q)^X!U)^X~Om*[O~P$LlOm$oO!T(QO!l.^O(r$nO(v(PO)QYO~Oq&fOm)^X~P$LlOm$oO!n.cO!o.cO(r$nO)QYO~Om;dO!U.nO!n.pO!o.oO#i-uO${!tO$}!uO%g!{O%k-tO%o!|O%v!}O(r;VO)QYO~P!8jO!T(QO!l.^O(v(PO])OXe)OXm)OXs)OXt)OXu)OXv)OXw)OXx)OXy)OXz)OX!O)OX!V)OX!r)OX!s)OX!t)OX!u)OX!v)OX!x)OX!{)OX%v)OX&r)OX&s)OX(r)OX)T)OX)V)OX)W)OX~O)X)OX[)OX!X)OX!Y)OX![)OX!^)OX!_)OX!a)OX!b)OX!c)OX!e)OX!f)OX!h)OX(u)OX(w)OX(x)OX)U)OX)Y)OX!g)OX)j)OX!W)OXQ)OX!d)OX!U)OX#v)OX~P%%eO!T(QO~O!T(QO(v(PO~O(r%nO!U*QP~O!T(ZO(v.uO]&kae&kam&kas&kat&kau&kav&kaw&kax&kay&kaz&ka!O&ka!V&ka!r&ka!s&ka!t&ka!u&ka!v&ka!x&ka!{&ka%v&ka&r&ka&s&ka(r&ka)T&ka)V&ka)W&ka)X&ka[&ka!X&ka!Y&ka![&ka!^&ka!_&ka!a&ka!b&ka!c&ka!e&ka!f&ka!h&ka(u&ka(w&ka(x&ka)U&ka)Y&ka!g&ka)j&ka!W&kaQ&ka!d&ka!U&ka#v&ka~Om$oO!T(ZO(r$nO~O&r#WO&s$wO]&pae&pam&pas&pat&pau&pav&paw&pax&pay&paz&pa!O&pa!V&pa!r&pa!s&pa!t&pa!u&pa!v&pa!x&pa!{&pa%v&pa(r&pa)T&pa)V&pa)W&pa)X&pa[&pa!T&pa!X&pa!Y&pa![&pa!^&pa!_&pa!a&pa!b&pa!c&pa!e&pa!f&pa!h&pa(u&pa(w&pa(x&pa)U&pa)Y&pa!g&pa)j&pa!W&paQ&pa!d&pa(v&pa!U&pa#v&pa~O&s.zO~P!(zO!Y#qO![#rO!f#zO)T#mO!^'Ua!_'Ua!a'Ua!b'Ua!c'Ua!e'Ua!h'Ua(u'Ua)U'Ua)V'Ua)W'Ua)X'Ua)Y'Ua!g'Ua)j'Ua['Ua!W'Ua(v'Ua!U'UaQ'Ua!d'Ua~P#3zO!V'dX!X'dX!Y'dX!['dX!^'dX!_'dX!a'dX!b'dX!c'dX!e'dX!f'dX!h'dX(u'dX(w'dX(x'dX)T'dX)U'dX)V'dX)W'dX)Y'dX['dX~O].|O)X'dX!g'dX)j'dX!W'dX(v'dX!U'dXQ'dX!d'dX~P%2xO!Y#qO![#rO!f#zO)T#mO!^'Wa!_'Wa!a'Wa!b'Wa!c'Wa!e'Wa!h'Wa(u'Wa)U'Wa)V'Wa)W'Wa)X'Wa)Y'Wa!g'Wa)j'Wa['Wa!W'Wa(v'Wa!U'WaQ'Wa!d'Wa~P#3zO]#}O!T$WO!V.}O&r#WO&s$wO~O!X'Za!Y'Za!['Za!^'Za!_'Za!a'Za!b'Za!c'Za!e'Za!f'Za!h'Za(u'Za(w'Za(x'Za)T'Za)U'Za)V'Za)W'Za)X'Za)Y'Za!g'Za)j'Za['Za!W'Za(v'Za!U'ZaQ'Za!d'Za~P%6oO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O!h'^a)X'^a!g'^a)j'^a['^a!W'^a(v'^a!U'^aQ'^a!d'^a~P#3zOPmO]$eOb%QOm:zO!V$fO!X!XO!Y!WO!i!YO#V#QO%_#ZO%`#[O%a#YO%v$mO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO(r$xO)T$kO)W%]O)Y!ZO)[XO)hcO)idO)j%[O~O!W/QO~P%:oOS(qOT(nO]#}O*W(pO~O]/TO'f/UO*W/RO~OS/YOT(nO*W/XO~O]#}O~Q'na!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO(v/[O)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO!h#iO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O)X#Zi[#Zi~P#3zO]dXmhXqdXqjX!VdX!XdX!YdX![dX!^dX!_dX!adX!bdX!cdX!edX!fdX!gdX!hdX(udX(wdX(xdX)TdX)UdX)VdX)WdX)XdX)YdX)jdX[dX!WdX(vdX!TdX#vdX!UdXQdX!ddX~Oe/^O%Y*TO(y/]O~Om/_O~Om/`O~Oq&fO]ci!Vci!Xci!Yci![ci!^ci!_ci!aci!bci!cci!eci!fci!gci!hci(uci(wci(xci)Tci)Uci)Vci)Wci)Xci)Yci)jci[ci!Wci(vci!UciQci!dci~O!W/bO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO![#rO)T#mO!Y&zi!^&zi!_&zi!a&zi!b&zi!c&zi!e&zi!f&zi!h&zi(u&zi)U&zi)V&zi)W&zi)X&zi)Y&zi!g&zi)j&zi[&zi!W&zi(v&zi!U&ziQ&zi!d&zi~P#3zO!Y&zi![&zi!^&zi!_&zi!a&zi!b&zi!c&zi!e&zi!f&zi!h&zi(u&zi)T&zi)U&zi)V&zi)W&zi)X&zi)Y&zi!g&zi)j&zi[&zi!W&zi(v&zi!U&ziQ&zi!d&zi~P#3zO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO)T#mO)W#pO!h&zi(u&zi)U&zi)V&zi)X&zi)Y&zi!g&zi)j&zi[&zi!W&zi(v&zi!U&ziQ&zi!d&zi~P#3zO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO)T#mO)V#nO)W#pO!h&zi(u&zi)U&zi)X&zi)Y&zi!g&zi)j&zi[&zi!W&zi(v&zi!U&ziQ&zi!d&zi~P#3zO!Y#qO![#rO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO)T#mO)W#pO!^&zi!h&zi(u&zi)U&zi)V&zi)X&zi)Y&zi!g&zi)j&zi[&zi!W&zi(v&zi!U&ziQ&zi!d&zi~P#3zO!Y#qO![#rO!a#xO!b#yO!c#yO!e#yO!f#zO)T#mO)W#pO!^&zi!_&zi!h&zi(u&zi)U&zi)V&zi)X&zi)Y&zi!g&zi)j&zi[&zi!W&zi(v&zi!U&ziQ&zi!d&zi~P#3zO!Y#qO![#rO!a#xO!b#yO!c#yO!e#yO!f#zO)T#mO!^&zi!_&zi!h&zi(u&zi)U&zi)V&zi)W&zi)X&zi)Y&zi!g&zi)j&zi[&zi!W&zi(v&zi!U&ziQ&zi!d&zi~P#3zO!Y#qO![#rO!b#yO!c#yO!e#yO!f#zO)T#mO!^&zi!_&zi!a&zi!h&zi(u&zi)U&zi)V&zi)W&zi)X&zi)Y&zi!g&zi)j&zi[&zi!W&zi(v&zi!U&ziQ&zi!d&zi~P#3zO!Y#qO![#rO!f#zO)T#mO!^&zi!_&zi!a&zi!b&zi!c&zi!e&zi!h&zi(u&zi)U&zi)V&zi)W&zi)X&zi)Y&zi!g&zi)j&zi[&zi!W&zi(v&zi!U&ziQ&zi!d&zi~P#3zO!Y#qO![#rO)T#mO!^&zi!_&zi!a&zi!b&zi!c&zi!e&zi!f&zi!h&zi(u&zi)U&zi)V&zi)W&zi)X&zi)Y&zi!g&zi)j&zi[&zi!W&zi(v&zi!U&ziQ&zi!d&zi~P#3zO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO)T#mO)U#oO)V#nO)W#pO!h&zi(u&zi)X&zi)Y&zi!g&zi)j&zi[&zi!W&zi(v&zi!U&ziQ&zi!d&zi~P#3zO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO!h/cO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O[(sX~P#3zO!h/cO[(sX~O[/eO~O]%Xaq%Xa!X%Xa!Y%Xa![%Xa!^%Xa!_%Xa!a%Xa!b%Xa!c%Xa!e%Xa!f%Xa!h%Xa(u%Xa(w%Xa(x%Xa)U%Xa)V%Xa)W%Xa)X%Xa)Y%Xa!g%Xa)j%Xa[%Xa!W%Xa!T%Xa#v%Xa(v%Xa!U%XaQ%Xa!d%Xa~O)T/fO!V%Xa~P&,aO[/fO~O!W/fO~O!V/gO)T%Xa~P&,aO!X'Zi!Y'Zi!['Zi!^'Zi!_'Zi!a'Zi!b'Zi!c'Zi!e'Zi!f'Zi!h'Zi(u'Zi(w'Zi(x'Zi)T'Zi)U'Zi)V'Zi)W'Zi)X'Zi)Y'Zi!g'Zi)j'Zi['Zi!W'Zi(v'Zi!U'ZiQ'Zi!d'Zi~P%6oO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O!h'^i)X'^i!g'^i)j'^i['^i!W'^i(v'^i!U'^iQ'^i!d'^i~P#3zO!W/lO~P%:oO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO!h/nO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O!U)rX~P#3zO(r/qO~O!V/sO(w)sO)j/uO~O!h/nO!U)rX~O!U/vO~O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO)T#mO)U#oO)V#nO)W#pO)Y#|O!h`i(u`i)X`i!g`i)j`i[`i!W`i(v`i!U`iQ`i!d`i~P#3zO!R/wO~Om){O]!Qa!h!Qa)P!Qa)Y!Qa~OP0PO]0OOm0PO!R0PO!T/|O!V/}O!X0PO!Y0PO![0PO!^0PO!_0PO!a0PO!b0PO!c0PO!e0PO!f0PO!g0PO!h0PO!i0PO(pQO(v0PO(w0PO(x0PO)T/yO)U/zO)V/zO)W/{O)X0PO)Y0PO)[XO~O[0SO~P&6yO!R$[O~O!h*OO)P)Ra)Y)Ra~O)P0WO~O])dO!V)eO!X)bO!g)bO%Z)bO%[)bO%])bO%^)bO%_)fO%`)fO%a)bO(x)cO)j)bO)x)gO~Oe)oO%Y*TO(y$OO~O)X0YO~O]oXeoXmnXqoXsoXtoXuoXvoXwoXxoXyoXzoX!OoX!VoX!roX!soX!toX!uoX!voX!xoX!{oX%voX&roX&soX(roX)ToX)VoX)WoX!ToX!hoX)YoX[oXQoX!doX~O!loX(voX)XoX!XoX!YoX![oX!^oX!_oX!aoX!boX!coX!eoX!foX(uoX(woX(xoX)UoX!goX)joX!WoX!UoX#voX#ToX#VoX#poXboX|oX!ooX#aoX#boX#ioX#toX${oX%coX%eoX%koX%loX%ooX&moX)QoX~P&:uOs!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O!O!_O!r!aO!s!aO!t!aO!u!aO!v!aO!x!cO~O])aie)aim)ai!V)ai!{)ai%v)ai(r)ai)T)ai)V)ai)W)aiQ)ai!d)ai!h)ai)Y)ai)j)ai[)ai!T)ai&r)ai(v)ai)X)ai~P&?sO]&cO!V&bO[#Qi!T#Qi!h#Qi#v#Qi)X#Qi)j#QiQ#Qi!d#Qi(v#Qi~O[raQra!dra!hra)Yra)Xra~P#9{O[raQra!dra!hra)Yra)Xra~P#IkO]&cO!V+kO[raQra!dra!hra)Yra)Xra~O!h*iO!W)ka~O!h*mO!W*Oa~OPmOb!]Os!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O|#RO!O!_O!X!XO!Y!WO!i!YO!s!aO!t!aO!v!aO!x!cO#V#QO#a#VO#b#TO#v!eO$Y!vO$Z!wO$`!iO$e!jO$g!kO$h!lO$k!mO$m!nO$o!oO$q!pO$s!qO$u!rO$w!sO%_#ZO%`#[O%a#YO%e#UO%l#SO&m!RO&r#WO&s!TO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO)QYO)XiO)Y!ZO)[XO)hcO)idO~O]eOe!POmTO!T*qO!U&TO!V0hO!opO!r!`O!u!bO!{!dO#i#OO#p!xO#t!fO$R!gO$T!hO${!tO$}!uO%U!yO%c!zO%g!{O%o!|O%v!}O%|#PO(rRO(w)sO)TaO)V|O)W{O~P&DuO!h*tO)X)qa~OPmO]$eOb!]Om:|O|#RO!T$WO!V$fO!X!XO!Y!WO!i!YO#V#QO#a#VO#b#TO%_#ZO%`#[O%a#YO%e#UO%l#SO%v$mO&m!RO&r#WO&s!TO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO(r;UO)QYO)T$kO)W$kO)Y0nO)[XO)hcO)idO[(sP[)dP~P&?sO!h*mO!W*OX~O]#}O!T$WO~O!h0sO!T)zX#v)zX)j)zX~O)X0uO~O)X0vO~O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)X0xO)Y#|O~P#3zO)X0vO~P!?WO]1SOe!POm%bO!V1QO!{!dO%v$mO(r$xO)T0zO)Y0}O~O)V1OO)W1OO)j0{OQ#PX!d#PX!h#PX[#PX~P' dO!h1TOQ)lX!d)lX~OQ1VO!d1VO~O)Y1YO)j1XOQ#`X!d#`X!h#`X~P!<[O)Y1YO)j1XOQ#`X!d#`X!h#`X~P!;bOq&UO~O[#ka!T#ka#v#ka)X#ka)j#kaQ#ka!d#ka!h#ka)Y#ka!x#ka(v#ka~P#IkO]&cO!V+kO[#ka!T#ka#v#ka)X#ka)j#kaQ#ka!d#ka!h#ka)Y#ka!x#ka(v#ka~O!W1_O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO!W1_O)T1aO~P$%pO!W1_O~P!(zO]#ja!T#ja!V#ja[#ja#v#ja)X#ja)j#jaQ#ja!d#ja!h#ja)Y#ja!x#ja(v#ja~P$ xO[1eO]&cO!V+kO~O!h1fO[)dX~O[1hO~O]&cO!V+kO[#na!T#na#v#na)X#na)j#naQ#na!d#na!h#na)Y#na!x#na(v#na~O]1lOs#SXt#SXu#SXv#SXw#SXx#SXy#SXz#SX!T#SX!V#SX#T#SX#p#SX(x#SX)V#SX)W#SX!l#SX!x#SX#V#SX#v#SX(v#SX)j#SX[#SX!h#SX)X#SXQ#SX!d#SX)Y#SX~O]1mO~O]1pOm$oO!V$fO#V#QO(r$nO)hcO)idO~Os!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O!l+zO#T+vO#V+yO#p+wO(x+tO)V+zO)W+zO~O])fX!T)fX!V)fX!x)fX#v)fX(v)fX)j)fX[)fX!h)fX)X)fXQ)fX!d)fX~P'+}O!x!cO]#Ri!T#Ri!V#Ri#v#Ri(v#Ri)j#Ri[#Ri!h#Ri)X#RiQ#Ri!d#Ri~O!W1xO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO!W1xO)T1zO~P$%pO!W1xO~P!(zO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|OQ*RX!d*RX!h*RX~P#3zO)Y1{OQ({X!d({X!h({X~O!h1|OQ(zX!d(zX~OQ2OO!d2OO~O[2PO~O#t$lO)QYO~P8zOm-eO!TxO)j2TO~O[2UO~O#x,aOP#ui]#uib#uie#uim#uis#uit#uiu#uiv#uiw#uix#uiy#uiz#ui|#ui!O#ui!T#ui!V#ui!X#ui!Y#ui!i#ui!o#ui!r#ui!s#ui!t#ui!u#ui!v#ui!x#ui!{#ui#V#ui#a#ui#b#ui#i#ui#p#ui#t#ui#v#ui$R#ui$T#ui$Y#ui$Z#ui$`#ui$e#ui$g#ui$h#ui$k#ui$m#ui$o#ui$q#ui$s#ui$u#ui$w#ui${#ui$}#ui%U#ui%_#ui%`#ui%a#ui%c#ui%e#ui%g#ui%l#ui%o#ui%v#ui%|#ui&m#ui&r#ui&s#ui'Q#ui'R#ui'V#ui'Y#ui'a#ui'b#ui(k#ui(p#ui(r#ui)Q#ui)T#ui)V#ui)W#ui)X#ui)Y#ui)[#ui)h#ui)i#ui!U#ui$c#ui!n#ui%k#ui~O]&cO~O]&cO!TxO!V&bO#v!eO~O(v2ZO(w,cO)Q$Ua)X$Ua~O)QYO)X2]O~O[2^O~P,]O[2^O)X#jO~O[2^O~O$c2cOP$_i]$_ib$_ie$_im$_is$_it$_iu$_iv$_iw$_ix$_iy$_iz$_i|$_i!O$_i!T$_i!V$_i!X$_i!Y$_i!i$_i!o$_i!r$_i!s$_i!t$_i!u$_i!v$_i!x$_i!{$_i#V$_i#a$_i#b$_i#i$_i#p$_i#t$_i#v$_i$R$_i$T$_i$Y$_i$Z$_i$`$_i$e$_i$g$_i$h$_i$k$_i$m$_i$o$_i$q$_i$s$_i$u$_i$w$_i${$_i$}$_i%U$_i%_$_i%`$_i%a$_i%c$_i%e$_i%g$_i%l$_i%o$_i%v$_i%|$_i&m$_i&r$_i&s$_i'Q$_i'R$_i'V$_i'Y$_i'a$_i'b$_i(k$_i(p$_i(r$_i)Q$_i)T$_i)V$_i)W$_i)X$_i)Y$_i)[$_i)h$_i)i$_i!U$_i~O]1pO~O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO!h#iO(u#gO)T#mO)U#oO)V#nO)W#pO)X2fO)Y#|O~P#3zOPmO]$eOb!]Om:{O|#RO!V$fO!X!XO!Y!WO!i!YO#V#QO#a#VO#b#TO%_#ZO%`#[O%a#YO%e#UO%l#SO%v$mO&m!RO&r#WO&s!TO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO(r:}O)T$kO)W$kO)X2iO)Y!ZO)[XO)hcO)idO~P&?sO)X2fO~O(r-UO~O)QYO)j2lO~O)X2nO~O]-YOs!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O!{!dO!|%RO(r-UO)T-VO~O)T2sO~O]&cO!V2uO!h2vO)X)uX~O]-YO!{!dO(r-UO)T-VO~O)X2yO~O!TxO$`!iO$e!jO$g!kO$h!lO$k-bO$m!nO$o!oO$q!pO$s!qO$u!rO$w!sO$}!uO(r:nOe$Xi!o$Xi!{$Xi#i$Xi#p$Xi#t$Xi#v$Xi$R$Xi$T$Xi$Y$Xi$Z$Xi${$Xi%U$Xi%c$Xi%g$Xi%o$Xi%|$Xi(k$Xi)V$Xi!U$Xi$c$Xi~P$0kOm:{O(r:nO~P0zO]2}O~O)X2SO~O!u3PO(r%nO~O[3SO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO!h3TO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO[3UO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO]&cO!V+kO!T%ui#v%ui)X%ui)j%ui~O!W3VO~Om:yO)X(}X~P$GQOb!TOm$oO|3]O#a#VO#b3[O#t!fO%e#UO%l3^O&m!RO&r#WO&s!TO(r$nO)QYO~P&?sOm;cO!o-pO#i-uO#t!fO${,yO%c!zO%k-tO%o!|O%v!}O(r;TO)QYO~P!8jO]&cO!V&bO)X3`O~O)X3aO~O)QYO)X3aO~O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO!h#iO(u#gO)T#mO)U#oO)V#nO)W#pO)X3bO)Y#|O~P#3zO)X3bO~O)X3eO~O!U3gO~P$JbOm$oO(r$nO~O]3iO!T'yO~P'+iO!T(QO!l3lO(v(PO])Oae)Oam)Oas)Oat)Oau)Oav)Oaw)Oax)Oay)Oaz)Oa!O)Oa!V)Oa!r)Oa!s)Oa!t)Oa!u)Oa!v)Oa!x)Oa!{)Oa%v)Oa&r)Oa&s)Oa(r)Oa)T)Oa)V)Oa)W)Oa)X)Oa[)Oa!X)Oa!Y)Oa![)Oa!^)Oa!_)Oa!a)Oa!b)Oa!c)Oa!e)Oa!f)Oa!h)Oa(u)Oa(w)Oa(x)Oa)U)Oa)Y)Oa!g)Oa)j)Oa!W)OaQ)Oa!d)Oa!U)Oa#v)Oa~Om$oO!n.cO!o.cO(r$nO~O!h3pO)Y3rO!T)_X~O!o3tO)QYO~P8zO)X3uO~PGVO]3zOm({O!T$WO!{!dO%v$mO&r#WO(r(zO(v4OO)T3wO)V3{O)W3{O~O)X4PO)j4RO~P(&eOm;dO!U4TO!n.pO!o.oO#i-uO${!tO$}!uO%g!{O%k-tO%o!|O%v!}O(r;VO)QYO~P!8jOm;dO%v!}O(r;VO~P!8jO(v4UO~Om$oO!T(QO(r$nO(v(PO)QYO~O!l3lO~P((sO)j4WO!U&oX!h&oX~O!h4XO!U*QX~O!U4ZO~Ob4]Om$oO&m!RO(r$nO~O!T(ZO]&kie&kim&kis&kit&kiu&kiv&kiw&kix&kiy&kiz&ki!O&ki!V&ki!r&ki!s&ki!t&ki!u&ki!v&ki!x&ki!{&ki%v&ki&r&ki&s&ki(r&ki)T&ki)V&ki)W&ki)X&ki[&ki!X&ki!Y&ki![&ki!^&ki!_&ki!a&ki!b&ki!c&ki!e&ki!f&ki!h&ki(u&ki(w&ki(x&ki)U&ki)Y&ki!g&ki)j&ki!W&kiQ&ki!d&ki!U&ki#v&ki~O(v&ki~P(*TO(v.uO~P(*TO[4`O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO[4`O~O[4aO~O]#}O!T$WO!V'Zi!X'Zi!Y'Zi!['Zi!^'Zi!_'Zi!a'Zi!b'Zi!c'Zi!e'Zi!f'Zi!h'Zi(u'Zi(w'Zi(x'Zi)T'Zi)U'Zi)V'Zi)W'Zi)X'Zi)Y'Zi!g'Zi)j'Zi['Zi!W'Zi(v'Zi!U'ZiQ'Zi!d'Zi~OPmOb%QOm:zO!X!XO!Y!WO!i!YO#V#QO%_#ZO%`#[O%a#YO%v$mO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO(r$xO)Y!ZO)[XO)hcO)idO]#]aq#]a!T#]a!V#]a)T#]a)V#]a)W#]a~O(r%nO)Y4fO[*YP~O*W4eO~O'f4hO*W4eO~O*W4iO~OmnXqoXq&wX~Oe4kO%Y*TO(y/]O~Oe4kO%Y*TO(y4lO~O!h/cO[(sa~O!W4pO~O]&cO!V+kO!T%uq#v%uq)X%uq)j%uq~O]#}O!T$WO!X'Zq!Y'Zq!['Zq!^'Zq!_'Zq!a'Zq!b'Zq!c'Zq!e'Zq!f'Zq!h'Zq(u'Zq(w'Zq(x'Zq)T'Zq)U'Zq)V'Zq)W'Zq)X'Zq)Y'Zq!g'Zq)j'Zq['Zq!W'Zq(v'Zq!U'ZqQ'Zq!d'Zq~O!V'Zq~P(5bO!V.}O&r#WO&s$wO~P(5bO!T$WO!V)rO(w)sO!U(UX!h(UX~P!JwO!h/nO!U)ra~O!W4xO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO!h*iO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO!U4|O~P&6yO!W4|O~P&6yO[4|O~P&6yO[5RO~P&6yO]5SO!h'ua)P'ua)Y'ua~O!h*OO)P)Ri)Y)Ri~O]&cO!V&bO[#Qq!T#Qq!h#Qq#v#Qq)X#Qq)j#QqQ#Qq!d#Qq(v#Qq~O[riQri!dri!hri)Yri)Xri~P#IkO]&cO!V+kO[riQri!dri!hri)Yri)Xri~O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O!h'Tq)X'Tq!g'Tq)j'Tq['Tq!W'Tq(v'Tq!U'TqQ'Tq!d'Tq~P#3zO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O!W'|a!h'|a~P#3zO!W5XO~O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO!h5YO(u#gO)T#mO)U#oO)V#nO)W#pO)X#jO)Y#|O!U)rX~P#3zO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O!h#{i)X#{i~P#3zO]*vO!T$WO!V&bO)j*rO!h(Va)X(Va~O!h1fO[)dX]'dX~P%2xO)Y5[O!T%qa!h%qa#v%qa)j%qa~O!h0sO!T)za#v)za)j)za~O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)X5_O)Y#|O~P#3zO]1SOe!POm;[O!V1QO!{!dO%v$mO(r$xO)T;xO)V5aO)W5aO~OQ#Pa!d#Pa!h#Pa[#Pa~P(DjO]1SOe!POs!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O!V1QO!{!dO!|%RO%v$mO(r$xOQ#kX!d#kX!h#kX[#kX~Om%bO)T0zO)V;yO)W;yO~P(ElO]&cOQ#Pa!d#Pa!h#Pa[#Pa~O!V&bO)j5eO~P(GZO(r%nOQ#dX!d#dX!h#dX[#dX~O)V;yO)W;yOQ#nX!d#nX!h#nX[#nX~P' dO!V+kO~P(GZO]1SOb!TOe!POm;]O|#RO!V1QO!{!dO#a#VO#b#TO%e#UO%l#SO%v$mO&m!RO&r#WO&s!TO(r;QO)QYO)T;xO)V5aO)W5aO)Y+nO[)dP~P&?sO!h1TOQ)la!d)la~Oq&fO)j5jOQ#`am(}X!d#`a!h#`a)Y(}X~P$GQO(r-UOQ#ga!d#ga!h#ga~Oq&fO)j5jOQ#`a])^Xe)^Xm)^Xs)^Xt)^Xu)^Xv)^Xw)^Xx)^Xy)^Xz)^X!O)^X!T)^X!V)^X!d#`a!h#`a!l)^X!r)^X!s)^X!t)^X!u)^X!v)^X!x)^X!{)^X%v)^X&r)^X&s)^X(r)^X(v)^X)T)^X)V)^X)W)^X)Y)^X~O#a5mO#b5mO~O]&cO!V+kO[#ki!T#ki#v#ki)X#ki)j#kiQ#ki!d#ki!h#ki)Y#ki!x#ki(v#ki~O!W5oO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO!W5oO~P!(zO!W5oO)T5qO~P$%pO]#ji!T#ji!V#ji[#ji#v#ji)X#ji)j#jiQ#ji!d#ji!h#ji)Y#ji!x#ji(v#ji~P$ xO)QYO)Y5sO~P8zO!h1fO[)da~O&r#WO&s$wO!T#qa!x#qa#v#qa(v#qa)j#qa[#qa!h#qa)X#qaQ#qa!d#qa)Y#qa~P#NeO[5xO~P!(zO[)oP~P!4xO)U6OO)V5|O]#Ua!T#Ua!V#Ua)T#Ua)W#Uas#Uat#Uau#Uav#Uaw#Uax#Uay#Uaz#Ua!l#Ua!x#Ua#T#Ua#V#Ua#p#Ua#v#Ua(v#Ua(x#Ua)j#Uab#Uae#Uam#Ua|#Ua!O#Ua!o#Ua!r#Ua!s#Ua!t#Ua!u#Ua!v#Ua!{#Ua#a#Ua#b#Ua#i#Ua#t#Ua${#Ua%c#Ua%e#Ua%k#Ua%l#Ua%o#Ua%v#Ua&m#Ua&r#Ua&s#Ua(r#Ua)Q#Ua)X#Ua[#Ua!h#UaQ#Ua!d#Ua~O!x!cO]#Rq!T#Rq!V#Rq#v#Rq(v#Rq)j#Rq[#Rq!h#Rq)X#RqQ#Rq!d#Rq~O!W6TO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO!W6TO~P!(zO!h1|OQ(za!d(za~O)X6YO~Om-eO!TxO)j6ZO~O]*vO!T$WO!V&bO!h*tO)X)qX~O)j6_O~P)+cO[6aO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO!h#iO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO[6aO~O$c6cOP$_q]$_qb$_qe$_qm$_qs$_qt$_qu$_qv$_qw$_qx$_qy$_qz$_q|$_q!O$_q!T$_q!V$_q!X$_q!Y$_q!i$_q!o$_q!r$_q!s$_q!t$_q!u$_q!v$_q!x$_q!{$_q#V$_q#a$_q#b$_q#i$_q#p$_q#t$_q#v$_q$R$_q$T$_q$Y$_q$Z$_q$`$_q$e$_q$g$_q$h$_q$k$_q$m$_q$o$_q$q$_q$s$_q$u$_q$w$_q${$_q$}$_q%U$_q%_$_q%`$_q%a$_q%c$_q%e$_q%g$_q%l$_q%o$_q%v$_q%|$_q&m$_q&r$_q&s$_q'Q$_q'R$_q'V$_q'Y$_q'a$_q'b$_q(k$_q(p$_q(r$_q)Q$_q)T$_q)V$_q)W$_q)X$_q)Y$_q)[$_q)h$_q)i$_q!U$_q~O)X6dO~OPmO]$eOb!]Om:{O|#RO!V$fO!X!XO!Y!WO!i!YO#V#QO#a#VO#b#TO%_#ZO%`#[O%a#YO%e#UO%l#SO%v$mO&m!RO&r#WO&s!TO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO(r:}O)T$kO)W$kO)X6fO)Y!ZO)[XO)hcO)idO~P&?sO(v6hO)j*rO~P)+cO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)X6fO)Y#|O~P#3zO[6jO~P!(zO)X6nO~O)X6oO~O]-YOs!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O!{!dO(r-UO)T-VO~O]&cO!V2uO!h%Oa)X%Oa[%Oa~O!W6uO)T6vO~P$%pO!h2vO)X)ua~O[6yO]&cO!V2uO~O!TxO$`!iO$e!jO$g!kO$h!lO$k-bO$m!nO$o!oO$q!pO$s!qO$u!rO$w!sO$}!uO(r:nOe$Xq!o$Xq!{$Xq#i$Xq#p$Xq#t$Xq#v$Xq$R$Xq$T$Xq$Y$Xq$Z$Xq${$Xq%U$Xq%c$Xq%g$Xq%o$Xq%|$Xq(k$Xq)V$Xq!U$Xq$c$Xq~P$0kOPmO]$eOb!]Om:{O|#RO!V$fO!X!XO!Y!WO!i!YO#V#QO#a#VO#b#TO%_#ZO%`#[O%a#YO%e#UO%l#SO%v$mO&m!RO&r#WO&s!TO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO(r:}O)QYO)T$kO)W$kO)X6{O)Y!ZO)[XO)hcO)idO~P&?sO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)X7OO)Y#|O~P#3zO)X7PO~OP7QO(pQO~Om*[O)X)^X~P$GQOq&fOm(}X)X)^X~P$GQO)X7SO~O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O)X&Sa~P#3zO!U7UO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO)X7VO~OPmO]$eOb!]Om:|O|#RO!V$fO!X!XO!Y!WO!i!YO#V#QO#a#VO#b#TO%_#ZO%`#[O%a#YO%e#UO%l#SO%v$mO&m!RO&r#WO&s!TO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO(r;UO)QYO)T$kO)W$kO)Y0nO)[XO)hcO)idO[)dP~P&?sO!h3pO)Y7ZO!T)_a~O!h3pO!T)_a~O)X7`O)j7bO~P(&eO)X7dO~PGVO]3zOm({Os!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O!{!dO!|%RO%v$mO&r#WO(r(zO)T3wO)V3{O)W3{O~O)T7hO~O]&cO!T*qO!V7jO!h7kO#v!eO(v4OO~O)X7`O)j7mO~P)FwO]3zOm({O!{!dO%v$mO&r#WO(r(zO)T3wO)V3{O)W3{O~Oq&fO])cX!T)cX!V)cX!h)cX#v)cX(v)cX)X)cX)j)cX[)cX~O)X7`O~O!T(QO!l7sO(v(PO])Oie)Oim)Ois)Oit)Oiu)Oiv)Oiw)Oix)Oiy)Oiz)Oi!O)Oi!V)Oi!r)Oi!s)Oi!t)Oi!u)Oi!v)Oi!x)Oi!{)Oi%v)Oi&r)Oi&s)Oi(r)Oi)T)Oi)V)Oi)W)Oi)X)Oi[)Oi!X)Oi!Y)Oi![)Oi!^)Oi!_)Oi!a)Oi!b)Oi!c)Oi!e)Oi!f)Oi!h)Oi(u)Oi(w)Oi(x)Oi)U)Oi)Y)Oi!g)Oi)j)Oi!W)OiQ)Oi!d)Oi!U)Oi#v)Oi~O(r%nO!U(fX!h(fX~O!h4XO!U*Qa~Oq&fO]*Pae*Pam*Pas*Pat*Pau*Pav*Paw*Pax*Pay*Paz*Pa!O*Pa!T*Pa!V*Pa!r*Pa!s*Pa!t*Pa!u*Pa!v*Pa!x*Pa!{*Pa%v*Pa&r*Pa&s*Pa(r*Pa)T*Pa)V*Pa)W*Pa)X*Pa[*Pa!X*Pa!Y*Pa![*Pa!^*Pa!_*Pa!a*Pa!b*Pa!c*Pa!e*Pa!f*Pa!h*Pa(u*Pa(w*Pa(x*Pa)U*Pa)Y*Pa!g*Pa)j*Pa!W*PaQ*Pa!d*Pa(v*Pa!U*Pa#v*Pa~O!T(ZO]&kqe&kqm&kqs&kqt&kqu&kqv&kqw&kqx&kqy&kqz&kq!O&kq!V&kq!r&kq!s&kq!t&kq!u&kq!v&kq!x&kq!{&kq%v&kq&r&kq&s&kq(r&kq)T&kq)V&kq)W&kq)X&kq[&kq!X&kq!Y&kq![&kq!^&kq!_&kq!a&kq!b&kq!c&kq!e&kq!f&kq!h&kq(u&kq(w&kq(x&kq)U&kq)Y&kq!g&kq)j&kq!W&kqQ&kq!d&kq(v&kq!U&kq#v&kq~OPmOb%QOm:zO!T$WO!i!YO#V#QO%_#ZO%`#[O%a#YO%v$mO'Q!WO'R!WO'V#XO'Y![O'a![O'b![O(pQO(r$xO)[XO)hcO)idO~O]*Ui!V*Ui!X*Ui!Y*Ui![*Ui!^*Ui!_*Ui!a*Ui!b*Ui!c*Ui!e*Ui!f*Ui!h*Ui(u*Ui(w*Ui(x*Ui)T*Ui)U*Ui)V*Ui)W*Ui)X*Ui)Y*Ui!g*Ui)j*Ui[*Ui!W*Ui(v*Ui!U*UiQ*Ui!d*Ui~P*&WO[7xO~O!W7yO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O!h'^q)X'^q!g'^q)j'^q['^q!W'^q(v'^q!U'^qQ'^q!d'^q~P#3zO!h7zO[*YX~O[7|O~O*W7}O~O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O!h_y)X_y!g_y)j_y[_y!W_y(v_y!U_yQ_y!d_y~P#3zO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O[(ha!h(ha~P#3zO]#}O!T$WO!V'Zy!X'Zy!Y'Zy!['Zy!^'Zy!_'Zy!a'Zy!b'Zy!c'Zy!e'Zy!f'Zy!h'Zy(u'Zy(w'Zy(x'Zy)T'Zy)U'Zy)V'Zy)W'Zy)X'Zy)Y'Zy!g'Zy)j'Zy['Zy!W'Zy(v'Zy!U'ZyQ'Zy!d'Zy~O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O!h'^y)X'^y!g'^y)j'^y['^y!W'^y(v'^y!U'^yQ'^y!d'^y~P#3zO]&cO!V+kO!T%uy#v%uy)X%uy)j%uy~O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O!U(Ua!h(Ua~P#3zO!W4xO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O!U#}i!h#}i~P#3zO!U8PO~P&6yO!W8PO~P&6yO[8PO~P&6yO[8RO~P&6yO]&cO!V&bO[#Qy!T#Qy!h#Qy#v#Qy)X#Qy)j#QyQ#Qy!d#Qy(v#Qy~O]&cO!V+kO[rqQrq!drq!hrq)Yrq)Xrq~O]&cOQ#Pi!d#Pi!h#Pi[#Pi~O!V+kO~P*9jOQ#nX!d#nX!h#nX[#nX~P(DjO!V&bO~P*9jOQ(OX](OXe'qXm'qXs(OXt(OXu(OXv(OXw(OXx(OXy(OXz(OX!V(OX!d(OX!h(OX!{'qX%v'qX(r'qX)T(OX)V(OX)W(OX[(OX~O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|OQ#_i!d#_i!h#_i[#_i~P#3zO&r#WO&s$wOQ#fi!d#fi!h#fi~O(r-UO)Y1YO)j1XOQ#`X!d#`X!h#`X~O!W8WO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO!W8WO~P!(zO!T#qi!x#qi#v#qi(v#qi)j#qi[#qi!h#qi)X#qiQ#qi!d#qi)Y#qi~O]&cO!V+kO~P*?fO]&YO!V&WO&r#WO&s$wO)T&VO)V&ZO)W&ZO~P*?fO[8YO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO!h8ZO[)oX~O[8]O~O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|OQ*TX!d*TX!h*TX~P#3zO)Y8`OQ*SX!d*SX!h*SX~O)X8bO~O[$bi!h#{a)X#{a~O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)X8eO)Y#|O~P#3zO[8gO~P!(zO[8gO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO!h#iO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO[8gO~O]&cO!V&bO(v8mO~O)X8nO~O]&cO!V2uO!h%Oi)X%Oi[%Oi~O!W8qO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO!W8qO)T8sO~P$%pO!W8qO~P!(zO]&cO!V2uO!h(Ya)X(Ya~O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO!h#iO(u#gO)T#mO)U#oO)V#nO)W#pO)X8tO)Y#|O~P#3zO)X2iO~P!(zO)X8tO~OP%oO[8uO(pQO~O[8uO~O)X8vO~P%%eO#T8yO(x.PO)X8wO~O!h3pO!T)_i~O)Y8}O!T'wa!h'wa~O)X9PO)j9RO~P)FwO)X9PO~O)X9PO)j9VO~P(&eOs!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O~P)GgO]&cO!V7jO!T!ya!h!ya#v!ya(v!ya)X!ya)j!ya[!ya~O!W9^O)T9_O~P$%pO!T$WO!h7kO(v4OO)X9PO)j9VO~O!T$WO~P#EfO[9bO]&cO!V7jO~O]&cO!V7jO!T&aa!h&aa#v&aa(v&aa)X&aa)j&aa[&aa~O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O)X&ba~P#3zO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)X9PO)Y#|O~P#3zO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O!U&oi!h&oi~P#3zO!V.}O]']i!T']i!X']i!Y']i![']i!^']i!_']i!a']i!b']i!c']i!e']i!f']i!h']i(u']i(w']i(x']i)T']i)U']i)V']i)W']i)X']i)Y']i!g']i)j']i[']i!W']i(v']i!U']iQ']i!d']i~O(r%nO)Y9eO~O!h7zO[*Ya~O[9gO~P&6yO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO!h#iO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O!U(Ua)X#Zi~P#3zO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|OQ#_q!d#_q!h#_q[#_q~P#3zO&r#WO&s$wOQ#fq!d#fq!h#fq~O)j5jOQ#`a!d#`a!h#`a~O]&cO!V+kO!T#qq!x#qq#v#qq(v#qq)j#qq[#qq!h#qq)X#qqQ#qq!d#qq)Y#qq~O!h8ZO[)oa~O)V5|O]&Vi!T&Vi!V&Vi)T&Vi)U&Vi)W&Vis&Vit&Viu&Viv&Viw&Vix&Viy&Viz&Vi!l&Vi!x&Vi#T&Vi#V&Vi#p&Vi#v&Vi(v&Vi(x&Vi)j&Vib&Vie&Vim&Vi|&Vi!O&Vi!o&Vi!r&Vi!s&Vi!t&Vi!u&Vi!v&Vi!{&Vi#a&Vi#b&Vi#i&Vi#t&Vi${&Vi%c&Vi%e&Vi%k&Vi%l&Vi%o&Vi%v&Vi&m&Vi&r&Vi&s&Vi(r&Vi)Q&Vi)X&Vi[&Vi!h&ViQ&Vi!d&Vi~O)X9jO~O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O[$bq!h#{i)X#{i~P#3zO[9lO~P!(zO[9lO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO!h#iO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO[9lO~O]&cO!V&bO(v9oO~O[9pO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO[9pO~O]&cO!V2uO!h%Oq)X%Oq[%Oq~O!W9tO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO!W9tO~P!(zO)X6fO~P!(zO)X9uO~O)X9vO~O(x.PO)X9vO~O!h3pO!T)_q~O)Y9xO!T'wi!h'wi~O!T$WO!h7kO(v4OO)X9yO)j9{O~O)X9yO~O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)X9yO)Y#|O~P#3zO)X9yO)j:OO~P)FwO]&cO!V7jO!T!yi!h!yi#v!yi(v!yi)X!yi)j!yi[!yi~O!W:SO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO!W:SO)T:UO~P$%pO!W:SO~P!(zO]&cO!V7jO!T(da!h(da(v(da)X(da)j(da~O[:WO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO!h#iO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO[:WO~O[:]O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO[:]O~O]&cO!V2uO!h%Oy)X%Oy[%Oy~O)X:^O~O)X:_O~O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)X:_O)Y#|O~P#3zO!T$WO!h7kO(v4OO)X:_O)j:bO~O]&cO!V7jO!T!yq!h!yq#v!yq(v!yq)X!yq)j!yq[!yq~O!W:dO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO!W:dO~P!(zO[:fO!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)Y#|O~P#3zO[:fO~O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)X:hO)Y#|O~P#3zO)X:hO~O]&cO!V7jO!T!yy!h!yy#v!yy(v!yy)X!yy)j!yy[!yy~O!Y#qO![#rO!^#uO!_#vO!a#xO!b#yO!c#yO!e#yO!f#zO(u#gO)T#mO)U#oO)V#nO)W#pO)X:lO)Y#|O~P#3zO)X:lO~O]ZXmhXqZXqjX!TjX!VZX!XZX!YZX![ZX!^ZX!_ZX!aZX!bZX!cZX!eZX!fZX!gZX!hZX(uZX(v$]X(wZX(xZX)TZX)UZX)VZX)WZX)XZX)YZX)jZX~O]%WXmnXqoXq%WX!ToX!V%WX!X%WX!Y%WX![%WX!^%WX!_%WX!a%WX!b%WX!c%WX!e%WX!f%WX!gnX!h%WX(u%WX(w%WX(x%WX)T%WX)U%WX)V%WX)W%WX)Y%WX)jnX[%WXQ%WX!d%WX~O)X%WX!W%WX(v%WX!U%WX~P+GrO]oX]%WXeoXmnXqoXq%WXsoXtoXuoXvoXwoXxoXyoXzoX!OoX!VoX!V%WX!roX!soX!toX!uoX!voX!xoX!{oX%voX&roX&soX(roX)ToX)VoX)WoX[oX[%WX!hoX)YoX~O)XoX)joX~P+JSO]%WXmnXqoXq%WX!V%WX!h%WXQ%WX!d%WX[%WX~O!T%WX#v%WX)X%WX)j%WX(v%WX~P+LmOQoXQ%WX!ToX!X%WX!Y%WX![%WX!^%WX!_%WX!a%WX!b%WX!c%WX!doX!d%WX!e%WX!f%WX!gnX!h%WX(u%WX(w%WX(x%WX)T%WX)U%WX)V%WX)W%WX)Y%WX)jnX~P+JSO]oX]%WXmnXqoXq%WXsoXtoXuoXvoXwoXxoXyoXzoX!OoX!V%WX!roX!soX!toX!uoX!voX!xoX!{oX%voX&roX&soX(roX)ToX)VoX)WoX~O!ToX(voX)XoX)joX~P, eOeoX!VoX)X%WX~P, eOmnXqoX)X%WX~Oe)oO%Y)pO(y:oO~Oe)oO%Y)pO(y:tO~Oe)oO%Y)pO(y:pO~Oe$RO%Y*TO'[$TO'_$UO(y:oO~Oe$RO%Y*TO'[$TO'_$UO(y:qO~Oe$RO%Y*TO'[$TO'_$UO(y:sO~O[jX]jXsjXtjXujXvjXwjXxjXyjXzjX!VjX&rjX&sjX)TjX)VjX)WjXejX!OjX!rjX!sjX!tjX!ujX!vjX!xjX!{jX%vjX(rjX~P#1jO]ZXmhXqZXqjX!VZX!hZX)XZX)jZX~O!TZX#vZX(vZX~P,'{OmhXqjX)QjX)XZX)jjX~O]ZX]jXejXmhXqZXqjXsjXtjXujXvjXwjXxjXyjXzjX!OjX!VZX!VjX!rjX!sjX!tjX!ujX!vjX!xjX!{jX%vjX&rjX&sjX(rjX)TjX)VjX)WjX[ZX[jX!hjX)YjX)jjX~O)XZX~P,)VO]ZX]jXmhXqZXqjXsjXtjXujXvjXwjXxjXyjXzjX!TjX!VZX!VjX!XZX!YZX![ZX!^ZX!_ZX!aZX!bZX!cZX!eZX!fZX!gZX!hZX!hjX&rjX&sjX(uZX(wZX(xZX)TZX)TjX)UZX)VZX)VjX)WZX)WjX)YZX)YjX)jZX~OQZXQjX!dZX!djX~P,+pO]jXejXsjXtjXujXvjXwjXxjXyjXzjX!OjX!VjX!rjX!sjX!tjX!ujX!vjX!xjX!{jX%vjX&rjX&sjX(rjX)TjX)VjX)WjX~P#1jO]ZX]jXejXmhXqZXqjXsjXtjXujXvjXwjXxjXyjXzjX!OjX!VZX!VjX!rjX!sjX!tjX!ujX!vjX!xjX!{jX%vjX&rjX&sjX(rjX)TjX)VjX)WjX~O)XjX~P,0rO[ZX[jXejX!OjX!rjX!sjX!tjX!ujX!vjX!xjX!{jX%vjX(rjX)jjX~P,+pO]ZX]jXmhXqZXqjXsjXtjXujXvjXwjXxjXyjXzjX!OjX!TjX!VZX!rjX!sjX!tjX!ujX!vjX!xjX!{jX%vjX&rjX&sjX(rjX(vjX)TjX)VjX)WjX)XjX)jjX~Os!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O~PBUOe$RO%Y*TO(y:oO~Oe$RO%Y*TO(y:pO~Oe$RO%Y*TO(y:vO~Oe$RO%Y*TO(y:uO~O]%hOe!POm%bOs!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O!V%kO!{!dO!|%RO%v$mO(r$xO)T;aO)V;bO)W;bO~O]%hOe!POm%bO!V%kO!{!dO%v$mO(r$xO)T;aO)V;bO)W;bO~Oe$RO%Y$SO(y:pO~Oe$RO%Y$SO(y:tO~Om:yO~Om:xO~O]dXmhXqjX!TdX~Oe)oO%Y*TO(y:oO~Oe)oO%Y*TO(y:pO~Oe)oO%Y*TO(y:qO~Oe)oO%Y*TO(y:rO~Oe)oO%Y*TO(y:sO~Oe)oO%Y*TO(y:uO~Oe)oO%Y*TO(y:vO~Os!^Ot!^Ou!^Ov!^Ow!^Ox!^Oy!^Oz!^O~P,9OO](}Xs(}Xt(}Xu(}Xv(}Xw(}Xx(}Xy(}Xz(}X!O(}X!r(}X!s(}X!t(}X!u(}X!v(}X!x(}X!{(}X%v(}X&r(}X&s(}X(r(}X)T(}X)V(}X)W(}X)j(}X~Om:xO!T(}X(v(}X)X(}X~P,<}O]&wXmnXqoX!T&wX~Oe4kO%Y*TO(y;tO~Om;[O)T;xO)V5aO)W5aO~P(ElOe!POm%bO!{!dO%v$mO(r$xO~O]1SO!V1QO)T0zO)V;yO)W;yOQ#nX!d#nX!h#nX[#nX~P,?yO)T;YO~Om;hO~Om;iO~Om;jO~Om;lO~Om;mO~Om;nO~Om;lO!T$WOQ(}X!d(}X!h(}X)Y(}X[(}X)j(}X~P$GQOm;jO!T$WO~P$GQOm;hO!g$YO)j$YO~Om;jO!g$YO)j$YO~Om;lO!g$YO)j$YO~Om;iO[(}X!h(}X)Y(}X)j(}X~P$GQOe/^O%Y*TO(y;tO~Om;uO~O)T<YO~OV'e'h'i'g(p)[!R(rST%Z!Y!['je%[!i'R!f]'f*Z'k(w!^!_'l'm'l~",
+    goto: "%5]*ZPPPPPP*[P*_PP.TPP4i7j7j:tP:t>OP>i>{?aFXMX!&]!,sP!3m!4b!5VP!5qPPPPPPPP!6[P!7tP!9V!:oP!:uPPPPPP!:xP!:xPP!:xPPPPPPPPP!;U!>lP!>oPP!?]!@QPPPPP!@UP>l!AgPP>l!Cn!Eo!E}!Gd!ITP!I`P!Io!Io!MP#!`##v#'S#*^!Eo#*hPP!Eo#*o#*u#*h#*h#*xP#*|#+k#+k#+k#+k!ITP#,U#,g#.|P#/bP#0}P#1R#1Z#2O#2Z#4i#4q#4q#1RP#1RP#4x#5OP#5YPP#5u#6d#7U#5uP#7v#8SP#5uP#5uPP#5u#5uP#5uP#5uP#5uP#5uP#5uP#5uP#8V#5Y#8sP#9YP#9o#9o#9o#9o#9|#1RP#:d#?`#?}PPPPPPPP#@uP#ATP#ATP#Aa#Dn#9OPP#@}#EQP#Ee#Ep#Ev#Ev#@}#FlP#1R#1R#1R#1R#1RP!Io#GW#G_#G_#G_#Gc!Ly#Gm!Ly#Gq!E}!E}!E}#Gt#L^!E}>l>l>l$#V!@Q!@Q!@Q!@Q!@Q!@Q!6[!6[!6[$#jP$%V$%e!6[$%kPP!6[$'y$'|#@l$(P:t7j$+V$-Q$.q$0a7jPP7j$2T7jP7j7jP7jP$5Z7jP7jPP7j$5gPPPPPPPPP*[P$8o$8u$;^$=d$=j$>Q$>[$>g$>v$>|$@[$AZ$Ab$Ai$Ao$Aw$BR$BX$Bd$Bj$Bs$B{$CW$C^$Ch$Cn$Cx$DP$D`$Df$DlP$Dr$Dz$ER$Ea$F}$GT$GZ$Gb$GkPPPPPPPP$Gq$GuPPPPP$Nw$'y$Nz%$S%&[PP%&i%&lPPPPPPPPP%&x%'{%(R%(V%)|%+Z%+|%,T%.d%.jPPP%.t%/P%/S%/Y%0a%0d%0n%0x%0|%2Q%2s%2y#@uP%3d%3t%3w%4X%4e%4i%4o%4u$'y$'|$'|%4x%4{P%5V%5YR#cP'`mO[aefwx{!W!X!g!k!n!r!s!v!x#X#Y#[#g#i#l#q#r#s#t#u#v#w#x#y#z#{#}$U$W$Y$e$f$k%]%m&Q&S&W&b&f&x&y&|'O'P'b'i'j'y(`(b(i)l)r*h*i*l*q*r*v+W+Y+h+j+k,P,R,n,q,w-]-^-a-g.P.Q.U.}/Q/[/c/l/n/s/u0h0{1Q1a1b1l1p1z1|2c2f2i2u2z2}3i4O4R4W4a5Y5e5q6_6c6f6h6j6t6v6{7b7j7m8e8g8m8s8t9R9V9]9_9l9o9p9{:O:U:W:]:b:fU%om%p7QQ&m!`Q(j#]d0P)}/|/}0O0R4}5O5P5S8QR7Q3Tb}Oaewx{!g&S*q&v$i[!W!X!k!n!r!s!v!x#X#Y#[#g#i#l#q#r#s#t#u#v#w#x#y#z#{#}$U$W$Y$e$f$k%]%m&Q&W&b&f&x&y&|'O'P'b'i'j'y(`(b(i)l)r*h*i*l*r*v+W+Y+h+j+k,P,R,n,q,w-]-^-a-g.P.Q.U.}/Q/[/c/l/n/s/u0{1a1b1l1p1z1|2c2f2i2u2z2}3i4O4R4W4a5Y5e5q6_6c6f6h6j6t6v6{7b7j7m8e8g8m8s8t9R9V9]9_9l9o9p9{:O:U:W:]:b:fS%`f0h#d%jgnp|#O$g$|$}%S%d%h%i%w&s't'u(Q*Y*`*b*t+],l,v-_-p-w.f.m.o0]0y0z1O1S2_2j5a6g;W;X;Y;`;a;b;o;p;q;r;v;w;x;y<W<X<YS%qm!YS&u!h#PQ']!tQ'g!yQ'h!zQ(j#`Q(k#]Q(l#^Q*x%kQ,W&lQ,]&nQ-S'^Q-d'fQ-k'qS.r(Z4XQ/f)gQ0e*mQ2Q,[Q2X,cQ3O-eQ4b.|Q4f/TQ5f0}Q6[2TQ6}3PQ8a6ZQ9e7zR;Z1Q$|#hS!]$y%Q%T%Z&j&k'Q'X'Z'a'c(a(e(h(w(x)R)S)T)U)V)W)X)Y)Z)[)])^)_)k)q)x+X+g,O,S,j,u-h-i-|.y/p0`0b0g0i0w1`1y2a2h3R3c3d4c4d4j4m4s4u4y4z5d5p5w6U6e6i6s6z7q7r7t8S8T8c8f8j8r9T9[9k9q9|:T:Y:`:iQ&p!dQ(g#ZQ(s#bQ)j$T[*s%e*W0k2`2g2{Q,^&oQ/O(fQ/S(kQ/Z(tS/i)i/PQ0r+QS4q/j/kR8O4r'a![O[aefwx{!W!X!g!k!n!r!s!v!x#X#Y#[#g#i#l#q#r#s#t#u#v#w#x#y#z#{#}$U$W$Y$e$f$k%]%m&Q&S&W&b&f&x&y&|'O'P'b'i'j'y(`(b(i)l)r*h*i*l*q*r*v+W+Y+h+j+k,P,R,n,q,w-]-^-a-g.P.Q.U.}/Q/[/c/l/n/s/u0h0{1Q1a1b1l1p1z1|2c2f2i2u2z2}3i4O4R4W4a5Y5e5q6_6c6f6h6j6t6v6{7b7j7m8e8g8m8s8t9R9V9]9_9l9o9p9{:O:U:W:]:b:f'a!VO[aefwx{!W!X!g!k!n!r!s!v!x#X#Y#[#g#i#l#q#r#s#t#u#v#w#x#y#z#{#}$U$W$Y$e$f$k%]%m&Q&S&W&b&f&x&y&|'O'P'b'i'j'y(`(b(i)l)r*h*i*l*q*r*v+W+Y+h+j+k,P,R,n,q,w-]-^-a-g.P.Q.U.}/Q/[/c/l/n/s/u0h0{1Q1a1b1l1p1z1|2c2f2i2u2z2}3i4O4R4W4a5Y5e5q6_6c6f6h6j6t6v6{7b7j7m8e8g8m8s8t9R9V9]9_9l9o9p9{:O:U:W:]:b:fQ)O#kS+Q%y0sQ/r)sk3}.g3s3w3z3{7c7e7f7h7k9X9Y:RQ)Q#kk3|.g3s3w3z3{7c7e7f7h7k9X9Y:Rl)P#k.g3s3w3z3{7c7e7f7h7k9X9Y:RT+Q%y0s[UOwx!g&S*qW$`[e$e(b#l$p_!f!u!}#R#S#T#U#V#Z$S$T$l%U&U&Y&c&m'_'}(P(U(^(g)j)p+[+a+b+t+y,X,k,z-Q-o-t.W.X._.`.d.q.u1T1X1f1k1m2l3[3]3^3p3t5j5}6P7[8Z![%cg$g%d%i&s*Y*t+],l,v-_0z1O2_;W;X;Y;a;b;o;p;q;r;v;w;y<W<X<YY%snp%w-p.fl(|#k.g3s3w3z3{7c7e7f7h7k9X9Y:RS;e't-wU;f(Q.m.o&|;{af{|!W!X!k!n!r!s!v!x#X#Y#[#g#i#l#q#r#s#t#u#v#w#x#y#z#{#}$U$W$Y$f$k$|$}%S%]%h%m&Q&W&b&y&|'O'i'j'u'y(`(i)l)r*`*b*h*i*l*r+W+Y+h+j+k,P,R,n,q-g.P.Q.U.}/Q/[/c/l/n/s/u0]0h0y0{1Q1a1b1l1p1z2c2i2j2u4O4R4W4a5Y5a5e5q6_6c6f6g6h6j6t6v6{7b7j7m8e8g8m8s8t9R9V9]9_9l9o9p9{:O:U:W:]:b:f;`;xQ;|1Sd;}&x'P'b,w-]-^-a2f2z2}W<O&f*v1|3iQ<P#O[<Q!t'^'f,[2T6ZT<]%y0s[VOwx!g&S*qW$a[e$e(bQ$p.u!j$q_!f!u!}#V#Z$S$T$l%U&U&Y&c&m'_(g)j)p+[+a+t,X,k,z-Q-o.d1T1X1f1k1m2l3t5j8Z&^$zaf{!W!X!k!n!r!s!v!x#X#Y#[#g#i#l#q#r#s#t#u#v#w#x#y#z#{#}$U$W$Y$f$k%]%m&Q&W&b&y&|'O'i'j'y(`(i)l)r*h*i*l*r+W+Y+h+j+k,P,R,n,q-g.P.Q.U.}/Q/[/c/l/n/s/u0h0{1Q1a1b1l1p1z2c2i2u4O4R4W4a5Y5e5q6_6c6f6h6j6t6v6{7b7j7m8e8g8m8s8t9R9V9]9_9l9o9p9{:O:U:W:]:b:f![%cg$g%d%i&s*Y*t+],l,v-_0z1O2_;W;X;Y;a;b;o;p;q;r;v;w;y<W<X<YY%snp%w-p.fQ'r#O|'|#R#S#T#U'}(P(U(^+b+y.W.X._.`.q3[3]3^3p5}6P7[l(|#k.g3s3w3z3{7c7e7f7h7k9X9Y:RS-n't-wQ3W-tU;s(Q.m.on;{|$|$}%S%h'u*`*b0]0y2j5a6g;`;x[<Q!t'^'f,[2T6ZW<R&f*v1|3id<S&x'P'b,w-]-^-a2f2z2}Q<Z1ST<]%y0s!Q!UO[ewx!g$e&S&f&x'P'b(b*q*v,w-]-^-a1|2f2z2}3i!v$t_!f!u!}#O#V#Z$S$T$l%U&U&Y&c&m'_'t(Q(g)j)p+[+t,X,k,z-Q-o-w.d.m.o1S1T1X1f1k1m2l3t5j8Z&^%Paf{!W!X!k!n!r!s!v!x#X#Y#[#g#i#l#q#r#s#t#u#v#w#x#y#z#{#}$U$W$Y$f$k%]%m&Q&W&b&y&|'O'i'j'y(`(i)l)r*h*i*l*r+W+Y+h+j+k,P,R,n,q-g.P.Q.U.}/Q/[/c/l/n/s/u0h0{1Q1a1b1l1p1z2c2i2u4O4R4W4a5Y5e5q6_6c6f6h6j6t6v6{7b7j7m8e8g8m8s8t9R9V9]9_9l9o9p9{:O:U:W:]:b:f$Q%lgnp|#k$g$|$}%S%d%h%i%w%y&s'^'f'u*Y*`*b*t+],[,l,v-_-p.f.g0]0s0y0z1O2T2_2j3s3w3z3{5a6Z6g7c7e7f7h7k9X9Y:R;W;X;Y;`;a;b;o;p;q;r;v;w;x;y<W<X<YQ'[!tz(O#R#S#T#U'}(P(U(^+y.W.X._.`.q3[3]3^3p5}6P7[f-Z'`-T-V-Y2p2q2s2v6q6r8pQ1W+aQ1Z+bQ2k,yQ3X-tQ4[.uQ5l1YR8V5m!Q!UO[ewx!g$e&S&f&x'P'b(b*q*v,w-]-^-a1|2f2z2}3i!x$t_!f!u!}#O#V#Z$S$T$l%U&U&Y&c&m'_'t(Q(g)j)p+[+a+t,X,k,z-Q-o-w.d.m.o1S1T1X1f1k1m2l3t5j8Z&^%Paf{!W!X!k!n!r!s!v!x#X#Y#[#g#i#l#q#r#s#t#u#v#w#x#y#z#{#}$U$W$Y$f$k%]%m&Q&W&b&y&|'O'i'j'y(`(i)l)r*h*i*l*r+W+Y+h+j+k,P,R,n,q-g.P.Q.U.}/Q/[/c/l/n/s/u0h0{1Q1a1b1l1p1z2c2i2u4O4R4W4a5Y5e5q6_6c6f6h6j6t6v6{7b7j7m8e8g8m8s8t9R9V9]9_9l9o9p9{:O:U:W:]:b:f$S%lgnp|!t#k$g$|$}%S%d%h%i%w%y&s'^'f'u*Y*`*b*t+],[,l,v-_-p.f.g0]0s0y0z1O2T2_2j3s3w3z3{5a6Z6g7c7e7f7h7k9X9Y:R;W;X;Y;`;a;b;o;p;q;r;v;w;x;y<W<X<Y|(O#R#S#T#U'}(P(U(^+b+y.W.X._.`.q3[3]3^3p5}6P7[Q3X-tR4[.u[WOwx!g&S*qW$b[e$e(b#l$p_!f!u!}#R#S#T#U#V#Z$S$T$l%U&U&Y&c&m'_'}(P(U(^(g)j)p+[+a+b+t+y,X,k,z-Q-o-t.W.X._.`.d.q.u1T1X1f1k1m2l3[3]3^3p3t5j5}6P7[8Z![%cg$g%d%i&s*Y*t+],l,v-_0z1O2_;W;X;Y;a;b;o;p;q;r;v;w;y<W<X<YY%snp%w-p.fl(|#k.g3s3w3z3{7c7e7f7h7k9X9Y:RS;e't-wU;f(Q.m.on;{|$|$}%S%h'u*`*b0]0y2j5a6g;`;xQ;|1SQ<P#O[<Q!t'^'f,[2T6Z&^<Taf{!W!X!k!n!r!s!v!x#X#Y#[#g#i#l#q#r#s#t#u#v#w#x#y#z#{#}$U$W$Y$f$k%]%m&Q&W&b&y&|'O'i'j'y(`(i)l)r*h*i*l*r+W+Y+h+j+k,P,R,n,q-g.P.Q.U.}/Q/[/c/l/n/s/u0h0{1Q1a1b1l1p1z2c2i2u4O4R4W4a5Y5e5q6_6c6f6h6j6t6v6{7b7j7m8e8g8m8s8t9R9V9]9_9l9o9p9{:O:U:W:]:b:fd<U&x'P'b,w-]-^-a2f2z2}W<V&f*v1|3iT<]%y0sp$PT$_$o%b%r({:z:{:|;[;];^;_;c;d<[o)m$V*U*[/_:w:x:y;h;i;j;k;l;m;n;up$QT$_$o%b%r({:z:{:|;[;];^;_;c;d<[o)n$V*U*[/_:w:x:y;h;i;j;k;l;m;n;u^&e}!O$i$j%`%j;Zd&i!U$t%P%l'[(O1W1Z3X4[V/a)O)P3}S%Ye$eQ,T&fQ.{(bQ2m-QQ5y1mQ6V1|Q6m2lR9h8Z#}!TO[_ewx!f!g!u!}#O#V#Z$S$T$e$l%U&S&U&Y&c&f&m&x'P'_'b't(Q(b(g)j)p*q*v+[+a+t,X,k,w,z-Q-]-^-a-o-t-w.d.m.o1S1T1X1f1k1m1|2f2l2z2}3i3t5j8Z#[^O[_`wx!f!g!}#O$S$d$l$s$u&S&U&Y&c&m&r&x'P'b't(Q)p*]*q*v+[,X,k,w,z-]-^-a-o-t-w.d.m.o1S1T1f2f2z2}3i3t_(U#R#S#T+b3[3]3^#}ZO[wx!g!k#R#S#T%m&S&U&Y&c&m&w&x&y&|'O'P'['b't'x'}(P(Q(U*q*v+[+b,X,h,k,q-P-]-^-a-o-t-w-z._.d.m.q1S1T1f2c2k2z2}3[3]3^3i6c6j8g9l9p:W:]:fQ$]YR0T*OR*Q$]e0P)}/|/}0O0R4}5O5P5S8Q'`!YO[aefwx{!W!X!g!k!n!r!s!v!x#X#Y#[#g#i#l#q#r#s#t#u#v#w#x#y#z#{#}$U$W$Y$e$f$k%]%m&Q&S&W&b&f&x&y&|'O'P'b'i'j'y(`(b(i)l)r*h*i*l*q*r*v+W+Y+h+j+k,P,R,n,q,w-]-^-a-g.P.Q.U.}/Q/[/c/l/n/s/u0h0{1Q1a1b1l1p1z1|2c2f2i2u2z2}3i4O4R4W4a5Y5e5q6_6c6f6h6j6t6v6{7b7j7m8e8g8m8s8t9R9V9]9_9l9o9p9{:O:U:W:]:b:fe0P)}/|/}0O0R4}5O5P5S8QR5T0T^(T#R#S#T+b3[3]3^Y.]'}(R(U(V7TU3k.Z.^.qS7X3l4VR9c7s^(S#R#S#T+b3[3]3^[.['}(R(T(U(V7TW3j.Z.].^.qU7W3k3l4VS8z7X7sR:V9cT.k(Q.md]Owx!g&S't(Q*q-w.m!v^[_`!f!}#O$S$d$l$s$u&U&Y&c&m&r&x'P'b)p*]*v+[,X,k,w,z-]-^-a-o-t.d.o1S1T1f2f2z2}3i3tQ%tnT1u+}1v!jbOaenpwx{|!g#O$|$}%S%h%w&S't'u(Q*`*b*q-p-w.f.m.o0]0y1S2j5a6g;`;xf-W'`-T-V-Y2p2q2s2v6q6r8pj3x.g3s3w3z3{7c7e7f7h7k9X9Y:Rr;zg$g%d%i&s*Y*t,l,v-_2_;W;X;Y;o;q;vi<^+]0z1O;a;b;p;r;w;y<W<X<Y!O&^y%X&V&Y&Z'k)h*d*f+]+e+x/m0^0y0z1O1S1j5a5v;x;yz&az%O%W%e&d's*W*_,b-x0Z0[0k0|2`2g2{5V5b6l8iS'{#Q.Xn+l&X*g+f+m+p-j/h0_1R1^4t5W5`5u8XQ2W,a^2t-X2r2x6p6w8o9se7i3y7_7g7o7p9U9W9`:Q:cS+^&U1TY+n&Y&c*v1S3iR5s1f#w!POaegnpwx{|!g#O$g$|$}%S%d%h%i%w&S&s't'u(Q*Y*`*b*q*t+],l,v-_-p-w.f.m.o0]0y0z1O1S2_2j5a6g;W;X;Y;`;a;b;o;p;q;r;v;w;x;y<W<X<Y`oOwx!g&S't*q-w#U!Paeg{|#O$g$|$}%S%d%h%i&s'u*Y*`*b*t+],l,v-_0]0y0z1O1S2_2j5a6g;W;X;Y;`;a;b;o;p;q;r;v;w;x;y<W<X<YU%vnp-pQ*}%wS.e(Q.mT3v.f.oW+r&^+l+s1cV+z&a+{7iQ+x&`U+z&a+{7iQ-w'tT.S'y.U'`![O[aefwx{!W!X!g!k!n!r!s!v!x#X#Y#[#g#i#l#q#r#s#t#u#v#w#x#y#z#{#}$U$W$Y$e$f$k%]%m&Q&S&W&b&f&x&y&|'O'P'b'i'j'y(`(b(i)l)r*h*i*l*q*r*v+W+Y+h+j+k,P,R,n,q,w-]-^-a-g.P.Q.U.}/Q/[/c/l/n/s/u0h0{1Q1a1b1l1p1z1|2c2f2i2u2z2}3i4O4R4W4a5Y5e5q6_6c6f6h6j6t6v6{7b7j7m8e8g8m8s8t9R9V9]9_9l9o9p9{:O:U:W:]:b:fX1r+y.X5}6P'W!VO[aefwx{!W!X!g!k!n!r!s!v!x#X#Y#[#g#i#l#q#r#s#t#u#v#w#x#y#z#}$U$W$Y$e$f$k%]%m&Q&S&W&b&f&x&y&|'O'P'b'i'j'y(`(b(i)l)r*h*i*l*q*r*v+W+Y+h+j+k,P,R,n,q,w-]-^-a-g.P.Q.U.}/[/c/n/s/u0h0{1Q1a1b1l1p1z1|2c2f2i2u2z2}3i4O4R4W5Y5e5q6_6c6f6h6j6t6v6{7b7j7m8e8g8m8s8t9R9V9]9_9l9o9p9{:O:U:W:]:b:fW1r+y.X5}6PR2e,s!WjO[wx!g!k%m&S&y&|'O'b*q,q-]-^-a2c2z6c6j8g9l9p:W:]:fY%Ve$e(b1p3iQ'S!nS(y#i5YQ,m&xQ,x'PS.O'y.UQ2b,nQ6k2iQ6|2}Q8h6fR9m8e'W![O[aefwx{!W!X!g!k!n!r!s!v!x#X#Y#[#g#i#l#q#r#s#t#u#v#w#x#y#z#}$U$W$Y$e$f$k%]%m&Q&S&W&b&f&x&y&|'O'P'b'i'j'y(`(b(i)l)r*h*i*l*q*r*v+W+Y+h+j+k,P,R,n,q,w-]-^-a-g.P.Q.U.}/[/c/n/s/u0h0{1Q1a1b1l1p1z1|2c2f2i2u2z2}3i4O4R4W5Y5e5q6_6c6f6h6j6t6v6{7b7j7m8e8g8m8s8t9R9V9]9_9l9o9p9{:O:U:W:]:b:fX1r+y.X5}6P'ayO[aefwx{!W!X!g!k!n!r!s!v!x#X#Y#[#g#i#l#q#r#s#t#u#v#w#x#y#z#}$U$W$Y$e$f$k%]%m&Q&S&W&b&f&x&y&|'O'P'b'i'j'y(`(b(i)l)r*h*i*l*q*r*v+W+Y+h+j+k+y,P,R,n,q,w-]-^-a-g.P.Q.U.X.}/[/c/n/s/u0h0{1Q1a1b1l1p1z1|2c2f2i2u2z2}3i4O4R4W5Y5e5q5}6P6_6c6f6h6j6t6v6{7b7j7m8e8g8m8s8t9R9V9]9_9l9o9p9{:O:U:W:]:b:fQ&`yS't#O-uR1[+cS+^&U1TR5n1[Q1P+]R5g1OR1P+]T+^&U1Tz&[%X&V&Y&Z'k)h*d*f+]+e/m0^0y0z1O1S1j5a5v;x;yQ&]yR1n+x!P&[y%X&V&Y&Z'k)h*d*f+]+e+x/m0^0y0z1O1S1j5a5v;x;yQ+u&^S+|&a7iS1d+l+sQ1t+{R5r1c!WkO[wx!g!k%m&S&y&|'O'b*q,q-]-^-a2c2z6c6j8g9l9p:W:]:fS%zo.eS&Oq-rQ&_yQ&q!eQ'e!yQ*p%eU*{%v%{3vS+P%x%}Q+q&]Q,Y&mS,Z&n'gQ,r&{S0X*W,bS0o*|*}Q0q+OQ1o+xS2S,]-fQ5U0ZQ5Z0pQ5{1nQ6Y2RQ6]2WQ7n3yQ9S7_R:P9U[uOwx!g&S*qQ,Y&mQ-v'tQ3Y-tR3_-wxlOwx!g!k%m&S&y'O*q,q2c6c6j8g9l9p:W:]:fU$h[&|-^S%zo.eS&Oq-rQ*p%eU*{%v%{3vS+P%x%}S0X*W,bS0o*|*}Q0q+OQ5U0ZQ5Z0pQ7n3yQ9S7_R:P9UT,_&q,`]uOwx!g&S*q[uOwx!g&S*qQ,Y&mQ,n&xQ,w'PW-`'b-]-a2zQ-v'tQ3Y-tQ3_-wR6{2}[%fg$g,l,v-_2_R0l*t^$XV!U$a$z%P<R<SQ'S!nS)`#}*vS)v$W*qQ)y$YY*s%e*W0k2g2{Q/O(fS/i)i/PS0a*h4aS0j*r6_Q0r+QQ4Q.gQ4n/cS4q/j/kS4v/n5YQ4{/uQ6`2`U7a3s3y4RQ8O4rQ8k6hY9Q7_7b7c7l7mQ9r8mW9z9O9R9U9VQ:Z9oU:a9{9}:OR:j:bS)v$W*qT4v/n5YZ)t$W)u*q/n5YQ&w!hR'x#PS,g&v'vQ2[,eR6^2ZxlOwx!g!k%m&S&y'O*q,q2c6c6j8g9l9p:W:]:fV$h[&|-^!XkO[wx!g!k%m&S&y&|'O'b*q,q-]-^-a2c2z6c6j8g9l9p:W:]:f!WhO[wx!g!k%m&S&y&|'O'b*q,q-]-^-a2c2z6c6j8g9l9p:W:]:fR'W!q!WkO[wx!g!k%m&S&y&|'O'b*q,q-]-^-a2c2z6c6j8g9l9p:W:]:fR,n&xQ&y!iQ&{!jQ'O!lR,q&zR,o&xxlOwx!g!k%m&S&y'O*q,q2c6c6j8g9l9p:W:]:fX-`'b-]-a2z[uOwx!g&S*qQ,z'PQ-v'tS.k(Q.mR3_-w[uOwx!g&S*qQ,z'PW-`'b-]-a2zT.k(Q.mg-Z'`-T-V-Y2p2q2s2v6q6r8pylOwx!g!k%m&S&y'O*q,q2c6c6j8g9l9p:W:]:fb!OOaewx{!g&S*q&|$j[f!W!X!k!n!r!s!v!x#X#Y#[#g#i#l#q#r#s#t#u#v#w#x#y#z#{#}$U$W$Y$e$f$k%]%m&Q&W&b&f&x&y&|'O'P'b'i'j'y(`(b(i)l)r*h*i*l*r*v+W+Y+h+j+k,P,R,n,q,w-]-^-a-g.P.Q.U.}/Q/[/c/l/n/s/u0h0{1Q1a1b1l1p1z1|2c2f2i2u2z2}3i4O4R4W4a5Y5e5q6_6c6f6h6j6t6v6{7b7j7m8e8g8m8s8t9R9V9]9_9l9o9p9{:O:U:W:]:b:f#d%jgnp|#O$g$|$}%S%d%h%i%w&s't'u(Q*Y*`*b*t+],l,v-_-p-w.f.m.o0]0y0z1O1S2_2j5a6g;W;X;Y;`;a;b;o;p;q;r;v;w;x;y<W<X<YQ']!tQ-S'^Q-d'fQ2Q,[Q6[2TR8a6Zj$RT$_%b%r:z:{:|;[;];^;_;c;di)o$V*U:w:x:y;h;i;j;k;l;m;nj$RT$_%b%r:z:{:|;[;];^;_;c;dh)o$V*U:w:x:y;h;i;j;k;l;m;nS/^({<[V4k/_/`;u[uOwx!g&S*qQ-v'tR3_-w[uOwx!g&S*qT.k(Q.m'`!YO[aefwx{!W!X!g!k!n!r!s!v!x#X#Y#[#g#i#l#q#r#s#t#u#v#w#x#y#z#{#}$U$W$Y$e$f$k%]%m&Q&S&W&b&f&x&y&|'O'P'b'i'j'y(`(b(i)l)r*h*i*l*q*r*v+W+Y+h+j+k,P,R,n,q,w-]-^-a-g.P.Q.U.}/Q/[/c/l/n/s/u0h0{1Q1a1b1l1p1z1|2c2f2i2u2z2}3i4O4R4W4a5Y5e5q6_6c6f6h6j6t6v6{7b7j7m8e8g8m8s8t9R9V9]9_9l9o9p9{:O:U:W:]:b:fR7R3T[uOwx!g&S*qQ-v'tS.k(Q.mR3_-w[pOwx!g&S*qQ%wnS-p't-wT.f(Q.mS%{o.eS*|%v3vR0p*}Q+R%yR5]0sS%zo.eS&Oq-rU*{%v%{3vS+P%x%}S0o*|*}Q0q+OQ5Z0pQ7n3yQ9S7_R:P9U`qOwx!g&S(Q*q.mS%xn-pU%}p.f.oQ+O%wT-r't-wS'z#Q.XR.Y'{T.R'y.US.S'y.UQ8x7UR9w8yT5}1q8_R6P1q#d!Pgnp|#O$g$|$}%S%d%h%i%w&s't'u(Q*Y*`*b*t+],l,v-_-p-w.f.m.o0]0y0z1O1S2_2j5a6g;W;X;Y;`;a;b;o;p;q;r;v;w;x;y<W<X<Yb!QOaewx{!g&S*q&}![[f!W!X!k!n!r!s!v!x#X#Y#[#g#i#l#q#r#s#t#u#v#w#x#y#z#{#}$U$W$Y$e$f$k%]%m&Q&W&b&f&x&y&|'O'P'b'i'j'y(`(b(i)l)r*h*i*l*r*v+W+Y+h+j+k,P,R,n,q,w-]-^-a-g.P.Q.U.}/Q/[/c/l/n/s/u0h0{1Q1a1b1l1p1z1|2c2f2i2u2z2}3i4O4R4W4a5Y5e5q6_6c6f6h6j6t6v6{7b7j7m8e8g8m8s8t9R9V9]9_9l9o9p9{:O:U:W:]:b:f#d!Pgnp|#O$g$|$}%S%d%h%i%w&s't'u(Q*Y*`*b*t+],l,v-_-p-w.f.m.o0]0y0z1O1S2_2j5a6g;W;X;Y;`;a;b;o;p;q;r;v;w;x;y<W<X<Yb!QOaewx{!g&S*q&|![[f!W!X!k!n!r!s!v!x#X#Y#[#g#i#l#q#r#s#t#u#v#w#x#y#z#{#}$U$W$Y$e$f$k%]%m&Q&W&b&f&x&y&|'O'P'b'i'j'y(`(b(i)l)r*h*i*l*r*v+W+Y+h+j+k,P,R,n,q,w-]-^-a-g.P.Q.U.}/Q/[/c/l/n/s/u0h0{1Q1a1b1l1p1z1|2c2f2i2u2z2}3i4O4R4W4a5Y5e5q6_6c6f6h6j6t6v6{7b7j7m8e8g8m8s8t9R9V9]9_9l9o9p9{:O:U:W:]:b:fk3|.g3s3w3z3{7c7e7f7h7k9X9Y:RQ4Q.gS7a3s3yU9Q7_7c7lS9z9O9UR:a9}#|!TO[_ewx!f!g!u!}#O#V#Z$S$T$e$l%U&S&U&Y&c&f&m&x'P'_'b't(Q(b(g)j)p*q*v+[+a+t,X,k,w,z-Q-]-^-a-o-t-w.d.m.o1S1T1X1f1k1m1|2f2l2z2}3i3t5j8ZR4].uQ(]#US.v([(^S4^.w.xR7w4_Q.s(ZR7u4X#|!TO[_ewx!f!g!u!}#O#V#Z$S$T$e$l%U&S&U&Y&c&f&m&x'P'_'b't(Q(b(g)j)p*q*v+[+a+t,X,k,w,z-Q-]-^-a-o-t-w.d.m.o1S1T1X1f1k1m1|2f2l2z2}3i3t5j8Zp$w`$d$s%X&r'`(_(f)i*d-T/k1j5k5v8Uq(}#k%y.g0s3s3w3z3{7c7e7f7h7k9X9Y:RR,U&fR6W1|'X!VO[aefwx{!W!X!g!k!n!r!s!v!x#X#Y#[#g#i#l#q#r#s#t#u#v#w#x#y#z#}$U$W$Y$e$f$k%]%m&Q&S&W&b&f&x&y&|'O'P'b'i'j'y(`(b(i)l)r*h*i*l*q*r*v+W+Y+h+j+k,P,R,n,q,w-]-^-a-g.P.Q.U.}/[/c/n/s/u0h0{1Q1a1b1l1p1z1|2c2f2i2u2z2}3i4O4R4W5Y5e5q6_6c6f6h6j6t6v6{7b7j7m8e8g8m8s8t9R9V9]9_9l9o9p9{:O:U:W:]:b:f$q#rS%T%Z'Q'X'Z'a'c(a(e(h(w(x)R)S)U)V)W)X)Y)Z)[)])^)_)k)q)x+X+g,O,S,j,u-h-i-|.y/p0`0b0g0i0w1`1y2a2h3R3c3d4c4d4j4m4s4u4y4z5d5p5w6U6e6i6s6z7q7r7t8S8T8c8f8j8r9T9[9k9q9|:T:Y:`:i$]#sS%T%Z'Q'X'Z'a'c(h(w(x)R)V)^)_)k)q)x+X+g,O,S,j,u-h-i-|.y/p0`0b0g0i0w1`1y2a2h3R3c3d4c4d4j4m4s4u4y4z5d5p5w6U6e6i6s6z7q7r7t8S8T8c8f8j8r9T9[9k9q9|:T:Y:`:i$Z#tS%T%Z'Q'X'Z'a'c(h(w(x)R)^)_)k)q)x+X+g,O,S,j,u-h-i-|.y/p0`0b0g0i0w1`1y2a2h3R3c3d4c4d4j4m4s4u4y4z5d5p5w6U6e6i6s6z7q7r7t8S8T8c8f8j8r9T9[9k9q9|:T:Y:`:i$c#wS%T%Z'Q'X'Z'a'c(h(w(x)R)U)V)W)X)^)_)k)q)x+X+g,O,S,j,u-h-i-|.y/p0`0b0g0i0w1`1y2a2h3R3c3d4c4d4j4m4s4u4y4z5d5p5w6U6e6i6s6z7q7r7t8S8T8c8f8j8r9T9[9k9q9|:T:Y:`:i'X![O[aefwx{!W!X!g!k!n!r!s!v!x#X#Y#[#g#i#l#q#r#s#t#u#v#w#x#y#z#}$U$W$Y$e$f$k%]%m&Q&S&W&b&f&x&y&|'O'P'b'i'j'y(`(b(i)l)r*h*i*l*q*r*v+W+Y+h+j+k,P,R,n,q,w-]-^-a-g.P.Q.U.}/[/c/n/s/u0h0{1Q1a1b1l1p1z1|2c2f2i2u2z2}3i4O4R4W5Y5e5q6_6c6f6h6j6t6v6{7b7j7m8e8g8m8s8t9R9V9]9_9l9o9p9{:O:U:W:]:b:fQ/P(fQ/j)iQ4r/kR9d7y']![O[aefwx{!W!X!g!k!n!r!s!v!x#X#Y#[#g#i#l#q#r#s#t#u#v#w#x#y#z#}$U$W$Y$e$f$k%]%m&Q&S&W&b&f&x&y&|'O'P'b'i'j'y(`(b(i)l)r*h*i*l*q*r*v+W+Y+h+j+k,P,R,n,q,w-]-^-a-g.P.Q.U.}/Q/[/c/l/n/s/u0h0{1Q1a1b1l1p1z1|2c2f2i2u2z2}3i4O4R4W5Y5e5q6_6c6f6h6j6t6v6{7b7j7m8e8g8m8s8t9R9V9]9_9l9o9p9{:O:U:W:]:b:fQ#eQR(u#eU$|a;`;xb%Ue$e&f(b-Q1m1|2l8ZQ'_!u!Q*^$|%U'_*`*f+h,P0]0^1b2p6q6t7e8p9X9]:R;W;o;p;v;w<WS*`$}%SQ*f%XS+h&W1QQ,P&bQ0]*bQ0^*dQ1b+kQ2p-VS6q2q2sQ6t2uQ7e3wQ8p6rS9X7f7hQ9]7jQ:R9YQ;W%dS;o;X;YS;p<X<YQ;v;qQ;w;rT<W0z;a[[Owx!g&S*ql$c[&|'}+[,X,h,k-P-^-o-z._.d.ql&|!k%m&y'O,q2c6c6j8g9l9p:W:]:f^'}#R#S#T+b3[3]3^`+[&U&Y&c*v1S1T1f3iS,X&m-tQ,h&wU,k&x'P2}S-P'[2kW-^'b-]-a2zS-o't-wQ-z'xQ._(PS.d(Q.mR.q(UQ)|$[R/x)|Q0R)}Q4}/|Q5O/}Q5P0OY5Q0R4}5O5P8QR8Q5SQ*P$]S0U*P0VR0V*QS.`(P._S3n.`7[R7[3pQ3q.aS7Y3o3rU7^3q7Y8{R8{7ZQ.m(QR4S.m!|_O[wx!f!g!}#O$S$l&S&U&Y&c&m&x'P'b't(Q)p*q*v+[,X,k,w,z-]-^-a-o-t-w.d.m.o1S1T1f2f2z2}3i3tU$r_$u*]U$u`$d&rR*]$sU$}a;`;xd*a$}*b2q6r7f9Y;X;q;r<XQ*b%SQ2q-VQ6r2sQ7f3wQ9Y7hQ;X%dQ;q;YQ;r<YT<X0z;aS+{&a7iR1s+{S*j%Z/pR0c*jQ1U+_R5i1UU+e&V0z;xR1]+eQ+s&^Q1c+lT1i+s1cQ8[5yR9i8[QwOS&Rw&ST&Sx*qQ,`&qR2V,`W)u$W*q/n5YR/t)uU/o)q)v0gR4w/o[*u%e%f*W2`2g2{R0m*uQ,d&uR2Y,dQ-a'bQ2z-]T2|-a2zQ2w-XR6x2wQ-f'gQ2R,]T3Q-f2RS%pm7QR*z%pdnOwx!g&S't(Q*q-w.mR%unQ0t+RR5^0tQ.U'yR3f.UQ1v+}R6Q1vU*n%`*x;ZR0f*nS1g+n0nR5t1gQ7l3yQ9O7_U9a7l9O9}R9}9U$O!SO[_ewx!f!g!u!}#O#V#Z$S$T$e$l%U&S&U&Y&c&f&m&x'P'_'b't(Q(b(g)j)p*q*v+[+a+t,X,k,w,z-Q-]-^-a-o-t-w.d.m.o.u1S1T1X1f1k1m1|2f2l2z2}3i3t5j8ZR&g!SQ4Y.sR7v4YQ1},UR6X1}S/d)_)`R4o/dW(o#a(j(k/SR/W(oQ7{4fR9f7{T)a#}*v!USO[wx!g!k%m&S&y&|'O'b,q-]-^-a2c2z6c6j8g9l9p:W:]:fj$ya{$k%]+j,R1a1z5q6v8s9_:UY%Te$e(b1p3iY%Zf$f(i)l*lQ&j!WQ&k!XQ'Q!nQ'X!rQ'Z!sQ'a!vQ'c!xQ(a#XQ(e#YS(h#[+YQ(w#gQ(x#iQ)R#lQ)S#qQ)T#rQ)U#sQ)V#tQ)W#uQ)X#vQ)Y#wQ)Z#xQ)[#yQ)]#zQ)^#{S)_#}*vQ)k$UQ)q$WQ)x$YQ+X&QS+g&W1QQ,O&bQ,S&fQ,j&xQ,u'PQ-h'iQ-i'jS-|'y.UQ.y(`S/p)r0hS0`*h4aQ0b*iQ0g*qQ0i*rQ0w+WS1`+h+kQ1y,PQ2a,nS2h,w6{Q3R-gQ3c.PQ3d.QQ4c.}Q4d/QQ4j/[Q4m/cQ4s/lQ4u/nQ4y/sQ4z/uQ5d0{Q5p1bQ5w1lQ6U1|S6e2f8tQ6i2iQ6s2uQ6z2}Q7q4OQ7r4RQ7t4WQ8S5YQ8T5eQ8c6_Q8f6fQ8j6hQ8r6tS9T7b7mQ9[7jQ9k8eQ9q8mS9|9R9VQ:T9]Q:Y9oS:`9{:OR:i:bR,V&fd]Owx!g&S't(Q*q-w.m!v^[_`!f!}#O$S$d$l$s$u&U&Y&c&m&r&x'P'b)p*]*v+[,X,k,w,z-]-^-a-o-t.d.o1S1T1f2f2z2}3i3t#r${ae!u$e$|$}%S%U%X%d&W&b&f'_(b*`*b*d*f+h+k,P-Q-V0]0^1Q1b1m1|2l2p2q2s2u3w6q6r6t7e7f7h7j8Z8p9X9Y9]:R;W;X;Y;`;a;o;p;q;r;v;w<W<X<YQ%tnS+d&V+eW+r&^+l+s1cU+z&a+{7iQ1k+tT5c0z;x``Owx!g&S't*q-wS$d[-oQ$s_b%Xe$e&f(b-Q1m1|2l8Z!h&r!f!}#O$S$l&U&Y&c&m&x'P'b(Q)p*v+[,X,k,w,z-]-^-a-t.d.m.o1S1T1f2f2z2}3i3tQ'`!uS(_#V+aQ(f#ZS)i$T(gQ*d%UQ-T'_Q/k)jQ1j+tQ5k1XQ5v1kR8U5jS(W#R3]S(X#S3^V(Y#T+b3[R$^Ye0Q)}/|/}0O0R4}5O5P5S8QW(R#R#S#T+bQ([#US.Z'}(US.a(P._Q.x(^W1r+y.X5}6PQ3Z-tQ3h.WQ3o.`Q4V.qU7T3[3]3^Q7]3pR8|7[Q.b(PR3m._T.l(Q.mdgOwx!g&S&m't*q-t-wU$g[,X-oQ&s!fQ'k!}Q'u#OQ)h$SQ*Y$l`+]&U&Y&c*v1S1T1f3iQ,l&xQ,v'PY-_'b-]-a2z2}S.g(Q.mQ/m)pQ0y+[S2_,k-^S2j,w,zS3s.d.oQ6g2fR7c3td]Owx!g&S't(Q*q-w.m!v^[_`!f!}#O$S$d$l$s$u&U&Y&c&m&r&x'P'b)p*]*v+[,X,k,w,z-]-^-a-o-t.d.o1S1T1f2f2z2}3i3tR%tnQ3y.gQ7_3sQ7g3wQ7o3zQ7p3{Q9U7cU9W7e7f7hQ9`7kS:Q9X9YR:c:RZ+o&Y&c*v1S3ipzOnpwx!g%w&S't(Q*q-p-w.f.m.o[%Oa%d0z;`;a;xU%We%h1SQ%eg^&d{|%i1O5a;b;yQ's#OQ*W$gb*_$|$}%S;W;X;Y<W<X<YQ,b&sQ-x'uQ0Z*Y[0[*`*b;o;p;q;rQ0k*tQ0|+]Q2`,lQ2g,vS2{-_2_U5V0];v;wQ5b0yQ6l2jR8i6gQ+}&aR9Z7iS1q+y.XQ8^5}R8_6P[%^f$f(i)l)r0hR0d*lR+`&UQ+_&UR5h1TS&Xy+xQ*g%XU+f&V0z;xS+m&Y1SW+p&Z1O5a;yQ-j'kQ/h)hS0_*d*fQ1R+]Q1^+eQ4t/mQ5W0^Q5`0yQ5u1jR8X5vR5z1mYvOwx&S*qR&t!gW%gg,l,v-_T*X$g2_T)w$W*q[uOwx!g&S*qQ&}!kQ*y%mQ,p&yQ,t'OQ2d,qQ6b2cQ8d6cQ8l6jQ9n8gQ:X9lQ:[9pQ:e:WQ:g:]R:k:fxlOwx!g!k%m&S&y'O*q,q2c6c6j8g9l9p:W:]:fU$h[&|-^X-`'b-]-a2zQ-['`R2o-TS-X'`-TQ2r-VQ2x-YU6p2p2q2sQ6w2vS8o6q6rR9s8p[rOwx!g&S*qS-q't-wT.h(Q.mR+S%y[sOwx!g&S*qS-s't-wT.i(Q.m[tOwx!g&S*qT.j(Q.mT.T'y.UX%af%k0h1QQ.w([R4_.xR.t(ZR(d#XQ(r#aS/R(j(kR4e/SR/V(lR4g/T",
+    nodeNames: "⚠ RawString > MacroName LineComment BlockComment PreprocDirective #include String EscapeSequence SystemLibString Identifier ) ( ArgumentList ConditionalExpression AssignmentExpression CallExpression PrimitiveType FieldExpression FieldIdentifier DestructorName TemplateMethod ScopedFieldIdentifier NamespaceIdentifier TemplateType TypeIdentifier ScopedTypeIdentifier ScopedNamespaceIdentifier :: NamespaceIdentifier TypeIdentifier TemplateArgumentList < TypeDescriptor const volatile restrict _Atomic mutable constexpr constinit consteval StructSpecifier struct MsDeclspecModifier __declspec Attribute AttributeName Identifier AttributeArgs { } [ ] UpdateOp ArithOp ArithOp ArithOp LogicOp BitOp BitOp BitOp CompareOp CompareOp CompareOp > CompareOp BitOp UpdateOp , Number CharLiteral AttributeArgs VirtualSpecifier BaseClassClause Access virtual FieldDeclarationList FieldDeclaration extern static register inline thread_local AttributeSpecifier __attribute__ PointerDeclarator MsBasedModifier __based MsPointerModifier FunctionDeclarator ParameterList ParameterDeclaration PointerDeclarator FunctionDeclarator Noexcept noexcept RequiresClause requires True False ParenthesizedExpression CommaExpression LambdaExpression LambdaCaptureSpecifier TemplateParameterList OptionalParameterDeclaration TypeParameterDeclaration typename class VariadicParameterDeclaration VariadicDeclarator ReferenceDeclarator OptionalTypeParameterDeclaration VariadicTypeParameterDeclaration TemplateTemplateParameterDeclaration template AbstractFunctionDeclarator AbstractPointerDeclarator AbstractArrayDeclarator AbstractParenthesizedDeclarator AbstractReferenceDeclarator ThrowSpecifier throw TrailingReturnType CompoundStatement FunctionDefinition MsCallModifier TryStatement try CatchClause catch LinkageSpecification Declaration InitDeclarator InitializerList InitializerPair SubscriptDesignator FieldDesignator ExportDeclaration export ImportDeclaration import ModuleName PartitionName HeaderName CaseStatement case default LabeledStatement StatementIdentifier ExpressionStatement IfStatement if ConditionClause Declaration else SwitchStatement switch DoStatement do while WhileStatement ForStatement for ReturnStatement return BreakStatement break ContinueStatement continue GotoStatement goto CoReturnStatement co_return CoYieldStatement co_yield AttributeStatement ForRangeLoop AliasDeclaration using TypeDefinition typedef PointerDeclarator FunctionDeclarator ArrayDeclarator ParenthesizedDeclarator ThrowStatement NamespaceDefinition namespace ScopedIdentifier Identifier OperatorName operator ArithOp BitOp CompareOp LogicOp new delete co_await ConceptDefinition concept UsingDeclaration enum StaticAssertDeclaration static_assert ConcatenatedString TemplateDeclaration FriendDeclaration friend union FunctionDefinition ExplicitFunctionSpecifier explicit FieldInitializerList FieldInitializer DefaultMethodClause DeleteMethodClause FunctionDefinition OperatorCast operator TemplateInstantiation FunctionDefinition FunctionDefinition Declaration ModuleDeclaration module RequiresExpression RequirementList SimpleRequirement TypeRequirement CompoundRequirement ReturnTypeRequirement ConstraintConjuction LogicOp ConstraintDisjunction LogicOp ArrayDeclarator ParenthesizedDeclarator ReferenceDeclarator TemplateFunction OperatorName StructuredBindingDeclarator ArrayDeclarator ParenthesizedDeclarator ReferenceDeclarator BitfieldClause FunctionDefinition FunctionDefinition Declaration FunctionDefinition Declaration AccessSpecifier UnionSpecifier ClassSpecifier EnumSpecifier SizedTypeSpecifier TypeSize EnumeratorList Enumerator DependentType Decltype decltype auto PlaceholderTypeSpecifier ParameterPackExpansion ParameterPackExpansion FieldIdentifier PointerExpression SubscriptExpression BinaryExpression ArithOp LogicOp LogicOp BitOp UnaryExpression LogicOp BitOp UpdateExpression CastExpression SizeofExpression sizeof CoAwaitExpression CompoundLiteralExpression NULL NewExpression new NewDeclarator DeleteExpression delete ParameterPackExpansion nullptr this UserDefinedLiteral ParamPack #define PreprocArg #if #ifdef #ifndef #else #endif #elif PreprocDirectiveName Macro Program",
+    maxTerm: 425,
+    nodeProps: [
+        ["group", -35, 1, 8, 11, 15, 16, 17, 19, 71, 72, 100, 101, 102, 104, 191, 208, 229, 242, 243, 270, 271, 272, 277, 280, 281, 282, 284, 285, 286, 287, 290, 292, 293, 294, 295, 296, "Expression", -13, 18, 25, 26, 27, 43, 255, 256, 257, 258, 262, 263, 265, 266, "Type", -19, 126, 129, 147, 150, 152, 153, 158, 160, 163, 164, 166, 168, 170, 172, 174, 176, 178, 179, 188, "Statement"],
+        ["isolate", -4, 4, 5, 8, 10, ""],
+        ["openedBy", 12, "(", 52, "{", 54, "["],
+        ["closedBy", 13, ")", 51, "}", 53, "]"]
+    ],
+    propSources: [cppHighlighting],
+    skippedNodes: [0, 3, 4, 5, 6, 7, 10, 297, 298, 299, 300, 301, 302, 303, 304, 305, 306, 347, 348],
+    repeatNodeCount: 41,
+    tokenData: "&*r7ZR!UOX$eXY({YZ.gZ]$e]^+P^p$epq({qr.}rs0}st2ktu$euv!7dvw!9bwx!;exy!<Yyz!=Tz{!>O{|!?R|}!AV}!O!BQ!O!P!DX!P!Q#+y!Q!R#Az!R![$(x![!]$Ag!]!^$Cc!^!_$D^!_!`%1W!`!a%2X!a!b%5_!b!c$e!c!n%6Y!n!o%7q!o!w%6Y!w!x%7q!x!}%6Y!}#O%:n#O#P%<g#P#Q%Kz#Q#R%Ms#R#S%6Y#S#T$e#T#i%6Y#i#j%Nv#j#o%6Y#o#p&!e#p#q&#`#q#r&%f#r#s&&a#s;'S$e;'S;=`(u<%lO$e&t$nY)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e&r%eW)]W'f&jOY%^Zw%^wx%}x#O%^#O#P&f#P;'S%^;'S;=`'x<%lO%^&j&SU'f&jOY%}Z#O%}#O#P&f#P;'S%};'S;=`'r<%lO%}&j&kX'f&jOY%}YZ%}Z]%}]^'W^#O%}#O#P&f#P;'S%};'S;=`'r<%lO%}&j']V'f&jOY%}YZ%}Z#O%}#O#P&f#P;'S%};'S;=`'r<%lO%}&j'uP;=`<%l%}&r'{P;=`<%l%^&l(VW(qQ'f&jOY(OZr(Ors%}s#O(O#O#P&f#P;'S(O;'S;=`(o<%lO(O&l(rP;=`<%l(O&t(xP;=`<%l$e7Z)Y`)]W(qQ(n.o'f&j*Z)`OX$eXY({YZ*[Z]$e]^+P^p$epq({qr$ers%^sw$ewx(Ox#O$e#O#P,^#P;'S$e;'S;=`(u<%lO$e.o*aT(n.oXY*[YZ*[]^*[pq*[#O#P*p.o*sQYZ*[]^*y.o*|PYZ*[4e+[`)]W(qQ(n.o'f&jOX$eXY+PYZ*[Z]$e]^+P^p$epq+Pqr$ers%^sw$ewx(Ox#O$e#O#P,^#P;'S$e;'S;=`(u<%lO$e4Z,cX'f&jOY%}YZ-OZ]%}]^-{^#O%}#O#P&f#P;'S%};'S;=`'r<%lO%}4Z-V[(n.o'f&jOX%}XY-OYZ*[Z]%}]^-O^p%}pq-Oq#O%}#O#P,^#P;'S%};'S;=`'r<%lO%}4Z.QV'f&jOY%}YZ-OZ#O%}#O#P&f#P;'S%};'S;=`'r<%lO%}7P.nT*W)`(n.oXY*[YZ*[]^*[pq*[#O#P*p3o/[[%^!b'QP)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox!_$e!_!`0Q!`#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e3o0_Y%]!b!a,g)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e6e1YY)]W(oQ(p/]'f&jOY%^Zr%^rs1xsw%^wx%}x#O%^#O#P&f#P;'S%^;'S;=`'x<%lO%^(U2RW)x!b)]W'f&jOY%^Zw%^wx%}x#O%^#O#P&f#P;'S%^;'S;=`'x<%lO%^4e2tf)]W(qQ'f&jOX$eXY2kZp$epq2kqr$ers%^sw$ewx(Ox!c$e!c!}4Y!}#O$e#O#P&f#P#T$e#T#W4Y#W#X5m#X#Y>u#Y#]4Y#]#^NZ#^#o4Y#o;'S$e;'S;=`(u<%lO$e4e4eb)]W(qQ'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#o4Y#o;'S$e;'S;=`(u<%lO$e4e5xd)]W(qQ'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#X4Y#X#Y7W#Y#o4Y#o;'S$e;'S;=`(u<%lO$e4e7cd)]W(qQ'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#Y4Y#Y#Z8q#Z#o4Y#o;'S$e;'S;=`(u<%lO$e4e8|d)]W(qQ'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#]4Y#]#^:[#^#o4Y#o;'S$e;'S;=`(u<%lO$e4e:gd)]W(qQ'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#b4Y#b#c;u#c#o4Y#o;'S$e;'S;=`(u<%lO$e4e<Qd)]W(qQ'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#X4Y#X#Y=`#Y#o4Y#o;'S$e;'S;=`(u<%lO$e4e=mb)]W(qQ'e.o'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#o4Y#o;'S$e;'S;=`(u<%lO$e4e?Qf)]W(qQ'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#`4Y#`#a@f#a#b4Y#b#cHV#c#o4Y#o;'S$e;'S;=`(u<%lO$e4e@qf)]W(qQ'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#]4Y#]#^BV#^#g4Y#g#hEV#h#o4Y#o;'S$e;'S;=`(u<%lO$e4eBbd)]W(qQ'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#Y4Y#Y#ZCp#Z#o4Y#o;'S$e;'S;=`(u<%lO$e4eC}b)]W(qQ'f&j'l.o'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#o4Y#o;'S$e;'S;=`(u<%lO$e4eEbd)]W(qQ'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#X4Y#X#YFp#Y#o4Y#o;'S$e;'S;=`(u<%lO$e4eF}b)]W(qQ'j.o'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#o4Y#o;'S$e;'S;=`(u<%lO$e4eHbd)]W(qQ'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#W4Y#W#XIp#X#o4Y#o;'S$e;'S;=`(u<%lO$e4eI{d)]W(qQ'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#]4Y#]#^KZ#^#o4Y#o;'S$e;'S;=`(u<%lO$e4eKfd)]W(qQ'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#Y4Y#Y#ZLt#Z#o4Y#o;'S$e;'S;=`(u<%lO$e4eMRb)]W(qQ'f&j'k.o'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#o4Y#o;'S$e;'S;=`(u<%lO$e4eNff)]W(qQ'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#Y4Y#Y#Z! z#Z#b4Y#b#c!.[#c#o4Y#o;'S$e;'S;=`(u<%lO$e4e!!Xf)]W(qQ'g.o'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#W4Y#W#X!#m#X#b4Y#b#c!(W#c#o4Y#o;'S$e;'S;=`(u<%lO$e4e!#xd)]W(qQ'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#X4Y#X#Y!%W#Y#o4Y#o;'S$e;'S;=`(u<%lO$e4e!%cd)]W(qQ'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#Y4Y#Y#Z!&q#Z#o4Y#o;'S$e;'S;=`(u<%lO$e4e!'Ob)]W(qQ'h.o'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#o4Y#o;'S$e;'S;=`(u<%lO$e4e!(cd)]W(qQ'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#W4Y#W#X!)q#X#o4Y#o;'S$e;'S;=`(u<%lO$e4e!)|d)]W(qQ'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#X4Y#X#Y!+[#Y#o4Y#o;'S$e;'S;=`(u<%lO$e4e!+gd)]W(qQ'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#Y4Y#Y#Z!,u#Z#o4Y#o;'S$e;'S;=`(u<%lO$e4e!-Sb)]W(qQ'i.o'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#o4Y#o;'S$e;'S;=`(u<%lO$e4e!.gd)]W(qQ'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#V4Y#V#W!/u#W#o4Y#o;'S$e;'S;=`(u<%lO$e4e!0Qd)]W(qQ'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#`4Y#`#a!1`#a#o4Y#o;'S$e;'S;=`(u<%lO$e4e!1kd)]W(qQ'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#i4Y#i#j!2y#j#o4Y#o;'S$e;'S;=`(u<%lO$e4e!3Ud)]W(qQ'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#W4Y#W#X!4d#X#o4Y#o;'S$e;'S;=`(u<%lO$e4e!4od)]W(qQ'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#X4Y#X#Y!5}#Y#o4Y#o;'S$e;'S;=`(u<%lO$e4e!6[b)]W(qQV.o'f&j'm.oOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![4Y![!c$e!c!}4Y!}#O$e#O#P&f#P#R$e#R#S4Y#S#T$e#T#o4Y#o;'S$e;'S;=`(u<%lO$e3o!7q[)]W(qQ%Z!b![,g'f&jOY$eZr$ers%^sw$ewx(Ox!_$e!_!`!8g!`#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e3o!8rY!g-y)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e3o!9o])W,g)]W(qQ%[!b'f&jOY$eZr$ers%^sv$evw!:hwx(Ox!_$e!_!`!8g!`#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e3o!:uY)V,g%^!b)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e2X!;pW)ZS(qQ)[,g'f&jOY(OZr(Ors%}s#O(O#O#P&f#P;'S(O;'S;=`(o<%lO(O6i!<eY)]W(qQ]6_'f&jOY$eZr$ers%^sw$ewx(Ox#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e'V!=`Y[a)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e3o!>][)T,g)]W(qQ%Z!b'f&jOY$eZr$ers%^sw$ewx(Ox!_$e!_!`!8g!`#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e3o!?`^)]W(qQ%Z!b!Y,g'f&jOY$eZr$ers%^sw$ewx(Ox{$e{|!@[|!_$e!_!`!8g!`#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e3o!@gY)]W!X-y(qQ'f&jOY$eZr$ers%^sw$ewx(Ox#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e2a!AbY!h,k)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e3o!B__)]W(qQ%Z!b!Y,g'f&jOY$eZr$ers%^sw$ewx(Ox}$e}!O!@[!O!_$e!_!`!8g!`!a!C^!a#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e3o!CiY(x-y)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e2a!Dd^)]W(qQ'f&j(w,gOY$eZr$ers%^sw$ewx(Ox!O$e!O!P!E`!P!Q$e!Q![!GY![#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e2a!Ei[)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox!O$e!O!P!F_!P#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e2a!FjY)Y,k)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e2]!Gen)]W(qQ!i,g'f&jOY$eZr$ers%^sw$ewx!Icx!Q$e!Q![!GY![!g$e!g!h#$w!h!i#*Y!i!n$e!n!o#*Y!o!r$e!r!s#$w!s!w$e!w!x#*Y!x#O$e#O#P&f#P#X$e#X#Y#$w#Y#Z#*Y#Z#`$e#`#a#*Y#a#d$e#d#e#$w#e#i$e#i#j#*Y#j;'S$e;'S;=`(u<%lO$e2T!IjY(qQ'f&jOY(OZr(Ors%}s!Q(O!Q![!JY![#O(O#O#P&f#P;'S(O;'S;=`(o<%lO(O2T!Jcn(qQ!i,g'f&jOY(OZr(Ors%}sw(Owx!Icx!Q(O!Q![!JY![!g(O!g!h!La!h!i##`!i!n(O!n!o##`!o!r(O!r!s!La!s!w(O!w!x##`!x#O(O#O#P&f#P#X(O#X#Y!La#Y#Z##`#Z#`(O#`#a##`#a#d(O#d#e!La#e#i(O#i#j##`#j;'S(O;'S;=`(o<%lO(O2T!Ljl(qQ!i,g'f&jOY(OZr(Ors%}s{(O{|!Nb|}(O}!O!Nb!O!Q(O!Q![# e![!c(O!c!h# e!h!i# e!i!n(O!n!o##`!o!w(O!w!x##`!x#O(O#O#P&f#P#T(O#T#Y# e#Y#Z# e#Z#`(O#`#a##`#a#i(O#i#j##`#j;'S(O;'S;=`(o<%lO(O2T!Ni^(qQ'f&jOY(OZr(Ors%}s!Q(O!Q![# e![!c(O!c!i# e!i#O(O#O#P&f#P#T(O#T#Z# e#Z;'S(O;'S;=`(o<%lO(O2T# nj(qQ!i,g'f&jOY(OZr(Ors%}sw(Owx!Nbx!Q(O!Q![# e![!c(O!c!h# e!h!i# e!i!n(O!n!o##`!o!w(O!w!x##`!x#O(O#O#P&f#P#T(O#T#Y# e#Y#Z# e#Z#`(O#`#a##`#a#i(O#i#j##`#j;'S(O;'S;=`(o<%lO(O2T##id(qQ!i,g'f&jOY(OZr(Ors%}s!h(O!h!i##`!i!n(O!n!o##`!o!w(O!w!x##`!x#O(O#O#P&f#P#Y(O#Y#Z##`#Z#`(O#`#a##`#a#i(O#i#j##`#j;'S(O;'S;=`(o<%lO(O2]#%Sn)]W(qQ!i,g'f&jOY$eZr$ers%^sw$ewx(Ox{$e{|#'Q|}$e}!O#'Q!O!Q$e!Q![#(]![!c$e!c!h#(]!h!i#(]!i!n$e!n!o#*Y!o!w$e!w!x#*Y!x#O$e#O#P&f#P#T$e#T#Y#(]#Y#Z#(]#Z#`$e#`#a#*Y#a#i$e#i#j#*Y#j;'S$e;'S;=`(u<%lO$e2]#'Z`)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![#(]![!c$e!c!i#(]!i#O$e#O#P&f#P#T$e#T#Z#(]#Z;'S$e;'S;=`(u<%lO$e2]#(hj)]W(qQ!i,g'f&jOY$eZr$ers%^sw$ewx!Nbx!Q$e!Q![#(]![!c$e!c!h#(]!h!i#(]!i!n$e!n!o#*Y!o!w$e!w!x#*Y!x#O$e#O#P&f#P#T$e#T#Y#(]#Y#Z#(]#Z#`$e#`#a#*Y#a#i$e#i#j#*Y#j;'S$e;'S;=`(u<%lO$e2]#*ef)]W(qQ!i,g'f&jOY$eZr$ers%^sw$ewx(Ox!h$e!h!i#*Y!i!n$e!n!o#*Y!o!w$e!w!x#*Y!x#O$e#O#P&f#P#Y$e#Y#Z#*Y#Z#`$e#`#a#*Y#a#i$e#i#j#*Y#j;'S$e;'S;=`(u<%lO$e7Z#,W`)]W(qQ%Z!b![,g'f&jOY$eZr$ers%^sw$ewx(Oxz$ez{#-Y{!P$e!P!Q#:s!Q!_$e!_!`!8g!`#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e7Z#-c])]W(qQ'f&jOY#-YYZ#.[Zr#-Yrs#/csw#-Ywx#5wxz#-Yz{#8j{#O#-Y#O#P#2`#P;'S#-Y;'S;=`#:m<%lO#-Y1e#._TOz#.[z{#.n{;'S#.[;'S;=`#/]<%lO#.[1e#.qVOz#.[z{#.n{!P#.[!P!Q#/W!Q;'S#.[;'S;=`#/]<%lO#.[1e#/]OT1e1e#/`P;=`<%l#.[7X#/jZ)]W'f&jOY#/cYZ#.[Zw#/cwx#0]xz#/cz{#4O{#O#/c#O#P#2`#P;'S#/c;'S;=`#5q<%lO#/c7P#0bX'f&jOY#0]YZ#.[Zz#0]z{#0}{#O#0]#O#P#2`#P;'S#0];'S;=`#3x<%lO#0]7P#1SZ'f&jOY#0]YZ#.[Zz#0]z{#0}{!P#0]!P!Q#1u!Q#O#0]#O#P#2`#P;'S#0];'S;=`#3x<%lO#0]7P#1|UT1e'f&jOY%}Z#O%}#O#P&f#P;'S%};'S;=`'r<%lO%}7P#2eZ'f&jOY#0]YZ#0]Z]#0]]^#3W^z#0]z{#0}{#O#0]#O#P#2`#P;'S#0];'S;=`#3x<%lO#0]7P#3]X'f&jOY#0]YZ#0]Zz#0]z{#0}{#O#0]#O#P#2`#P;'S#0];'S;=`#3x<%lO#0]7P#3{P;=`<%l#0]7X#4V])]W'f&jOY#/cYZ#.[Zw#/cwx#0]xz#/cz{#4O{!P#/c!P!Q#5O!Q#O#/c#O#P#2`#P;'S#/c;'S;=`#5q<%lO#/c7X#5XW)]WT1e'f&jOY%^Zw%^wx%}x#O%^#O#P&f#P;'S%^;'S;=`'x<%lO%^7X#5tP;=`<%l#/c7R#6OZ(qQ'f&jOY#5wYZ#.[Zr#5wrs#0]sz#5wz{#6q{#O#5w#O#P#2`#P;'S#5w;'S;=`#8d<%lO#5w7R#6x](qQ'f&jOY#5wYZ#.[Zr#5wrs#0]sz#5wz{#6q{!P#5w!P!Q#7q!Q#O#5w#O#P#2`#P;'S#5w;'S;=`#8d<%lO#5w7R#7zW(qQT1e'f&jOY(OZr(Ors%}s#O(O#O#P&f#P;'S(O;'S;=`(o<%lO(O7R#8gP;=`<%l#5w7Z#8s_)]W(qQ'f&jOY#-YYZ#.[Zr#-Yrs#/csw#-Ywx#5wxz#-Yz{#8j{!P#-Y!P!Q#9r!Q#O#-Y#O#P#2`#P;'S#-Y;'S;=`#:m<%lO#-Y7Z#9}Y)]W(qQT1e'f&jOY$eZr$ers%^sw$ewx(Ox#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e7Z#:pP;=`<%l#-Y7Z#;OY)]W(qQS1e'f&jOY#:sZr#:srs#;nsw#:swx#@{x#O#:s#O#P#<z#P;'S#:s;'S;=`#At<%lO#:s7X#;wW)]WS1e'f&jOY#;nZw#;nwx#<ax#O#;n#O#P#<z#P;'S#;n;'S;=`#@u<%lO#;n7P#<hUS1e'f&jOY#<aZ#O#<a#O#P#<z#P;'S#<a;'S;=`#>[<%lO#<a7P#=RXS1e'f&jOY#<aYZ%}Z]#<a]^#=n^#O#<a#O#P#>b#P;'S#<a;'S;=`#>[<%lO#<a7P#=uVS1e'f&jOY#<aYZ%}Z#O#<a#O#P#<z#P;'S#<a;'S;=`#>[<%lO#<a7P#>_P;=`<%l#<a7P#>i]S1e'f&jOY#<aYZ%}Z]#<a]^#=n^#O#<a#O#P#>b#P#b#<a#b#c#<a#c#f#<a#f#g#?b#g;'S#<a;'S;=`#>[<%lO#<a7P#?iUS1e'f&jOY#<aZ#O#<a#O#P#?{#P;'S#<a;'S;=`#>[<%lO#<a7P#@SZS1e'f&jOY#<aYZ%}Z]#<a]^#=n^#O#<a#O#P#>b#P#b#<a#b#c#<a#c;'S#<a;'S;=`#>[<%lO#<a7X#@xP;=`<%l#;n7R#AUW(qQS1e'f&jOY#@{Zr#@{rs#<as#O#@{#O#P#<z#P;'S#@{;'S;=`#An<%lO#@{7R#AqP;=`<%l#@{7Z#AwP;=`<%l#:s2]#BVt)]W(qQ!i,g'f&jOY$eZr$ers%^sw$ewx#Dgx!O$e!O!P$ m!P!Q$e!Q![$(x![!g$e!g!h#$w!h!i#*Y!i!n$e!n!o#*Y!o!r$e!r!s#$w!s!w$e!w!x#*Y!x#O$e#O#P&f#P#U$e#U#V$+X#V#X$e#X#Y#$w#Y#Z#*Y#Z#`$e#`#a#*Y#a#d$e#d#e#$w#e#i$e#i#j#*Y#j#l$e#l#m$=`#m;'S$e;'S;=`(u<%lO$e2T#DnY(qQ'f&jOY(OZr(Ors%}s!Q(O!Q![#E^![#O(O#O#P&f#P;'S(O;'S;=`(o<%lO(O2T#Egp(qQ!i,g'f&jOY(OZr(Ors%}sw(Owx#Dgx!O(O!O!P#Gk!P!Q(O!Q![#E^![!g(O!g!h!La!h!i##`!i!n(O!n!o##`!o!r(O!r!s!La!s!w(O!w!x##`!x#O(O#O#P&f#P#X(O#X#Y!La#Y#Z##`#Z#`(O#`#a##`#a#d(O#d#e!La#e#i(O#i#j##`#j;'S(O;'S;=`(o<%lO(O2T#Gtn(qQ!i,g'f&jOY(OZr(Ors%}s!Q(O!Q![#Ir![!c(O!c!g#Ir!g!h#MS!h!i#Ir!i!n(O!n!o##`!o!r(O!r!s!La!s!w(O!w!x##`!x#O(O#O#P&f#P#T(O#T#X#Ir#X#Y#MS#Y#Z#Ir#Z#`(O#`#a##`#a#d(O#d#e!La#e#i(O#i#j##`#j;'S(O;'S;=`(o<%lO(O2T#I{p(qQ!i,g'f&jOY(OZr(Ors%}sw(Owx#LPx!Q(O!Q![#Ir![!c(O!c!g#Ir!g!h#MS!h!i#Ir!i!n(O!n!o##`!o!r(O!r!s!La!s!w(O!w!x##`!x#O(O#O#P&f#P#T(O#T#X#Ir#X#Y#MS#Y#Z#Ir#Z#`(O#`#a##`#a#d(O#d#e!La#e#i(O#i#j##`#j;'S(O;'S;=`(o<%lO(O2T#LW^(qQ'f&jOY(OZr(Ors%}s!Q(O!Q![#Ir![!c(O!c!i#Ir!i#O(O#O#P&f#P#T(O#T#Z#Ir#Z;'S(O;'S;=`(o<%lO(O2T#M]t(qQ!i,g'f&jOY(OZr(Ors%}sw(Owx#LPx{(O{|!Nb|}(O}!O!Nb!O!Q(O!Q![#Ir![!c(O!c!g#Ir!g!h#MS!h!i#Ir!i!n(O!n!o##`!o!r(O!r!s!La!s!w(O!w!x##`!x#O(O#O#P&f#P#T(O#T#X#Ir#X#Y#MS#Y#Z#Ir#Z#`(O#`#a##`#a#d(O#d#e!La#e#i(O#i#j##`#j;'S(O;'S;=`(o<%lO(O2]$ xp)]W(qQ!i,g'f&jOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![$#|![!c$e!c!g$#|!g!h$&]!h!i$#|!i!n$e!n!o#*Y!o!r$e!r!s#$w!s!w$e!w!x#*Y!x#O$e#O#P&f#P#T$e#T#X$#|#X#Y$&]#Y#Z$#|#Z#`$e#`#a#*Y#a#d$e#d#e#$w#e#i$e#i#j#*Y#j;'S$e;'S;=`(u<%lO$e2]$$Xp)]W(qQ!i,g'f&jOY$eZr$ers%^sw$ewx#LPx!Q$e!Q![$#|![!c$e!c!g$#|!g!h$&]!h!i$#|!i!n$e!n!o#*Y!o!r$e!r!s#$w!s!w$e!w!x#*Y!x#O$e#O#P&f#P#T$e#T#X$#|#X#Y$&]#Y#Z$#|#Z#`$e#`#a#*Y#a#d$e#d#e#$w#e#i$e#i#j#*Y#j;'S$e;'S;=`(u<%lO$e2]$&ht)]W(qQ!i,g'f&jOY$eZr$ers%^sw$ewx#LPx{$e{|#'Q|}$e}!O#'Q!O!Q$e!Q![$#|![!c$e!c!g$#|!g!h$&]!h!i$#|!i!n$e!n!o#*Y!o!r$e!r!s#$w!s!w$e!w!x#*Y!x#O$e#O#P&f#P#T$e#T#X$#|#X#Y$&]#Y#Z$#|#Z#`$e#`#a#*Y#a#d$e#d#e#$w#e#i$e#i#j#*Y#j;'S$e;'S;=`(u<%lO$e2]$)Tp)]W(qQ!i,g'f&jOY$eZr$ers%^sw$ewx#Dgx!O$e!O!P$ m!P!Q$e!Q![$(x![!g$e!g!h#$w!h!i#*Y!i!n$e!n!o#*Y!o!r$e!r!s#$w!s!w$e!w!x#*Y!x#O$e#O#P&f#P#X$e#X#Y#$w#Y#Z#*Y#Z#`$e#`#a#*Y#a#d$e#d#e#$w#e#i$e#i#j#*Y#j;'S$e;'S;=`(u<%lO$e2]$+b_)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox!O$e!O!P$,a!P!Q$e!Q!R$-`!R![$(x![#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e2]$,j[)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![!GY![#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e2]$-kt)]W(qQ!i,g'f&jOY$eZr$ers%^sw$ewx#Dgx!O$e!O!P$ m!P!Q$e!Q![$(x![!g$e!g!h#$w!h!i#*Y!i!n$e!n!o#*Y!o!r$e!r!s#$w!s!w$e!w!x#*Y!x#O$e#O#P&f#P#U$e#U#V$/{#V#X$e#X#Y#$w#Y#Z#*Y#Z#`$e#`#a#*Y#a#d$e#d#e#$w#e#i$e#i#j#*Y#j#l$e#l#m$0z#m;'S$e;'S;=`(u<%lO$e2]$0U[)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![$(x![#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e2]$1T`)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![$2V![!c$e!c!i$2V!i#O$e#O#P&f#P#T$e#T#Z$2V#Z;'S$e;'S;=`(u<%lO$e2]$2br)]W(qQ!i,g'f&jOY$eZr$ers%^sw$ewx$4lx!O$e!O!P$ m!P!Q$e!Q![$2V![!c$e!c!g$2V!g!h$:p!h!i$2V!i!n$e!n!o#*Y!o!r$e!r!s#$w!s!w$e!w!x#*Y!x#O$e#O#P&f#P#T$e#T#X$2V#X#Y$:p#Y#Z$2V#Z#`$e#`#a#*Y#a#d$e#d#e#$w#e#i$e#i#j#*Y#j;'S$e;'S;=`(u<%lO$e2T$4s^(qQ'f&jOY(OZr(Ors%}s!Q(O!Q![$5o![!c(O!c!i$5o!i#O(O#O#P&f#P#T(O#T#Z$5o#Z;'S(O;'S;=`(o<%lO(O2T$5xr(qQ!i,g'f&jOY(OZr(Ors%}sw(Owx$4lx!O(O!O!P#Gk!P!Q(O!Q![$5o![!c(O!c!g$5o!g!h$8S!h!i$5o!i!n(O!n!o##`!o!r(O!r!s!La!s!w(O!w!x##`!x#O(O#O#P&f#P#T(O#T#X$5o#X#Y$8S#Y#Z$5o#Z#`(O#`#a##`#a#d(O#d#e!La#e#i(O#i#j##`#j;'S(O;'S;=`(o<%lO(O2T$8]u(qQ!i,g'f&jOY(OZr(Ors%}sw(Owx$4lx{(O{|!Nb|}(O}!O!Nb!O!P#Gk!P!Q(O!Q![$5o![!c(O!c!g$5o!g!h$8S!h!i$5o!i!n(O!n!o##`!o!r(O!r!s!La!s!w(O!w!x##`!x#O(O#O#P&f#P#T(O#T#X$5o#X#Y$8S#Y#Z$5o#Z#`(O#`#a##`#a#d(O#d#e!La#e#i(O#i#j##`#j;'S(O;'S;=`(o<%lO(O2]$:{u)]W(qQ!i,g'f&jOY$eZr$ers%^sw$ewx$4lx{$e{|#'Q|}$e}!O#'Q!O!P$ m!P!Q$e!Q![$2V![!c$e!c!g$2V!g!h$:p!h!i$2V!i!n$e!n!o#*Y!o!r$e!r!s#$w!s!w$e!w!x#*Y!x#O$e#O#P&f#P#T$e#T#X$2V#X#Y$:p#Y#Z$2V#Z#`$e#`#a#*Y#a#d$e#d#e#$w#e#i$e#i#j#*Y#j;'S$e;'S;=`(u<%lO$e2]$=ic)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox!O$e!O!P$,a!P!Q$e!Q!R$>t!R![$2V![!c$e!c!i$2V!i#O$e#O#P&f#P#T$e#T#Z$2V#Z;'S$e;'S;=`(u<%lO$e2]$?Pv)]W(qQ!i,g'f&jOY$eZr$ers%^sw$ewx$4lx!O$e!O!P$ m!P!Q$e!Q![$2V![!c$e!c!g$2V!g!h$:p!h!i$2V!i!n$e!n!o#*Y!o!r$e!r!s#$w!s!w$e!w!x#*Y!x#O$e#O#P&f#P#T$e#T#U$2V#U#V$2V#V#X$2V#X#Y$:p#Y#Z$2V#Z#`$e#`#a#*Y#a#d$e#d#e#$w#e#i$e#i#j#*Y#j#l$e#l#m$0z#m;'S$e;'S;=`(u<%lO$e4e$Ar[(v-X)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox![$e![!]$Bh!]#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e3s$BsYm-})]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e2]$CnY)X,g)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e7V$Dk_q,g%]!b)]W(qQ'f&jOY$EjYZ$FlZr$Ejrs$GZsw$Ejwx%)Px!^$Ej!^!_%+w!_!`%.U!`!a%0]!a#O$Ej#O#P$Ib#P;'S$Ej;'S;=`%+q<%lO$Ej*[$Es])]W(qQ'f&jOY$EjYZ$FlZr$Ejrs$GZsw$Ejwx%)Px!`$Ej!`!a%*t!a#O$Ej#O#P$Ib#P;'S$Ej;'S;=`%+q<%lO$Ejp$FoTO!`$Fl!`!a$GO!a;'S$Fl;'S;=`$GT<%lO$Flp$GTO$Wpp$GWP;=`<%l$Fl*Y$GbZ)]W'f&jOY$GZYZ$FlZw$GZwx$HTx!`$GZ!`!a%(U!a#O$GZ#O#P$Ib#P;'S$GZ;'S;=`%(y<%lO$GZ*Q$HYX'f&jOY$HTYZ$FlZ!`$HT!`!a$Hu!a#O$HT#O#P$Ib#P;'S$HT;'S;=`$Mx<%lO$HT*Q$IOU$WpY#t'f&jOY%}Z#O%}#O#P&f#P;'S%};'S;=`'r<%lO%}*Q$Ig['f&jOY$HTYZ$HTZ]$HT]^$J]^!`$HT!`!a$NO!a#O$HT#O#P%&n#P;'S$HT;'S;=`%'f;=`<%l%$z<%lO$HT*Q$JbX'f&jOY$HTYZ$J}Z!`$HT!`!a$Hu!a#O$HT#O#P$Ib#P;'S$HT;'S;=`$Mx<%lO$HT'[$KSX'f&jOY$J}YZ$FlZ!`$J}!`!a$Ko!a#O$J}#O#P$LY#P;'S$J};'S;=`$Mr<%lO$J}'[$KvU$Wp'f&jOY%}Z#O%}#O#P&f#P;'S%};'S;=`'r<%lO%}'[$L_Z'f&jOY$J}YZ$J}Z]$J}]^$MQ^!`$J}!`!a$Ko!a#O$J}#O#P$LY#P;'S$J};'S;=`$Mr<%lO$J}'[$MVX'f&jOY$J}YZ$J}Z!`$J}!`!a$Ko!a#O$J}#O#P$LY#P;'S$J};'S;=`$Mr<%lO$J}'[$MuP;=`<%l$J}*Q$M{P;=`<%l$HT*Q$NVW$Wp'f&jOY$NoZ!`$No!`!a% ^!a#O$No#O#P% w#P;'S$No;'S;=`%#^<%lO$No)`$NtW'f&jOY$NoZ!`$No!`!a% ^!a#O$No#O#P% w#P;'S$No;'S;=`%#^<%lO$No)`% eUY#t'f&jOY%}Z#O%}#O#P&f#P;'S%};'S;=`'r<%lO%})`% |Y'f&jOY$NoYZ$NoZ]$No]^%!l^#O$No#O#P%#d#P;'S$No;'S;=`%$[;=`<%l%$z<%lO$No)`%!qX'f&jOY$NoYZ%}Z!`$No!`!a% ^!a#O$No#O#P% w#P;'S$No;'S;=`%#^<%lO$No)`%#aP;=`<%l$No)`%#iZ'f&jOY$NoYZ%}Z]$No]^%!l^!`$No!`!a% ^!a#O$No#O#P% w#P;'S$No;'S;=`%#^<%lO$No)`%$_XOY%$zZ!`%$z!`!a%%g!a#O%$z#O#P%%l#P;'S%$z;'S;=`%&h;=`<%l$No<%lO%$z#t%$}WOY%$zZ!`%$z!`!a%%g!a#O%$z#O#P%%l#P;'S%$z;'S;=`%&h<%lO%$z#t%%lOY#t#t%%oRO;'S%$z;'S;=`%%x;=`O%$z#t%%{XOY%$zZ!`%$z!`!a%%g!a#O%$z#O#P%%l#P;'S%$z;'S;=`%&h;=`<%l%$z<%lO%$z#t%&kP;=`<%l%$z*Q%&sZ'f&jOY$HTYZ$J}Z]$HT]^$J]^!`$HT!`!a$Hu!a#O$HT#O#P$Ib#P;'S$HT;'S;=`$Mx<%lO$HT*Q%'iXOY%$zZ!`%$z!`!a%%g!a#O%$z#O#P%%l#P;'S%$z;'S;=`%&h;=`<%l$HT<%lO%$z*Y%(aW$WpY#t)]W'f&jOY%^Zw%^wx%}x#O%^#O#P&f#P;'S%^;'S;=`'x<%lO%^*Y%(|P;=`<%l$GZ*S%)WZ(qQ'f&jOY%)PYZ$FlZr%)Prs$HTs!`%)P!`!a%)y!a#O%)P#O#P$Ib#P;'S%)P;'S;=`%*n<%lO%)P*S%*UW$WpY#t(qQ'f&jOY(OZr(Ors%}s#O(O#O#P&f#P;'S(O;'S;=`(o<%lO(O*S%*qP;=`<%l%)P*[%+RY$WpY#t)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e*[%+tP;=`<%l$Ej7V%,U^)]W(qQ%[!b!f,g'f&jOY$EjYZ$FlZr$Ejrs$GZsw$Ejwx%)Px!_$Ej!_!`%-Q!`!a%*t!a#O$Ej#O#P$Ib#P;'S$Ej;'S;=`%+q<%lO$Ej7V%-]]!g-y)]W(qQ'f&jOY$EjYZ$FlZr$Ejrs$GZsw$Ejwx%)Px!`$Ej!`!a%*t!a#O$Ej#O#P$Ib#P;'S$Ej;'S;=`%+q<%lO$Ej7V%.c]%]!b!b,g)]W(qQ'f&jOY$EjYZ$FlZr$Ejrs$GZsw$Ejwx%)Px!`$Ej!`!a%/[!a#O$Ej#O#P$Ib#P;'S$Ej;'S;=`%+q<%lO$Ej7V%/mY%]!b!b,g$WpY#t)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e)j%0hYY#t)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e3o%1c[)j!c)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox!_$e!_!`0Q!`#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e3o%2f]%]!b)]W(qQ!d,g'f&jOY$eZr$ers%^sw$ewx(Ox!_$e!_!`%3_!`!a%4[!a#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e3o%3lY%]!b!b,g)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e3o%4i[)]W(qQ%[!b!f,g'f&jOY$eZr$ers%^sw$ewx(Ox!_$e!_!`!8g!`#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e&u%5jY(uP)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e7Z%6ib)]W(yS(qQ!R,f(r%y'f&jOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![%6Y![!c$e!c!}%6Y!}#O$e#O#P&f#P#R$e#R#S%6Y#S#T$e#T#o%6Y#o;'S$e;'S;=`(u<%lO$e7Z%8Qb)]W(yS(qQ!R,f(r%y'f&jOY$eZr$ers%9Ysw$ewx%9{x!Q$e!Q![%6Y![!c$e!c!}%6Y!}#O$e#O#P&f#P#R$e#R#S%6Y#S#T$e#T#o%6Y#o;'S$e;'S;=`(u<%lO$e5P%9cW)]W(p/]'f&jOY%^Zw%^wx%}x#O%^#O#P&f#P;'S%^;'S;=`'x<%lO%^2T%:UW(qQ)[,g'f&jOY(OZr(Ors%}s#O(O#O#P&f#P;'S(O;'S;=`(o<%lO(O3o%:yZ!V-y)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox!}$e!}#O%;l#O#P&f#P;'S$e;'S;=`(u<%lO$e&u%;wY)QP)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e4e%<la'f&jOY%=qYZ%>[Z]%=q]^%?Z^!Q%=q!Q![%?w![!w%=q!w!x%AX!x#O%=q#O#P%H_#P#i%=q#i#j%Ds#j#l%=q#l#m%IR#m;'S%=q;'S;=`%Kt<%lO%=q&t%=xUXY'f&jOY%}Z#O%}#O#P&f#P;'S%};'S;=`'r<%lO%}4e%>e[XY(n.o'f&jOX%}XY-OYZ*[Z]%}]^-O^p%}pq-Oq#O%}#O#P,^#P;'S%};'S;=`'r<%lO%}4e%?bVXY'f&jOY%}YZ-OZ#O%}#O#P&f#P;'S%};'S;=`'r<%lO%}&t%@OWXY'f&jOY%}Z!Q%}!Q![%@h![#O%}#O#P&f#P;'S%};'S;=`'r<%lO%}&t%@oWXY'f&jOY%}Z!Q%}!Q![%=q![#O%}#O#P&f#P;'S%};'S;=`'r<%lO%}&t%A^['f&jOY%}Z!Q%}!Q![%BS![!c%}!c!i%BS!i#O%}#O#P&f#P#T%}#T#Z%BS#Z;'S%};'S;=`'r<%lO%}&t%BX['f&jOY%}Z!Q%}!Q![%B}![!c%}!c!i%B}!i#O%}#O#P&f#P#T%}#T#Z%B}#Z;'S%};'S;=`'r<%lO%}&t%CS['f&jOY%}Z!Q%}!Q![%Cx![!c%}!c!i%Cx!i#O%}#O#P&f#P#T%}#T#Z%Cx#Z;'S%};'S;=`'r<%lO%}&t%C}['f&jOY%}Z!Q%}!Q![%Ds![!c%}!c!i%Ds!i#O%}#O#P&f#P#T%}#T#Z%Ds#Z;'S%};'S;=`'r<%lO%}&t%Dx['f&jOY%}Z!Q%}!Q![%En![!c%}!c!i%En!i#O%}#O#P&f#P#T%}#T#Z%En#Z;'S%};'S;=`'r<%lO%}&t%Es['f&jOY%}Z!Q%}!Q![%Fi![!c%}!c!i%Fi!i#O%}#O#P&f#P#T%}#T#Z%Fi#Z;'S%};'S;=`'r<%lO%}&t%Fn['f&jOY%}Z!Q%}!Q![%Gd![!c%}!c!i%Gd!i#O%}#O#P&f#P#T%}#T#Z%Gd#Z;'S%};'S;=`'r<%lO%}&t%Gi['f&jOY%}Z!Q%}!Q![%=q![!c%}!c!i%=q!i#O%}#O#P&f#P#T%}#T#Z%=q#Z;'S%};'S;=`'r<%lO%}&t%HfXXY'f&jOY%}YZ%}Z]%}]^'W^#O%}#O#P&f#P;'S%};'S;=`'r<%lO%}&t%IW['f&jOY%}Z!Q%}!Q![%I|![!c%}!c!i%I|!i#O%}#O#P&f#P#T%}#T#Z%I|#Z;'S%};'S;=`'r<%lO%}&t%JR['f&jOY%}Z!Q%}!Q![%Jw![!c%}!c!i%Jw!i#O%}#O#P&f#P#T%}#T#Z%Jw#Z;'S%};'S;=`'r<%lO%}&t%KO[XY'f&jOY%}Z!Q%}!Q![%Jw![!c%}!c!i%Jw!i#O%}#O#P&f#P#T%}#T#Z%Jw#Z;'S%};'S;=`'r<%lO%}&t%KwP;=`<%l%=q2a%LVZ!W,V)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox#O$e#O#P&f#P#Q%Lx#Q;'S$e;'S;=`(u<%lO$e'Y%MTY)Pd)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e3o%NQ[)]W(qQ%[!b'f&j!_,gOY$eZr$ers%^sw$ewx(Ox!_$e!_!`!8g!`#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e7Z& Vd)]W(yS(qQ!R,f(r%y'f&jOY$eZr$ers%9Ysw$ewx%9{x!Q$e!Q!Y%6Y!Y!Z%7q!Z![%6Y![!c$e!c!}%6Y!}#O$e#O#P&f#P#R$e#R#S%6Y#S#T$e#T#o%6Y#o;'S$e;'S;=`(u<%lO$e2]&!pY!T,g)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e3o&#m^)]W(qQ%[!b'f&j!^,gOY$eZr$ers%^sw$ewx(Ox!_$e!_!`!8g!`#O$e#O#P&f#P#p$e#p#q&$i#q;'S$e;'S;=`(u<%lO$e3o&$vY)U,g%^!b)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e'V&%qY!Ua)]W(qQ'f&jOY$eZr$ers%^sw$ewx(Ox#O$e#O#P&f#P;'S$e;'S;=`(u<%lO$e(]&&nc)]W(qQ%[!b'RP'f&jOX$eXY&'yZp$epq&'yqr$ers%^sw$ewx(Ox!c$e!c!}&)_!}#O$e#O#P&f#P#R$e#R#S&)_#S#T$e#T#o&)_#o;'S$e;'S;=`(u<%lO$e&y&(Sc)]W(qQ'f&jOX$eXY&'yZp$epq&'yqr$ers%^sw$ewx(Ox!c$e!c!}&)_!}#O$e#O#P&f#P#R$e#R#S&)_#S#T$e#T#o&)_#o;'S$e;'S;=`(u<%lO$e&y&)jb)]W(qQeT'f&jOY$eZr$ers%^sw$ewx(Ox!Q$e!Q![&)_![!c$e!c!}&)_!}#O$e#O#P&f#P#R$e#R#S&)_#S#T$e#T#o&)_#o;'S$e;'S;=`(u<%lO$e",
+    tokenizers: [rawString, fallback, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    topRules: { "Program": [0, 307] },
+    dynamicPrecedences: { "87": 1, "94": 1, "119": 1, "184": 1, "187": -10, "240": -10, "241": 1, "244": -1, "246": -10, "247": 1, "262": -1, "267": 2, "268": 2, "306": -10, "365": 3, "417": 1, "418": 3, "419": 1, "420": 1 },
+    specialized: [{ term: 356, get: (value) => spec_identifier[value] || -1 }, { term: 33, get: (value) => spec_[value] || -1 }, { term: 66, get: (value) => spec_templateArgsEnd[value] || -1 }, { term: 363, get: (value) => spec_scopedIdentifier[value] || -1 }],
+    tokenPrec: 24891
+});
+
+
+;// ./node_modules/@codemirror/lang-cpp/dist/index.js
+
+
+const cppLanguage = LRLanguage.define({
+    name: "cpp",
+    parser: parser.configure({
+        props: [
+            indentNodeProp.add({
+                IfStatement: continuedIndent({ except: /^\s*({|else\b)/ }),
+                TryStatement: continuedIndent({ except: /^\s*({|catch)\b/ }),
+                LabeledStatement: flatIndent,
+                CaseStatement: context => context.baseIndent + context.unit,
+                BlockComment: () => null,
+                CompoundStatement: delimitedIndent({ closing: "}" }),
+                Statement: continuedIndent({ except: /^{/ })
+            }),
+            foldNodeProp.add({
+                "DeclarationList CompoundStatement EnumeratorList FieldDeclarationList InitializerList": foldInside,
+                BlockComment(tree) { return { from: tree.from + 2, to: tree.to - 2 }; }
+            })
+        ]
+    }),
+    languageData: {
+        commentTokens: { line: "//", block: { open: "/*", close: "*/" } },
+        indentOnInput: /^\s*(?:case |default:|\{|\})$/,
+        closeBrackets: { stringPrefixes: ["L", "u", "U", "u8", "LR", "UR", "uR", "u8R", "R"] }
+    }
+});
+function cpp() {
+    return new LanguageSupport(cppLanguage);
+}
+
+
+;// ./node_modules/@lezer/javascript/dist/index.js
+
+
+const noSemi = 315, noSemiType = 316, incdec = 1, incdecPrefix = 2, questionDot = 3, JSXStartTag = 4, insertSemi = 317, spaces = 319, newline = 320, LineComment = 5, BlockComment = 6, Dialect_jsx = 0;
+const space = [9, 10, 11, 12, 13, 32, 133, 160, 5760, 8192, 8193, 8194, 8195, 8196, 8197, 8198, 8199, 8200,
+    8201, 8202, 8232, 8233, 8239, 8287, 12288];
+const braceR = 125, semicolon = 59, slash = 47, star = 42, plus = 43, minus = 45, lt = 60, comma = 44, question = 63, dot = 46, bracketL = 91;
+const trackNewline = new ContextTracker({
+    start: false,
+    shift(context, term) {
+        return term == LineComment || term == BlockComment || term == spaces ? context : term == newline;
+    },
+    strict: false
+});
+const insertSemicolon = new ExternalTokenizer((input, stack) => {
+    let { next } = input;
+    if (next == braceR || next == -1 || stack.context)
+        input.acceptToken(insertSemi);
+}, { contextual: true, fallback: true });
+const noSemicolon = new ExternalTokenizer((input, stack) => {
+    let { next } = input, after;
+    if (space.indexOf(next) > -1)
+        return;
+    if (next == slash && ((after = input.peek(1)) == slash || after == star))
+        return;
+    if (next != braceR && next != semicolon && next != -1 && !stack.context)
+        input.acceptToken(noSemi);
+}, { contextual: true });
+const noSemicolonType = new ExternalTokenizer((input, stack) => {
+    if (input.next == bracketL && !stack.context)
+        input.acceptToken(noSemiType);
+}, { contextual: true });
+const operatorToken = new ExternalTokenizer((input, stack) => {
+    let { next } = input;
+    if (next == plus || next == minus) {
+        input.advance();
+        if (next == input.next) {
+            input.advance();
+            let mayPostfix = !stack.context && stack.canShift(incdec);
+            input.acceptToken(mayPostfix ? incdec : incdecPrefix);
+        }
+    }
+    else if (next == question && input.peek(1) == dot) {
+        input.advance();
+        input.advance();
+        if (input.next < 48 || input.next > 57)
+            input.acceptToken(questionDot);
+    }
+}, { contextual: true });
+function identifierChar(ch, start) {
+    return ch >= 65 && ch <= 90 || ch >= 97 && ch <= 122 || ch == 95 || ch >= 192 ||
+        !start && ch >= 48 && ch <= 57;
+}
+const jsx = new ExternalTokenizer((input, stack) => {
+    if (input.next != lt || !stack.dialectEnabled(Dialect_jsx))
+        return;
+    input.advance();
+    if (input.next == slash)
+        return;
+    let back = 0;
+    while (space.indexOf(input.next) > -1) {
+        input.advance();
+        back++;
+    }
+    if (identifierChar(input.next, true)) {
+        input.advance();
+        back++;
+        while (identifierChar(input.next, false)) {
+            input.advance();
+            back++;
+        }
+        while (space.indexOf(input.next) > -1) {
+            input.advance();
+            back++;
+        }
+        if (input.next == comma)
+            return;
+        for (let i = 0;; i++) {
+            if (i == 7) {
+                if (!identifierChar(input.next, true))
+                    return;
+                break;
+            }
+            if (input.next != "extends".charCodeAt(i))
+                break;
+            input.advance();
+            back++;
+        }
+    }
+    input.acceptToken(JSXStartTag, -back);
+});
+const jsHighlight = styleTags({
+    "get set async static": tags.modifier,
+    "for while do if else switch try catch finally return throw break continue default case": tags.controlKeyword,
+    "in of await yield void typeof delete instanceof as satisfies": tags.operatorKeyword,
+    "let var const using function class extends": tags.definitionKeyword,
+    "import export from": tags.moduleKeyword,
+    "with debugger new": tags.keyword,
+    TemplateString: tags.special(tags.string),
+    super: tags.atom,
+    BooleanLiteral: tags.bool,
+    this: tags.self,
+    null: tags.null,
+    Star: tags.modifier,
+    VariableName: tags.variableName,
+    "CallExpression/VariableName TaggedTemplateExpression/VariableName": tags.function(tags.variableName),
+    VariableDefinition: tags.definition(tags.variableName),
+    Label: tags.labelName,
+    PropertyName: tags.propertyName,
+    PrivatePropertyName: tags.special(tags.propertyName),
+    "CallExpression/MemberExpression/PropertyName": tags.function(tags.propertyName),
+    "FunctionDeclaration/VariableDefinition": tags.function(tags.definition(tags.variableName)),
+    "ClassDeclaration/VariableDefinition": tags.definition(tags.className),
+    "NewExpression/VariableName": tags.className,
+    PropertyDefinition: tags.definition(tags.propertyName),
+    PrivatePropertyDefinition: tags.definition(tags.special(tags.propertyName)),
+    UpdateOp: tags.updateOperator,
+    "LineComment Hashbang": tags.lineComment,
+    BlockComment: tags.blockComment,
+    Number: tags.number,
+    String: tags.string,
+    Escape: tags.escape,
+    ArithOp: tags.arithmeticOperator,
+    LogicOp: tags.logicOperator,
+    BitOp: tags.bitwiseOperator,
+    CompareOp: tags.compareOperator,
+    RegExp: tags.regexp,
+    Equals: tags.definitionOperator,
+    Arrow: tags.function(tags.punctuation),
+    ": Spread": tags.punctuation,
+    "( )": tags.paren,
+    "[ ]": tags.squareBracket,
+    "{ }": tags.brace,
+    "InterpolationStart InterpolationEnd": tags.special(tags.brace),
+    ".": tags.derefOperator,
+    ", ;": tags.separator,
+    "@": tags.meta,
+    TypeName: tags.typeName,
+    TypeDefinition: tags.definition(tags.typeName),
+    "type enum interface implements namespace module declare": tags.definitionKeyword,
+    "abstract global Privacy readonly override": tags.modifier,
+    "is keyof unique infer asserts": tags.operatorKeyword,
+    JSXAttributeValue: tags.attributeValue,
+    JSXText: tags.content,
+    "JSXStartTag JSXStartCloseTag JSXSelfCloseEndTag JSXEndTag": tags.angleBracket,
+    "JSXIdentifier JSXNameSpacedName": tags.tagName,
+    "JSXAttribute/JSXIdentifier JSXAttribute/JSXNameSpacedName": tags.attributeName,
+    "JSXBuiltin/JSXIdentifier": tags.standard(tags.tagName)
+});
+const dist_spec_identifier = { __proto__: null, export: 20, as: 25, from: 33, default: 36, async: 41, function: 42, in: 52, out: 55, const: 56, extends: 60, this: 64, true: 72, false: 72, null: 84, void: 88, typeof: 92, super: 108, new: 142, delete: 154, yield: 163, await: 167, class: 172, public: 235, private: 235, protected: 235, readonly: 237, instanceof: 256, satisfies: 259, import: 292, keyof: 349, unique: 353, infer: 359, asserts: 395, is: 397, abstract: 417, implements: 419, type: 421, let: 424, var: 426, using: 429, interface: 435, enum: 439, namespace: 445, module: 447, declare: 451, global: 455, for: 474, of: 483, while: 486, with: 490, do: 494, if: 498, else: 500, switch: 504, case: 510, try: 516, catch: 520, finally: 524, return: 528, throw: 532, break: 536, continue: 540, debugger: 544 };
+const spec_word = { __proto__: null, async: 129, get: 131, set: 133, declare: 195, public: 197, private: 197, protected: 197, static: 199, abstract: 201, override: 203, readonly: 209, accessor: 211, new: 401 };
+const spec_LessThan = { __proto__: null, "<": 193 };
+const dist_parser = LRParser.deserialize({
+    version: 14,
+    states: "$EOQ%TQlOOO%[QlOOO'_QpOOP(lO`OOO*zQ!0MxO'#CiO+RO#tO'#CjO+aO&jO'#CjO+oO#@ItO'#DaO.QQlO'#DgO.bQlO'#DrO%[QlO'#DzO0fQlO'#ESOOQ!0Lf'#E['#E[O1PQ`O'#EXOOQO'#Ep'#EpOOQO'#Ik'#IkO1XQ`O'#GsO1dQ`O'#EoO1iQ`O'#EoO3hQ!0MxO'#JqO6[Q!0MxO'#JrO6uQ`O'#F]O6zQ,UO'#FtOOQ!0Lf'#Ff'#FfO7VO7dO'#FfO7eQMhO'#F|O9[Q`O'#F{OOQ!0Lf'#Jr'#JrOOQ!0Lb'#Jq'#JqO9aQ`O'#GwOOQ['#K^'#K^O9lQ`O'#IXO9qQ!0LrO'#IYOOQ['#J_'#J_OOQ['#I^'#I^Q`QlOOQ`QlOOO9yQ!L^O'#DvO:QQlO'#EOO:XQlO'#EQO9gQ`O'#GsO:`QMhO'#CoO:nQ`O'#EnO:yQ`O'#EyO;OQMhO'#FeO;mQ`O'#GsOOQO'#K_'#K_O;rQ`O'#K_O<QQ`O'#G{O<QQ`O'#G|O<QQ`O'#HOO9gQ`O'#HRO<wQ`O'#HUO>`Q`O'#CeO>pQ`O'#HbO>xQ`O'#HhO>xQ`O'#HjO`QlO'#HlO>xQ`O'#HnO>xQ`O'#HqO>}Q`O'#HwO?SQ!0LsO'#H}O%[QlO'#IPO?_Q!0LsO'#IRO?jQ!0LsO'#ITO9qQ!0LrO'#IVO?uQ!0MxO'#CiO@wQpO'#DlQOQ`OOO%[QlO'#EQOA_Q`O'#ETO:`QMhO'#EnOAjQ`O'#EnOAuQ!bO'#FeOOQ['#Cg'#CgOOQ!0Lb'#Dq'#DqOOQ!0Lb'#Ju'#JuO%[QlO'#JuOOQO'#Jx'#JxOOQO'#Ig'#IgOBuQpO'#EgOOQ!0Lb'#Ef'#EfOOQ!0Lb'#J|'#J|OCqQ!0MSO'#EgOC{QpO'#EWOOQO'#Jw'#JwODaQpO'#JxOEnQpO'#EWOC{QpO'#EgPE{O&2DjO'#CbPOOO)CD|)CD|OOOO'#I_'#I_OFWO#tO,59UOOQ!0Lh,59U,59UOOOO'#I`'#I`OFfO&jO,59UOFtQ!L^O'#DcOOOO'#Ib'#IbOF{O#@ItO,59{OOQ!0Lf,59{,59{OGZQlO'#IcOGnQ`O'#JsOImQ!fO'#JsO+}QlO'#JsOItQ`O,5:ROJ[Q`O'#EpOJiQ`O'#KSOJtQ`O'#KROJtQ`O'#KROJ|Q`O,5;^OKRQ`O'#KQOOQ!0Ln,5:^,5:^OKYQlO,5:^OMWQ!0MxO,5:fOMwQ`O,5:nONbQ!0LrO'#KPONiQ`O'#KOO9aQ`O'#KOON}Q`O'#KOO! VQ`O,5;]O! [Q`O'#KOO!#aQ!fO'#JrOOQ!0Lh'#Ci'#CiO%[QlO'#ESO!$PQ!fO,5:sOOQS'#Jy'#JyOOQO-E<i-E<iO9gQ`O,5=_O!$gQ`O,5=_O!$lQlO,5;ZO!&oQMhO'#EkO!(YQ`O,5;ZO!(_QlO'#DyO!(iQpO,5;dO!(qQpO,5;dO%[QlO,5;dOOQ['#FT'#FTOOQ['#FV'#FVO%[QlO,5;eO%[QlO,5;eO%[QlO,5;eO%[QlO,5;eO%[QlO,5;eO%[QlO,5;eO%[QlO,5;eO%[QlO,5;eO%[QlO,5;eO%[QlO,5;eOOQ['#FZ'#FZO!)PQlO,5;tOOQ!0Lf,5;y,5;yOOQ!0Lf,5;z,5;zOOQ!0Lf,5;|,5;|O%[QlO'#IoO!+SQ!0LrO,5<iO%[QlO,5;eO!&oQMhO,5;eO!+qQMhO,5;eO!-cQMhO'#E^O%[QlO,5;wOOQ!0Lf,5;{,5;{O!-jQ,UO'#FjO!.gQ,UO'#KWO!.RQ,UO'#KWO!.nQ,UO'#KWOOQO'#KW'#KWO!/SQ,UO,5<SOOOW,5<`,5<`O!/eQlO'#FvOOOW'#In'#InO7VO7dO,5<QO!/lQ,UO'#FxOOQ!0Lf,5<Q,5<QO!0]Q$IUO'#CyOOQ!0Lh'#C}'#C}O!0pO#@ItO'#DRO!1^QMjO,5<eO!1eQ`O,5<hO!3QQ(CWO'#GXO!3_Q`O'#GYO!3dQ`O'#GYO!5SQ(CWO'#G^O!6XQpO'#GbOOQO'#Gn'#GnO!+xQMhO'#GmOOQO'#Gp'#GpO!+xQMhO'#GoO!6zQ$IUO'#JkOOQ!0Lh'#Jk'#JkO!7UQ`O'#JjO!7dQ`O'#JiO!7lQ`O'#CuOOQ!0Lh'#C{'#C{O!7}Q`O'#C}OOQ!0Lh'#DV'#DVOOQ!0Lh'#DX'#DXO1SQ`O'#DZO!+xQMhO'#GPO!+xQMhO'#GRO!8SQ`O'#GTO!8XQ`O'#GUO!3dQ`O'#G[O!+xQMhO'#GaO<QQ`O'#JjO!8^Q`O'#EqO!8{Q`O,5<gOOQ!0Lb'#Cr'#CrO!9TQ`O'#ErO!9}QpO'#EsOOQ!0Lb'#KQ'#KQO!:UQ!0LrO'#K`O9qQ!0LrO,5=cO`QlO,5>sOOQ['#Jg'#JgOOQ[,5>t,5>tOOQ[-E<[-E<[O!<TQ!0MxO,5:bO!9xQpO,5:`O!>nQ!0MxO,5:jO%[QlO,5:jO!AUQ!0MxO,5:lOOQO,5@y,5@yO!AuQMhO,5=_O!BTQ!0LrO'#JhO9[Q`O'#JhO!BfQ!0LrO,59ZO!BqQpO,59ZO!ByQMhO,59ZO:`QMhO,59ZO!CUQ`O,5;ZO!C^Q`O'#HaO!CrQ`O'#KcO%[QlO,5;}O!9xQpO,5<PO!CzQ`O,5=zO!DPQ`O,5=zO!DUQ`O,5=zO9qQ!0LrO,5=zO<QQ`O,5=jOOQO'#Cy'#CyO!DdQpO,5=gO!DlQMhO,5=hO!DwQ`O,5=jO!D|Q!bO,5=mO!EUQ`O'#K_O>}Q`O'#HWO9gQ`O'#HYO!EZQ`O'#HYO:`QMhO'#H[O!E`Q`O'#H[OOQ[,5=p,5=pO!EeQ`O'#H]O!EvQ`O'#CoO!E{Q`O,59PO!FVQ`O,59PO!H[QlO,59POOQ[,59P,59PO!HlQ!0LrO,59PO%[QlO,59PO!JwQlO'#HdOOQ['#He'#HeOOQ['#Hf'#HfO`QlO,5=|O!K_Q`O,5=|O`QlO,5>SO`QlO,5>UO!KdQ`O,5>WO`QlO,5>YO!KiQ`O,5>]O!KnQlO,5>cOOQ[,5>i,5>iO%[QlO,5>iO9qQ!0LrO,5>kOOQ[,5>m,5>mO# xQ`O,5>mOOQ[,5>o,5>oO# xQ`O,5>oOOQ[,5>q,5>qO#!fQpO'#D_O%[QlO'#JuO##XQpO'#JuO##cQpO'#DmO##tQpO'#DmO#&VQlO'#DmO#&^Q`O'#JtO#&fQ`O,5:WO#&kQ`O'#EtO#&yQ`O'#KTO#'RQ`O,5;_O#'WQpO'#DmO#'eQpO'#EVOOQ!0Lf,5:o,5:oO%[QlO,5:oO#'lQ`O,5:oO>}Q`O,5;YO!BqQpO,5;YO!ByQMhO,5;YO:`QMhO,5;YO#'tQ`O,5@aO#'yQ07dO,5:sOOQO-E<e-E<eO#)PQ!0MSO,5;ROC{QpO,5:rO#)ZQpO,5:rOC{QpO,5;RO!BfQ!0LrO,5:rOOQ!0Lb'#Ej'#EjOOQO,5;R,5;RO%[QlO,5;RO#)hQ!0LrO,5;RO#)sQ!0LrO,5;RO!BqQpO,5:rOOQO,5;X,5;XO#*RQ!0LrO,5;RPOOO'#I]'#I]P#*gO&2DjO,58|POOO,58|,58|OOOO-E<]-E<]OOQ!0Lh1G.p1G.pOOOO-E<^-E<^OOOO,59},59}O#*rQ!bO,59}OOOO-E<`-E<`OOQ!0Lf1G/g1G/gO#*wQ!fO,5>}O+}QlO,5>}OOQO,5?T,5?TO#+RQlO'#IcOOQO-E<a-E<aO#+`Q`O,5@_O#+hQ!fO,5@_O#+oQ`O,5@mOOQ!0Lf1G/m1G/mO%[QlO,5@nO#+wQ`O'#IiOOQO-E<g-E<gO#+oQ`O,5@mOOQ!0Lb1G0x1G0xOOQ!0Ln1G/x1G/xOOQ!0Ln1G0Y1G0YO%[QlO,5@kO#,]Q!0LrO,5@kO#,nQ!0LrO,5@kO#,uQ`O,5@jO9aQ`O,5@jO#,}Q`O,5@jO#-]Q`O'#IlO#,uQ`O,5@jOOQ!0Lb1G0w1G0wO!(iQpO,5:uO!(tQpO,5:uOOQS,5:w,5:wO#-}QdO,5:wO#.VQMhO1G2yO9gQ`O1G2yOOQ!0Lf1G0u1G0uO#.eQ!0MxO1G0uO#/jQ!0MvO,5;VOOQ!0Lh'#GW'#GWO#0WQ!0MzO'#JkO!$lQlO1G0uO#2cQ!fO'#JvO%[QlO'#JvO#2mQ`O,5:eOOQ!0Lh'#D_'#D_OOQ!0Lf1G1O1G1OO%[QlO1G1OOOQ!0Lf1G1f1G1fO#2rQ`O1G1OO#5WQ!0MxO1G1PO#5_Q!0MxO1G1PO#7uQ!0MxO1G1PO#7|Q!0MxO1G1PO#:dQ!0MxO1G1PO#<zQ!0MxO1G1PO#=RQ!0MxO1G1PO#=YQ!0MxO1G1PO#?pQ!0MxO1G1PO#?wQ!0MxO1G1PO#BUQ?MtO'#CiO#DPQ?MtO1G1`O#DWQ?MtO'#JrO#DkQ!0MxO,5?ZOOQ!0Lb-E<m-E<mO#FxQ!0MxO1G1PO#GuQ!0MzO1G1POOQ!0Lf1G1P1G1PO#HxQMjO'#J{O#ISQ`O,5:xO#IXQ!0MxO1G1cO#I{Q,UO,5<WO#JTQ,UO,5<XO#J]Q,UO'#FoO#JtQ`O'#FnOOQO'#KX'#KXOOQO'#Im'#ImO#JyQ,UO1G1nOOQ!0Lf1G1n1G1nOOOW1G1y1G1yO#K[Q?MtO'#JqO#KfQ`O,5<bO!)PQlO,5<bOOOW-E<l-E<lOOQ!0Lf1G1l1G1lO#KkQpO'#KWOOQ!0Lf,5<d,5<dO#KsQpO,5<dO#KxQMhO'#DTOOOO'#Ia'#IaO#LPO#@ItO,59mOOQ!0Lh,59m,59mO%[QlO1G2PO!8XQ`O'#IqO#L[Q`O,5<zOOQ!0Lh,5<w,5<wO!+xQMhO'#ItO#LxQMjO,5=XO!+xQMhO'#IvO#MkQMjO,5=ZO!&oQMhO,5=]OOQO1G2S1G2SO#MuQ!dO'#CrO#NYQ(CWO'#ErO$ _QpO'#GbO$ uQ!dO,5<sO$ |Q`O'#KZO9aQ`O'#KZO$![Q`O,5<uO!+xQMhO,5<tO$!aQ`O'#GZO$!rQ`O,5<tO$!wQ!dO'#GWO$#UQ!dO'#K[O$#`Q`O'#K[O!&oQMhO'#K[O$#eQ`O,5<xO$#jQlO'#JuO$#tQpO'#GcO##tQpO'#GcO$$VQ`O'#GgO!3dQ`O'#GkO$$[Q!0LrO'#IsO$$gQpO,5<|OOQ!0Lp,5<|,5<|O$$nQpO'#GcO$${QpO'#GdO$%^QpO'#GdO$%cQMjO,5=XO$%sQMjO,5=ZOOQ!0Lh,5=^,5=^O!+xQMhO,5@UO!+xQMhO,5@UO$&TQ`O'#IxO$&iQ`O,5@TO$&qQ`O,59aOOQ!0Lh,59i,59iO$'hQ$IYO,59uOOQ!0Lh'#Jo'#JoO$(ZQMjO,5<kO$(|QMjO,5<mO@oQ`O,5<oOOQ!0Lh,5<p,5<pO$)WQ`O,5<vO$)]QMjO,5<{O$)mQ`O,5@UO$){Q`O'#KOO!$lQlO1G2RO$*QQ`O1G2RO9aQ`O'#KRO9aQ`O'#EtO%[QlO'#EtO9aQ`O'#IzO$*VQ!0LrO,5@zOOQ[1G2}1G2}OOQ[1G4_1G4_OOQ!0Lf1G/|1G/|OOQ!0Lf1G/z1G/zO$,XQ!0MxO1G0UOOQ[1G2y1G2yO!&oQMhO1G2yO%[QlO1G2yO#.YQ`O1G2yO$.]QMhO'#EkOOQ!0Lb,5@S,5@SO$.jQ!0LrO,5@SOOQ[1G.u1G.uO!BfQ!0LrO1G.uO!BqQpO1G.uO!ByQMhO1G.uO$.{Q`O1G0uO$/QQ`O'#CiO$/]Q`O'#KdO$/eQ`O,5={O$/jQ`O'#KdO$/oQ`O'#KdO$/}Q`O'#JQO$0]Q`O,5@}O$0eQ!fO1G1iOOQ!0Lf1G1k1G1kO9gQ`O1G3fO@oQ`O1G3fO$0lQ`O1G3fO$0qQ`O1G3fOOQ[1G3f1G3fO!DwQ`O1G3UO!&oQMhO1G3RO$0vQ`O1G3ROOQ[1G3S1G3SO!&oQMhO1G3SO$0{Q`O1G3SO$1TQpO'#HQOOQ[1G3U1G3UO!6SQpO'#I|O!D|Q!bO1G3XOOQ[1G3X1G3XOOQ[,5=r,5=rO$1]QMhO,5=tO9gQ`O,5=tO$$VQ`O,5=vO9[Q`O,5=vO!BqQpO,5=vO!ByQMhO,5=vO:`QMhO,5=vO$1kQ`O'#KbO$1vQ`O,5=wOOQ[1G.k1G.kO$1{Q!0LrO1G.kO@oQ`O1G.kO$2WQ`O1G.kO9qQ!0LrO1G.kO$4`Q!fO,5APO$4mQ`O,5APO9aQ`O,5APO$4xQlO,5>OO$5PQ`O,5>OOOQ[1G3h1G3hO`QlO1G3hOOQ[1G3n1G3nOOQ[1G3p1G3pO>xQ`O1G3rO$5UQlO1G3tO$9YQlO'#HsOOQ[1G3w1G3wO$9gQ`O'#HyO>}Q`O'#H{OOQ[1G3}1G3}O$9oQlO1G3}O9qQ!0LrO1G4TOOQ[1G4V1G4VOOQ!0Lb'#G_'#G_O9qQ!0LrO1G4XO9qQ!0LrO1G4ZO$=vQ`O,5@aO!)PQlO,5;`O9aQ`O,5;`O>}Q`O,5:XO!)PQlO,5:XO!BqQpO,5:XO$={Q?MtO,5:XOOQO,5;`,5;`O$>VQpO'#IdO$>mQ`O,5@`OOQ!0Lf1G/r1G/rO$>uQpO'#IjO$?PQ`O,5@oOOQ!0Lb1G0y1G0yO##tQpO,5:XOOQO'#If'#IfO$?XQpO,5:qOOQ!0Ln,5:q,5:qO#'oQ`O1G0ZOOQ!0Lf1G0Z1G0ZO%[QlO1G0ZOOQ!0Lf1G0t1G0tO>}Q`O1G0tO!BqQpO1G0tO!ByQMhO1G0tOOQ!0Lb1G5{1G5{O!BfQ!0LrO1G0^OOQO1G0m1G0mO%[QlO1G0mO$?`Q!0LrO1G0mO$?kQ!0LrO1G0mO!BqQpO1G0^OC{QpO1G0^O$?yQ!0LrO1G0mOOQO1G0^1G0^O$@_Q!0MxO1G0mPOOO-E<Z-E<ZPOOO1G.h1G.hOOOO1G/i1G/iO$@iQ!bO,5<iO$@qQ!fO1G4iOOQO1G4o1G4oO%[QlO,5>}O$@{Q`O1G5yO$ATQ`O1G6XO$A]Q!fO1G6YO9aQ`O,5?TO$AgQ!0MxO1G6VO%[QlO1G6VO$AwQ!0LrO1G6VO$BYQ`O1G6UO$BYQ`O1G6UO9aQ`O1G6UO$BbQ`O,5?WO9aQ`O,5?WOOQO,5?W,5?WO$BvQ`O,5?WO$){Q`O,5?WOOQO-E<j-E<jOOQS1G0a1G0aOOQS1G0c1G0cO#.QQ`O1G0cOOQ[7+(e7+(eO!&oQMhO7+(eO%[QlO7+(eO$CUQ`O7+(eO$CaQMhO7+(eO$CoQ!0MzO,5=XO$EzQ!0MzO,5=ZO$HVQ!0MzO,5=XO$JhQ!0MzO,5=ZO$LyQ!0MzO,59uO% OQ!0MzO,5<kO%#ZQ!0MzO,5<mO%%fQ!0MzO,5<{OOQ!0Lf7+&a7+&aO%'wQ!0MxO7+&aO%(kQlO'#IeO%(xQ`O,5@bO%)QQ!fO,5@bOOQ!0Lf1G0P1G0PO%)[Q`O7+&jOOQ!0Lf7+&j7+&jO%)aQ?MtO,5:fO%[QlO7+&zO%)kQ?MtO,5:bO%)xQ?MtO,5:jO%*SQ?MtO,5:lO%*^QMhO'#IhO%*hQ`O,5@gOOQ!0Lh1G0d1G0dOOQO1G1r1G1rOOQO1G1s1G1sO%*pQ!jO,5<ZO!)PQlO,5<YOOQO-E<k-E<kOOQ!0Lf7+'Y7+'YOOOW7+'e7+'eOOOW1G1|1G1|O%*{Q`O1G1|OOQ!0Lf1G2O1G2OOOOO,59o,59oO%+QQ!dO,59oOOOO-E<_-E<_OOQ!0Lh1G/X1G/XO%+XQ!0MxO7+'kOOQ!0Lh,5?],5?]O%+{QMhO1G2fP%,SQ`O'#IqPOQ!0Lh-E<o-E<oO%,pQMjO,5?`OOQ!0Lh-E<r-E<rO%-cQMjO,5?bOOQ!0Lh-E<t-E<tO%-mQ!dO1G2wO%-tQ!dO'#CrO%.[QMhO'#KRO$#jQlO'#JuOOQ!0Lh1G2_1G2_O%.cQ`O'#IpO%.wQ`O,5@uO%.wQ`O,5@uO%/PQ`O,5@uO%/[Q`O,5@uOOQO1G2a1G2aO%/jQMjO1G2`O!+xQMhO1G2`O%/zQ(CWO'#IrO%0XQ`O,5@vO!&oQMhO,5@vO%0aQ!dO,5@vOOQ!0Lh1G2d1G2dO%2qQ!fO'#CiO%2{Q`O,5=POOQ!0Lb,5<},5<}O%3TQpO,5<}OOQ!0Lb,5=O,5=OOClQ`O,5<}O%3`QpO,5<}OOQ!0Lb,5=R,5=RO$){Q`O,5=VOOQO,5?_,5?_OOQO-E<q-E<qOOQ!0Lp1G2h1G2hO##tQpO,5<}O$#jQlO,5=PO%3nQ`O,5=OO%3yQpO,5=OO!+xQMhO'#ItO%4sQMjO1G2sO!+xQMhO'#IvO%5fQMjO1G2uO%5pQMjO1G5pO%5zQMjO1G5pOOQO,5?d,5?dOOQO-E<v-E<vOOQO1G.{1G.{O!9xQpO,59wO%[QlO,59wOOQ!0Lh,5<j,5<jO%6XQ`O1G2ZO!+xQMhO1G2bO!+xQMhO1G5pO!+xQMhO1G5pO%6^Q!0MxO7+'mOOQ!0Lf7+'m7+'mO!$lQlO7+'mO%7QQ`O,5;`OOQ!0Lb,5?f,5?fOOQ!0Lb-E<x-E<xO%7VQ!dO'#K]O#'oQ`O7+(eO4UQ!fO7+(eO$CXQ`O7+(eO%7aQ!0MvO'#CiO%7tQ!0MvO,5=SO%8fQ`O,5=SO%8nQ`O,5=SOOQ!0Lb1G5n1G5nOOQ[7+$a7+$aO!BfQ!0LrO7+$aO!BqQpO7+$aO!$lQlO7+&aO%8sQ`O'#JPO%9[Q`O,5AOOOQO1G3g1G3gO9gQ`O,5AOO%9[Q`O,5AOO%9dQ`O,5AOOOQO,5?l,5?lOOQO-E=O-E=OOOQ!0Lf7+'T7+'TO%9iQ`O7+)QO9qQ!0LrO7+)QO9gQ`O7+)QO@oQ`O7+)QOOQ[7+(p7+(pO%9nQ!0MvO7+(mO!&oQMhO7+(mO!DrQ`O7+(nOOQ[7+(n7+(nO!&oQMhO7+(nO%9xQ`O'#KaO%:TQ`O,5=lOOQO,5?h,5?hOOQO-E<z-E<zOOQ[7+(s7+(sO%;gQpO'#HZOOQ[1G3`1G3`O!&oQMhO1G3`O%[QlO1G3`O%;nQ`O1G3`O%;yQMhO1G3`O9qQ!0LrO1G3bO$$VQ`O1G3bO9[Q`O1G3bO!BqQpO1G3bO!ByQMhO1G3bO%<XQ`O'#JOO%<mQ`O,5@|O%<uQpO,5@|OOQ!0Lb1G3c1G3cOOQ[7+$V7+$VO@oQ`O7+$VO9qQ!0LrO7+$VO%=QQ`O7+$VO%[QlO1G6kO%[QlO1G6lO%=VQ!0LrO1G6kO%=aQlO1G3jO%=hQ`O1G3jO%=mQlO1G3jOOQ[7+)S7+)SO9qQ!0LrO7+)^O`QlO7+)`OOQ['#Kg'#KgOOQ['#JR'#JRO%=tQlO,5>_OOQ[,5>_,5>_O%[QlO'#HtO%>RQ`O'#HvOOQ[,5>e,5>eO9aQ`O,5>eOOQ[,5>g,5>gOOQ[7+)i7+)iOOQ[7+)o7+)oOOQ[7+)s7+)sOOQ[7+)u7+)uO%>WQpO1G5{O%>rQ?MtO1G0zO%>|Q`O1G0zOOQO1G/s1G/sO%?XQ?MtO1G/sO>}Q`O1G/sO!)PQlO'#DmOOQO,5?O,5?OOOQO-E<b-E<bOOQO,5?U,5?UOOQO-E<h-E<hO!BqQpO1G/sOOQO-E<d-E<dOOQ!0Ln1G0]1G0]OOQ!0Lf7+%u7+%uO#'oQ`O7+%uOOQ!0Lf7+&`7+&`O>}Q`O7+&`O!BqQpO7+&`OOQO7+%x7+%xO$@_Q!0MxO7+&XOOQO7+&X7+&XO%[QlO7+&XO%?cQ!0LrO7+&XO!BfQ!0LrO7+%xO!BqQpO7+%xO%?nQ!0LrO7+&XO%?|Q!0MxO7++qO%[QlO7++qO%@^Q`O7++pO%@^Q`O7++pOOQO1G4r1G4rO9aQ`O1G4rO%@fQ`O1G4rOOQS7+%}7+%}O#'oQ`O<<LPO4UQ!fO<<LPO%@tQ`O<<LPOOQ[<<LP<<LPO!&oQMhO<<LPO%[QlO<<LPO%@|Q`O<<LPO%AXQ!0MzO,5?`O%CdQ!0MzO,5?bO%EoQ!0MzO1G2`O%HQQ!0MzO1G2sO%J]Q!0MzO1G2uO%LhQ!fO,5?PO%[QlO,5?POOQO-E<c-E<cO%LrQ`O1G5|OOQ!0Lf<<JU<<JUO%LzQ?MtO1G0uO& RQ?MtO1G1PO& YQ?MtO1G1PO&#ZQ?MtO1G1PO&#bQ?MtO1G1PO&%cQ?MtO1G1PO&'dQ?MtO1G1PO&'kQ?MtO1G1PO&'rQ?MtO1G1PO&)sQ?MtO1G1PO&)zQ?MtO1G1PO&*RQ!0MxO<<JfO&+yQ?MtO1G1PO&,vQ?MvO1G1PO&-yQ?MvO'#JkO&0PQ?MtO1G1cO&0^Q?MtO1G0UO&0hQMjO,5?SOOQO-E<f-E<fO!)PQlO'#FqOOQO'#KY'#KYOOQO1G1u1G1uO&0rQ`O1G1tO&0wQ?MtO,5?ZOOOW7+'h7+'hOOOO1G/Z1G/ZO&1RQ!dO1G4wOOQ!0Lh7+(Q7+(QP!&oQMhO,5?]O!+xQMhO7+(cO&1YQ`O,5?[O9aQ`O,5?[OOQO-E<n-E<nO&1hQ`O1G6aO&1hQ`O1G6aO&1pQ`O1G6aO&1{QMjO7+'zO&2]Q!dO,5?^O&2gQ`O,5?^O!&oQMhO,5?^OOQO-E<p-E<pO&2lQ!dO1G6bO&2vQ`O1G6bO&3OQ`O1G2kO!&oQMhO1G2kOOQ!0Lb1G2i1G2iOOQ!0Lb1G2j1G2jO%3TQpO1G2iO!BqQpO1G2iOClQ`O1G2iOOQ!0Lb1G2q1G2qO&3TQpO1G2iO&3cQ`O1G2kO$){Q`O1G2jOClQ`O1G2jO$#jQlO1G2kO&3kQ`O1G2jO&4_QMjO,5?`OOQ!0Lh-E<s-E<sO&5QQMjO,5?bOOQ!0Lh-E<u-E<uO!+xQMhO7++[OOQ!0Lh1G/c1G/cO&5[Q`O1G/cOOQ!0Lh7+'u7+'uO&5aQMjO7+'|O&5qQMjO7++[O&5{QMjO7++[O&6YQ!0MxO<<KXOOQ!0Lf<<KX<<KXO&6|Q`O1G0zO!&oQMhO'#IyO&7RQ`O,5@wO&9TQ!fO<<LPO!&oQMhO1G2nO&9[Q!0LrO1G2nOOQ[<<G{<<G{O!BfQ!0LrO<<G{O&9mQ!0MxO<<I{OOQ!0Lf<<I{<<I{OOQO,5?k,5?kO&:aQ`O,5?kO&:fQ`O,5?kOOQO-E<}-E<}O&:tQ`O1G6jO&:tQ`O1G6jO9gQ`O1G6jO@oQ`O<<LlOOQ[<<Ll<<LlO&:|Q`O<<LlO9qQ!0LrO<<LlOOQ[<<LX<<LXO%9nQ!0MvO<<LXOOQ[<<LY<<LYO!DrQ`O<<LYO&;RQpO'#I{O&;^Q`O,5@{O!)PQlO,5@{OOQ[1G3W1G3WOOQO'#I}'#I}O9qQ!0LrO'#I}O&;fQpO,5=uOOQ[,5=u,5=uO&;mQpO'#EgO&;tQpO'#GeO&;yQ`O7+(zO&<OQ`O7+(zOOQ[7+(z7+(zO!&oQMhO7+(zO%[QlO7+(zO&<WQ`O7+(zOOQ[7+(|7+(|O9qQ!0LrO7+(|O$$VQ`O7+(|O9[Q`O7+(|O!BqQpO7+(|O&<cQ`O,5?jOOQO-E<|-E<|OOQO'#H^'#H^O&<nQ`O1G6hO9qQ!0LrO<<GqOOQ[<<Gq<<GqO@oQ`O<<GqO&<vQ`O7+,VO&<{Q`O7+,WO%[QlO7+,VO%[QlO7+,WOOQ[7+)U7+)UO&=QQ`O7+)UO&=VQlO7+)UO&=^Q`O7+)UOOQ[<<Lx<<LxOOQ[<<Lz<<LzOOQ[-E=P-E=POOQ[1G3y1G3yO&=cQ`O,5>`OOQ[,5>b,5>bO&=hQ`O1G4PO9aQ`O7+&fO!)PQlO7+&fOOQO7+%_7+%_O&=mQ?MtO1G6YO>}Q`O7+%_OOQ!0Lf<<Ia<<IaOOQ!0Lf<<Iz<<IzO>}Q`O<<IzOOQO<<Is<<IsO$@_Q!0MxO<<IsO%[QlO<<IsOOQO<<Id<<IdO!BfQ!0LrO<<IdO&=wQ!0LrO<<IsO&>SQ!0MxO<= ]O&>dQ`O<= [OOQO7+*^7+*^O9aQ`O7+*^OOQ[ANAkANAkO&>lQ!fOANAkO!&oQMhOANAkO#'oQ`OANAkO4UQ!fOANAkO&>sQ`OANAkO%[QlOANAkO&>{Q!0MzO7+'zO&A^Q!0MzO,5?`O&CiQ!0MzO,5?bO&EtQ!0MzO7+'|O&HVQ!fO1G4kO&HaQ?MtO7+&aO&JeQ?MvO,5=XO&LlQ?MvO,5=ZO&L|Q?MvO,5=XO&M^Q?MvO,5=ZO&MnQ?MvO,59uO' tQ?MvO,5<kO'#wQ?MvO,5<mO'&]Q?MvO,5<{O'(RQ?MtO7+'kO'(`Q?MtO7+'mO'(mQ`O,5<]OOQO7+'`7+'`OOQ!0Lh7+*c7+*cO'(rQMjO<<K}OOQO1G4v1G4vO'(yQ`O1G4vO')UQ`O1G4vO')dQ`O7++{O')dQ`O7++{O!&oQMhO1G4xO')lQ!dO1G4xO')vQ`O7++|O'*OQ`O7+(VO'*ZQ!dO7+(VOOQ!0Lb7+(T7+(TOOQ!0Lb7+(U7+(UO!BqQpO7+(TOClQ`O7+(TO'*eQ`O7+(VO!&oQMhO7+(VO$){Q`O7+(UO'*jQ`O7+(VOClQ`O7+(UO'*rQMjO<<NvOOQ!0Lh7+$}7+$}O!+xQMhO<<NvO'*|Q!dO,5?eOOQO-E<w-E<wO'+WQ!0MvO7+(YO!&oQMhO7+(YOOQ[AN=gAN=gO9gQ`O1G5VOOQO1G5V1G5VO'+hQ`O1G5VO'+mQ`O7+,UO'+mQ`O7+,UO9qQ!0LrOANBWO@oQ`OANBWOOQ[ANBWANBWOOQ[ANAsANAsOOQ[ANAtANAtO'+uQ`O,5?gOOQO-E<y-E<yO',QQ?MtO1G6gOOQO,5?i,5?iOOQO-E<{-E<{OOQ[1G3a1G3aO',[Q`O,5=POOQ[<<Lf<<LfO!&oQMhO<<LfO&;yQ`O<<LfO',aQ`O<<LfO%[QlO<<LfOOQ[<<Lh<<LhO9qQ!0LrO<<LhO$$VQ`O<<LhO9[Q`O<<LhO',iQpO1G5UO',tQ`O7+,SOOQ[AN=]AN=]O9qQ!0LrOAN=]OOQ[<= q<= qOOQ[<= r<= rO',|Q`O<= qO'-RQ`O<= rOOQ[<<Lp<<LpO'-WQ`O<<LpO'-]QlO<<LpOOQ[1G3z1G3zO>}Q`O7+)kO'-dQ`O<<JQO'-oQ?MtO<<JQOOQO<<Hy<<HyOOQ!0LfAN?fAN?fOOQOAN?_AN?_O$@_Q!0MxOAN?_OOQOAN?OAN?OO%[QlOAN?_OOQO<<Mx<<MxOOQ[G27VG27VO!&oQMhOG27VO#'oQ`OG27VO'-yQ!fOG27VO4UQ!fOG27VO'.QQ`OG27VO'.YQ?MtO<<JfO'.gQ?MvO1G2`O'0]Q?MvO,5?`O'2`Q?MvO,5?bO'4cQ?MvO1G2sO'6fQ?MvO1G2uO'8iQ?MtO<<KXO'8vQ?MtO<<I{OOQO1G1w1G1wO!+xQMhOANAiOOQO7+*b7+*bO'9TQ`O7+*bO'9`Q`O<= gO'9hQ!dO7+*dOOQ!0Lb<<Kq<<KqO$){Q`O<<KqOClQ`O<<KqO'9rQ`O<<KqO!&oQMhO<<KqOOQ!0Lb<<Ko<<KoO!BqQpO<<KoO'9}Q!dO<<KqOOQ!0Lb<<Kp<<KpO':XQ`O<<KqO!&oQMhO<<KqO$){Q`O<<KpO':^QMjOANDbO':hQ!0MvO<<KtOOQO7+*q7+*qO9gQ`O7+*qO':xQ`O<= pOOQ[G27rG27rO9qQ!0LrOG27rO!)PQlO1G5RO';QQ`O7+,RO';YQ`O1G2kO&;yQ`OANBQOOQ[ANBQANBQO!&oQMhOANBQO';_Q`OANBQOOQ[ANBSANBSO9qQ!0LrOANBSO$$VQ`OANBSOOQO'#H_'#H_OOQO7+*p7+*pOOQ[G22wG22wOOQ[ANE]ANE]OOQ[ANE^ANE^OOQ[ANB[ANB[O';gQ`OANB[OOQ[<<MV<<MVO!)PQlOAN?lOOQOG24yG24yO$@_Q!0MxOG24yO#'oQ`OLD,qOOQ[LD,qLD,qO!&oQMhOLD,qO';lQ!fOLD,qO';sQ?MvO7+'zO'=iQ?MvO,5?`O'?lQ?MvO,5?bO'AoQ?MvO7+'|O'CeQMjOG27TOOQO<<M|<<M|OOQ!0LbANA]ANA]O$){Q`OANA]OClQ`OANA]O'CuQ!dOANA]OOQ!0LbANAZANAZO'C|Q`OANA]O!&oQMhOANA]O'DXQ!dOANA]OOQ!0LbANA[ANA[OOQO<<N]<<N]OOQ[LD-^LD-^O'DcQ?MtO7+*mOOQO'#Gf'#GfOOQ[G27lG27lO&;yQ`OG27lO!&oQMhOG27lOOQ[G27nG27nO9qQ!0LrOG27nOOQ[G27vG27vO'DmQ?MtOG25WOOQOLD*eLD*eOOQ[!$(!]!$(!]O#'oQ`O!$(!]O!&oQMhO!$(!]O'DwQ!0MzOG27TOOQ!0LbG26wG26wO$){Q`OG26wO'GYQ`OG26wOClQ`OG26wO'GeQ!dOG26wO!&oQMhOG26wOOQ[LD-WLD-WO&;yQ`OLD-WOOQ[LD-YLD-YOOQ[!)9Ew!)9EwO#'oQ`O!)9EwOOQ!0LbLD,cLD,cO$){Q`OLD,cOClQ`OLD,cO'GlQ`OLD,cO'GwQ!dOLD,cOOQ[!$(!r!$(!rOOQ[!.K;c!.K;cO'HOQ?MvOG27TOOQ!0Lb!$( }!$( }O$){Q`O!$( }OClQ`O!$( }O'ItQ`O!$( }OOQ!0Lb!)9Ei!)9EiO$){Q`O!)9EiOClQ`O!)9EiOOQ!0Lb!.K;T!.K;TO$){Q`O!.K;TOOQ!0Lb!4/0o!4/0oO!)PQlO'#DzO1PQ`O'#EXO'JPQ!fO'#JqO'JWQ!L^O'#DvO'J_QlO'#EOO'JfQ!fO'#CiO'L|Q!fO'#CiO!)PQlO'#EQO'M^QlO,5;ZO!)PQlO,5;eO!)PQlO,5;eO!)PQlO,5;eO!)PQlO,5;eO!)PQlO,5;eO!)PQlO,5;eO!)PQlO,5;eO!)PQlO,5;eO!)PQlO,5;eO!)PQlO,5;eO!)PQlO'#IoO( aQ`O,5<iO!)PQlO,5;eO( iQMhO,5;eO(#SQMhO,5;eO!)PQlO,5;wO!&oQMhO'#GmO( iQMhO'#GmO!&oQMhO'#GoO( iQMhO'#GoO1SQ`O'#DZO1SQ`O'#DZO!&oQMhO'#GPO( iQMhO'#GPO!&oQMhO'#GRO( iQMhO'#GRO!&oQMhO'#GaO( iQMhO'#GaO!)PQlO,5:jO(#ZQpO'#D_O(#eQpO'#JuO!)PQlO,5@nO'M^QlO1G0uO(#oQ?MtO'#CiO!)PQlO1G2PO!&oQMhO'#ItO( iQMhO'#ItO!&oQMhO'#IvO( iQMhO'#IvO(#yQ!dO'#CrO!&oQMhO,5<tO( iQMhO,5<tO'M^QlO1G2RO!)PQlO7+&zO!&oQMhO1G2`O( iQMhO1G2`O!&oQMhO'#ItO( iQMhO'#ItO!&oQMhO'#IvO( iQMhO'#IvO!&oQMhO1G2bO( iQMhO1G2bO'M^QlO7+'mO'M^QlO7+&aO!&oQMhOANAiO( iQMhOANAiO($^Q`O'#EoO($cQ`O'#EoO($kQ`O'#F]O($pQ`O'#EyO($uQ`O'#KSO(%QQ`O'#KQO(%]Q`O,5;ZO(%bQMjO,5<eO(%iQ`O'#GYO(%nQ`O'#GYO(%sQ`O,5<gO(%{Q`O,5;ZO(&TQ?MtO1G1`O(&[Q`O,5<tO(&aQ`O,5<tO(&fQ`O,5<vO(&kQ`O,5<vO(&pQ`O1G2RO(&uQ`O1G0uO(&zQMjO<<K}O('RQMjO<<K}O7eQMhO'#F|O9[Q`O'#F{OAjQ`O'#EnO!)PQlO,5;tO!3dQ`O'#GYO!3dQ`O'#GYO!3dQ`O'#G[O!3dQ`O'#G[O!+xQMhO7+(cO!+xQMhO7+(cO%-mQ!dO1G2wO%-mQ!dO1G2wO!&oQMhO,5=]O!&oQMhO,5=]",
+    stateData: "((X~O'{OS'|OSTOS'}RQ~OPYOQYOSfOY!VOaqOdzOeyOl!POpkOrYOskOtkOzkO|YO!OYO!SWO!WkO!XkO!_XO!iuO!lZO!oYO!pYO!qYO!svO!uwO!xxO!|]O$W|O$niO%h}O%j!QO%l!OO%m!OO%n!OO%q!RO%s!SO%v!TO%w!TO%y!UO&V!WO&]!XO&_!YO&a!ZO&c![O&f!]O&l!^O&r!_O&t!`O&v!aO&x!bO&z!cO(SSO(UTO(XUO(`VO(n[O~OWtO~P`OPYOQYOSfOd!jOe!iOpkOrYOskOtkOzkO|YO!OYO!SWO!WkO!XkO!_!eO!iuO!lZO!oYO!pYO!qYO!svO!u!gO!x!hO$W!kO$niO(S!dO(UTO(XUO(`VO(n[O~Oa!wOs!nO!S!oO!b!yO!c!vO!d!vO!|;wO#T!pO#U!pO#V!xO#W!pO#X!pO#[!zO#]!zO(T!lO(UTO(XUO(d!mO(n!sO~O'}!{O~OP]XR]X[]Xa]Xj]Xr]X!Q]X!S]X!]]X!l]X!p]X#R]X#S]X#`]X#kfX#n]X#o]X#p]X#q]X#r]X#s]X#t]X#u]X#v]X#x]X#z]X#{]X$Q]X'y]X(`]X(q]X(x]X(y]X~O!g%RX~P(qO_!}O(U#PO(V!}O(W#PO~O_#QO(W#PO(X#PO(Y#QO~Ox#SO!U#TO(a#TO(b#VO~OPYOQYOSfOd!jOe!iOpkOrYOskOtkOzkO|YO!OYO!SWO!WkO!XkO!_!eO!iuO!lZO!oYO!pYO!qYO!svO!u!gO!x!hO$W!kO$niO(S;{O(UTO(XUO(`VO(n[O~O![#ZO!]#WO!Y(gP!Y(uP~P+}O!^#cO~P`OPYOQYOSfOd!jOe!iOrYOskOtkOzkO|YO!OYO!SWO!WkO!XkO!_!eO!iuO!lZO!oYO!pYO!qYO!svO!u!gO!x!hO$W!kO$niO(UTO(XUO(`VO(n[O~Op#mO![#iO!|]O#i#lO#j#iO(S;|O!k(rP~P.iO!l#oO(S#nO~O!x#sO!|]O%h#tO~O#k#uO~O!g#vO#k#uO~OP$[OR#zO[$cOj$ROr$aO!Q#yO!S#{O!]$_O!l#xO!p$[O#R$RO#n$OO#o$PO#p$PO#q$PO#r$QO#s$RO#t$RO#u$bO#v$SO#x$UO#z$WO#{$XO(`VO(q$YO(x#|O(y#}O~Oa(eX'y(eX'v(eX!k(eX!Y(eX!_(eX%i(eX!g(eX~P1qO#S$dO#`$eO$Q$eOP(fXR(fX[(fXj(fXr(fX!Q(fX!S(fX!](fX!l(fX!p(fX#R(fX#n(fX#o(fX#p(fX#q(fX#r(fX#s(fX#t(fX#u(fX#v(fX#x(fX#z(fX#{(fX(`(fX(q(fX(x(fX(y(fX!_(fX%i(fX~Oa(fX'y(fX'v(fX!Y(fX!k(fXv(fX!g(fX~P4UO#`$eO~O$]$hO$_$gO$f$mO~OSfO!_$nO$i$oO$k$qO~Oh%VOj%cOk%cOl%cOp%WOr%XOs$tOt$tOz%YO|%ZO!O%[O!S${O!_$|O!i%aO!l$xO#j%bO$W%_O$t%]O$v%^O$y%`O(S$sO(UTO(XUO(`$uO(x$}O(y%POg(]P~O!l%dO~O!S%gO!_%hO(S%fO~O!g%lO~Oa%mO'y%mO~O!Q%qO~P%[O(T!lO~P%[O%n%uO~P%[Oh%VO!l%dO(S%fO(T!lO~Oe%|O!l%dO(S%fO~Oj$RO~O!Q&RO!_&OO!l&QO%j&UO(S%fO(T!lO(UTO(XUO`)VP~O!x#sO~O%s&WO!S)RX!_)RX(S)RX~O(S&XO~Ol!PO!u&^O%j!QO%l!OO%m!OO%n!OO%q!RO%s!SO%v!TO%w!TO~Od&cOe&bO!x&`O%h&aO%{&_O~P<VOd&fOeyOl!PO!_&eO!u&^O!xxO!|]O%h}O%l!OO%m!OO%n!OO%q!RO%s!SO%v!TO%w!TO%y!UO~Ob&iO#`&lO%j&gO(T!lO~P=[O!l&mO!u&qO~O!l#oO~O!_XO~Oa%mO'w&yO'y%mO~Oa%mO'w&|O'y%mO~Oa%mO'w'OO'y%mO~O'v]X!Y]Xv]X!k]X&Z]X!_]X%i]X!g]X~P(qO!b']O!c'UO!d'UO(T!lO(UTO(XUO~Os'SO!S'RO!['VO(d'QO!^(hP!^(wP~P@cOn'`O!_'^O(S%fO~Oe'eO!l%dO(S%fO~O!Q&RO!l&QO~Os!nO!S!oO!|;wO#T!pO#U!pO#W!pO#X!pO(T!lO(UTO(XUO(d!mO(n!sO~O!b'kO!c'jO!d'jO#V!pO#['lO#]'lO~PA}Oa%mOh%VO!g#vO!l%dO'y%mO(q'nO~O!p'rO#`'pO~PC]Os!nO!S!oO(UTO(XUO(d!mO(n!sO~O!_XOs(lX!S(lX!b(lX!c(lX!d(lX!|(lX#T(lX#U(lX#V(lX#W(lX#X(lX#[(lX#](lX(T(lX(U(lX(X(lX(d(lX(n(lX~O!c'jO!d'jO(T!lO~PC{O(O'vO(P'vO(Q'xO~O_!}O(U'zO(V!}O(W'zO~O_#QO(W'zO(X'zO(Y#QO~Ov'|O~P%[Ox#SO!U#TO(a#TO(b(PO~O![(RO!Y'VX!Y']X!]'VX!]']X~P+}O!](TO!Y(gX~OP$[OR#zO[$cOj$ROr$aO!Q#yO!S#{O!](TO!l#xO!p$[O#R$RO#n$OO#o$PO#p$PO#q$PO#r$QO#s$RO#t$RO#u$bO#v$SO#x$UO#z$WO#{$XO(`VO(q$YO(x#|O(y#}O~O!Y(gX~PGvO!Y(YO~O!Y(tX!](tX!g(tX!k(tX(q(tX~O#`(tX#k#dX!^(tX~PIyO#`(ZO!Y(vX!](vX~O!]([O!Y(uX~O!Y(_O~O#`$eO~PIyO!^(`O~P`OR#zO!Q#yO!S#{O!l#xO(`VOP!na[!naj!nar!na!]!na!p!na#R!na#n!na#o!na#p!na#q!na#r!na#s!na#t!na#u!na#v!na#x!na#z!na#{!na(q!na(x!na(y!na~Oa!na'y!na'v!na!Y!na!k!nav!na!_!na%i!na!g!na~PKaO!k(aO~O!g#vO#`(bO(q'nO!](sXa(sX'y(sX~O!k(sX~PM|O!S%gO!_%hO!|]O#i(gO#j(fO(S%fO~O!](hO!k(rX~O!k(jO~O!S%gO!_%hO#j(fO(S%fO~OP(fXR(fX[(fXj(fXr(fX!Q(fX!S(fX!](fX!l(fX!p(fX#R(fX#n(fX#o(fX#p(fX#q(fX#r(fX#s(fX#t(fX#u(fX#v(fX#x(fX#z(fX#{(fX(`(fX(q(fX(x(fX(y(fX~O!g#vO!k(fX~P! jOR(lO!Q(kO!l#xO#S$dO!|!{a!S!{a~O!x!{a%h!{a!_!{a#i!{a#j!{a(S!{a~P!#kO!x(pO~OPYOQYOSfOd!jOe!iOpkOrYOskOtkOzkO|YO!OYO!SWO!WkO!XkO!_XO!iuO!lZO!oYO!pYO!qYO!svO!u!gO!x!hO$W!kO$niO(S!dO(UTO(XUO(`VO(n[O~Oh%VOp%WOr%XOs$tOt$tOz%YO|%ZO!O<eO!S${O!_$|O!i=vO!l$xO#j<kO$W%_O$t<gO$v<iO$y%`O(S(tO(UTO(XUO(`$uO(x$}O(y%PO~O#k(vO~O![(xO!k(jP~P%[O(d(zO(n[O~O!S(|O!l#xO(d(zO(n[O~OP;vOQ;vOSfOd=rOe!iOpkOr;vOskOtkOzkO|;vO!O;vO!SWO!WkO!XkO!_!eO!i;yO!lZO!o;vO!p;vO!q;vO!s;zO!u;}O!x!hO$W!kO$n=pO(S)ZO(UTO(XUO(`VO(n[O~O!]$_Oa$qa'y$qa'v$qa!k$qa!Y$qa!_$qa%i$qa!g$qa~Ol)bO~P!&oOh%VOp%WOr%XOs$tOt$tOz%YO|%ZO!O%[O!S${O!_$|O!i%aO!l$xO#j%bO$W%_O$t%]O$v%^O$y%`O(S(tO(UTO(XUO(`$uO(x$}O(y%PO~Og(oP~P!+xO!Q)gO!g)fO!_$^X$Z$^X$]$^X$_$^X$f$^X~O!g)fO!_(zX$Z(zX$](zX$_(zX$f(zX~O!Q)gO~P!.RO!Q)gO!_(zX$Z(zX$](zX$_(zX$f(zX~O!_)iO$Z)mO$])hO$_)hO$f)nO~O![)qO~P!)PO$]$hO$_$gO$f)uO~On$zX!Q$zX#S$zX'x$zX(x$zX(y$zX~OgmXg$zXnmX!]mX#`mX~P!/wOx)wO(a)xO(b)zO~On*TO!Q)|O'x)}O(x$}O(y%PO~Og){O~P!0{Og*UO~Oh%VOp%WOr%XOs$tOt$tOz%YO|%ZO!O<eO!S*WO!_*XO!i=vO!l$xO#j<kO$W%_O$t<gO$v<iO$y%`O(UTO(XUO(`$uO(x$}O(y%PO~O![*[O(S*VO!k(}P~P!1jO#k*^O~O!l*_O~Oh%VOp%WOr%XOs$tOt$tOz%YO|%ZO!O<eO!S${O!_$|O!i=vO!l$xO#j<kO$W%_O$t<gO$v<iO$y%`O(S*aO(UTO(XUO(`$uO(x$}O(y%PO~O![*dO!Y)OP~P!3iOr*pOs!nO!S*fO!b*nO!c*hO!d*hO!l*_O#[*oO%`*jO(T!lO(UTO(XUO(d!mO~O!^*mO~P!5^O#S$dOn(_X!Q(_X'x(_X(x(_X(y(_X!](_X#`(_X~Og(_X$O(_X~P!6`On*uO#`*tOg(^X!](^X~O!]*vOg(]X~Oj%cOk%cOl%cO(S&XOg(]P~Os*yO~O!l+OO~O(S(tO~Op+TO!S%gO![#iO!_%hO!|]O#i#lO#j#iO(S%fO!k(rP~O!g#vO#k+UO~O!S%gO![+WO!]([O!_%hO(S%fO!Y(uP~Os'YO!S+YO![+XO(UTO(XUO(d(zO~O!^(wP~P!9iO!]+ZOa)SX'y)SX~OP$[OR#zO[$cOj$ROr$aO!Q#yO!S#{O!l#xO!p$[O#R$RO#n$OO#o$PO#p$PO#q$PO#r$QO#s$RO#t$RO#u$bO#v$SO#x$UO#z$WO#{$XO(`VO(q$YO(x#|O(y#}O~Oa!ja!]!ja'y!ja'v!ja!Y!ja!k!jav!ja!_!ja%i!ja!g!ja~P!:aOR#zO!Q#yO!S#{O!l#xO(`VOP!ra[!raj!rar!ra!]!ra!p!ra#R!ra#n!ra#o!ra#p!ra#q!ra#r!ra#s!ra#t!ra#u!ra#v!ra#x!ra#z!ra#{!ra(q!ra(x!ra(y!ra~Oa!ra'y!ra'v!ra!Y!ra!k!rav!ra!_!ra%i!ra!g!ra~P!<wOR#zO!Q#yO!S#{O!l#xO(`VOP!ta[!taj!tar!ta!]!ta!p!ta#R!ta#n!ta#o!ta#p!ta#q!ta#r!ta#s!ta#t!ta#u!ta#v!ta#x!ta#z!ta#{!ta(q!ta(x!ta(y!ta~Oa!ta'y!ta'v!ta!Y!ta!k!tav!ta!_!ta%i!ta!g!ta~P!?_Oh%VOn+dO!_'^O%i+cO~O!g+fOa([X!_([X'y([X!]([X~Oa%mO!_XO'y%mO~Oh%VO!l%dO~Oh%VO!l%dO(S%fO~O!g#vO#k(vO~Ob+qO%j+rO(S+nO(UTO(XUO!^)WP~O!]+sO`)VX~O[+wO~O`+xO~O!_&OO(S%fO(T!lO`)VP~Oh%VO#`+}O~Oh%VOn,QO!_$|O~O!_,SO~O!Q,UO!_XO~O%n%uO~O!x,ZO~Oe,`O~Ob,aO(S#nO(UTO(XUO!^)UP~Oe%|O~O%j!QO(S&XO~P=[O[,fO`,eO~OPYOQYOSfOdzOeyOpkOrYOskOtkOzkO|YO!OYO!SWO!WkO!XkO!iuO!lZO!oYO!pYO!qYO!svO!xxO!|]O$niO%h}O(UTO(XUO(`VO(n[O~O!_!eO!u!gO$W!kO(S!dO~P!F_O`,eOa%mO'y%mO~OPYOQYOSfOd!jOe!iOpkOrYOskOtkOzkO|YO!OYO!SWO!WkO!XkO!_!eO!iuO!lZO!oYO!pYO!qYO!svO!x!hO$W!kO$niO(S!dO(UTO(XUO(`VO(n[O~Oa,kOl!OO!uwO%l!OO%m!OO%n!OO~P!HwO!l&mO~O&],qO~O!_,sO~O&n,uO&p,vOP&kaQ&kaS&kaY&kaa&kad&kae&kal&kap&kar&kas&kat&kaz&ka|&ka!O&ka!S&ka!W&ka!X&ka!_&ka!i&ka!l&ka!o&ka!p&ka!q&ka!s&ka!u&ka!x&ka!|&ka$W&ka$n&ka%h&ka%j&ka%l&ka%m&ka%n&ka%q&ka%s&ka%v&ka%w&ka%y&ka&V&ka&]&ka&_&ka&a&ka&c&ka&f&ka&l&ka&r&ka&t&ka&v&ka&x&ka&z&ka'v&ka(S&ka(U&ka(X&ka(`&ka(n&ka!^&ka&d&kab&ka&i&ka~O(S,{O~Oh!eX!]!RX!^!RX!g!RX!g!eX!l!eX#`!RX~O!]!eX!^!eX~P# }O!g-QO#`-POh(iX!]#hX!^#hX!g(iX!l(iX~O!](iX!^(iX~P#!pOh%VO!g-SO!l%dO!]!aX!^!aX~Os!nO!S!oO(UTO(XUO(d!mO~OP;vOQ;vOSfOd=rOe!iOpkOr;vOskOtkOzkO|;vO!O;vO!SWO!WkO!XkO!_!eO!i;yO!lZO!o;vO!p;vO!q;vO!s;zO!u;}O!x!hO$W!kO$n=pO(UTO(XUO(`VO(n[O~O(S<rO~P#$VO!]-WO!^(hX~O!^-YO~O!g-QO#`-PO!]#hX!^#hX~O!]-ZO!^(wX~O!^-]O~O!c-^O!d-^O(T!lO~P##tO!^-aO~P'_On-dO!_'^O~O!Y-iO~Os!{a!b!{a!c!{a!d!{a#T!{a#U!{a#V!{a#W!{a#X!{a#[!{a#]!{a(T!{a(U!{a(X!{a(d!{a(n!{a~P!#kO!p-nO#`-lO~PC]O!c-pO!d-pO(T!lO~PC{Oa%mO#`-lO'y%mO~Oa%mO!g#vO#`-lO'y%mO~Oa%mO!g#vO!p-nO#`-lO'y%mO(q'nO~O(O'vO(P'vO(Q-uO~Ov-vO~O!Y'Va!]'Va~P!:aO![-zO!Y'VX!]'VX~P%[O!](TO!Y(ga~O!Y(ga~PGvO!]([O!Y(ua~O!S%gO![.OO!_%hO(S%fO!Y']X!]']X~O#`.QO!](sa!k(saa(sa'y(sa~O!g#vO~P#,]O!](hO!k(ra~O!S%gO!_%hO#j.UO(S%fO~Op.ZO!S%gO![.WO!_%hO!|]O#i.YO#j.WO(S%fO!]'`X!k'`X~OR._O!l#xO~Oh%VOn.bO!_'^O%i.aO~Oa#ci!]#ci'y#ci'v#ci!Y#ci!k#civ#ci!_#ci%i#ci!g#ci~P!:aOn=|O!Q)|O'x)}O(x$}O(y%PO~O#k#_aa#_a#`#_a'y#_a!]#_a!k#_a!_#_a!Y#_a~P#/XO#k(_XP(_XR(_X[(_Xa(_Xj(_Xr(_X!S(_X!l(_X!p(_X#R(_X#n(_X#o(_X#p(_X#q(_X#r(_X#s(_X#t(_X#u(_X#v(_X#x(_X#z(_X#{(_X'y(_X(`(_X(q(_X!k(_X!Y(_X'v(_Xv(_X!_(_X%i(_X!g(_X~P!6`O!].oO!k(jX~P!:aO!k.rO~O!Y.tO~OP$[OR#zO!Q#yO!S#{O!l#xO!p$[O(`VO[#mia#mij#mir#mi!]#mi#R#mi#o#mi#p#mi#q#mi#r#mi#s#mi#t#mi#u#mi#v#mi#x#mi#z#mi#{#mi'y#mi(q#mi(x#mi(y#mi'v#mi!Y#mi!k#miv#mi!_#mi%i#mi!g#mi~O#n#mi~P#2wO#n$OO~P#2wOP$[OR#zOr$aO!Q#yO!S#{O!l#xO!p$[O#n$OO#o$PO#p$PO#q$PO(`VO[#mia#mij#mi!]#mi#R#mi#s#mi#t#mi#u#mi#v#mi#x#mi#z#mi#{#mi'y#mi(q#mi(x#mi(y#mi'v#mi!Y#mi!k#miv#mi!_#mi%i#mi!g#mi~O#r#mi~P#5fO#r$QO~P#5fOP$[OR#zO[$cOj$ROr$aO!Q#yO!S#{O!l#xO!p$[O#R$RO#n$OO#o$PO#p$PO#q$PO#r$QO#s$RO#t$RO#u$bO(`VOa#mi!]#mi#x#mi#z#mi#{#mi'y#mi(q#mi(x#mi(y#mi'v#mi!Y#mi!k#miv#mi!_#mi%i#mi!g#mi~O#v#mi~P#8TOP$[OR#zO[$cOj$ROr$aO!Q#yO!S#{O!l#xO!p$[O#R$RO#n$OO#o$PO#p$PO#q$PO#r$QO#s$RO#t$RO#u$bO#v$SO(`VO(y#}Oa#mi!]#mi#z#mi#{#mi'y#mi(q#mi(x#mi'v#mi!Y#mi!k#miv#mi!_#mi%i#mi!g#mi~O#x$UO~P#:kO#x#mi~P#:kO#v$SO~P#8TOP$[OR#zO[$cOj$ROr$aO!Q#yO!S#{O!l#xO!p$[O#R$RO#n$OO#o$PO#p$PO#q$PO#r$QO#s$RO#t$RO#u$bO#v$SO#x$UO(`VO(x#|O(y#}Oa#mi!]#mi#{#mi'y#mi(q#mi'v#mi!Y#mi!k#miv#mi!_#mi%i#mi!g#mi~O#z#mi~P#=aO#z$WO~P#=aOP]XR]X[]Xj]Xr]X!Q]X!S]X!l]X!p]X#R]X#S]X#`]X#kfX#n]X#o]X#p]X#q]X#r]X#s]X#t]X#u]X#v]X#x]X#z]X#{]X$Q]X(`]X(q]X(x]X(y]X!]]X!^]X~O$O]X~P#@OOP$[OR#zO[<_Oj<SOr<]O!Q#yO!S#{O!l#xO!p$[O#R<SO#n<PO#o<QO#p<QO#q<QO#r<RO#s<SO#t<SO#u<^O#v<TO#x<VO#z<XO#{<YO(`VO(q$YO(x#|O(y#}O~O$O.vO~P#B]O#S$dO#`<`O$Q<`O$O(fX!^(fX~P! jOa'ca!]'ca'y'ca'v'ca!k'ca!Y'cav'ca!_'ca%i'ca!g'ca~P!:aO[#mia#mij#mir#mi!]#mi#R#mi#r#mi#s#mi#t#mi#u#mi#v#mi#x#mi#z#mi#{#mi'y#mi(q#mi'v#mi!Y#mi!k#miv#mi!_#mi%i#mi!g#mi~OP$[OR#zO!Q#yO!S#{O!l#xO!p$[O#n$OO#o$PO#p$PO#q$PO(`VO(x#mi(y#mi~P#E_On=|O!Q)|O'x)}O(x$}O(y%POP#miR#mi!S#mi!l#mi!p#mi#n#mi#o#mi#p#mi#q#mi(`#mi~P#E_O!].zOg(oX~P!0{Og.|O~Oa$Pi!]$Pi'y$Pi'v$Pi!Y$Pi!k$Piv$Pi!_$Pi%i$Pi!g$Pi~P!:aO$].}O$_.}O~O$]/OO$_/OO~O!g)fO#`/PO!_$cX$Z$cX$]$cX$_$cX$f$cX~O![/QO~O!_)iO$Z/SO$])hO$_)hO$f/TO~O!]<ZO!^(eX~P#B]O!^/UO~O!g)fO$f(zX~O$f/WO~Ov/XO~P!&oOx)wO(a)xO(b/[O~O!S/_O~O(x$}On%aa!Q%aa'x%aa(y%aa!]%aa#`%aa~Og%aa$O%aa~P#LaO(y%POn%ca!Q%ca'x%ca(x%ca!]%ca#`%ca~Og%ca$O%ca~P#MSO!]fX!gfX!kfX!k$zX(qfX~P!/wO![/hO!]([O(S/gO!Y(uP!Y)OP~P!1jOr*pO!b*nO!c*hO!d*hO!l*_O#[*oO%`*jO(T!lO(UTO(XUO~Os<oO!S/iO![+XO!^*mO(d<nO!^(wP~P#NmO!k/jO~P#/XO!]/kO!g#vO(q'nO!k(}X~O!k/pO~O!S%gO![*[O!_%hO(S%fO!k(}P~O#k/rO~O!Y$zX!]$zX!g%RX~P!/wO!]/sO!Y)OX~P#/XO!g/uO~O!Y/wO~OpkO(S/xO~P.iOh%VOr/}O!g#vO!l%dO(q'nO~O!g+fO~Oa%mO!]0RO'y%mO~O!^0TO~P!5^O!c0UO!d0UO(T!lO~P##tOs!nO!S0VO(UTO(XUO(d!mO~O#[0XO~Og%aa!]%aa#`%aa$O%aa~P!0{Og%ca!]%ca#`%ca$O%ca~P!0{Oj%cOk%cOl%cO(S&XOg'lX!]'lX~O!]*vOg(]a~Og0bO~OR0cO!Q0cO!S0dO#S$dOn}a'x}a(x}a(y}a!]}a#`}a~Og}a$O}a~P$&vO!Q)|O'x)}On$sa(x$sa(y$sa!]$sa#`$sa~Og$sa$O$sa~P$'rO!Q)|O'x)}On$ua(x$ua(y$ua!]$ua#`$ua~Og$ua$O$ua~P$(eO#k0gO~Og%Ta!]%Ta#`%Ta$O%Ta~P!0{On0iO#`0hOg(^a!](^a~O!g#vO~O#k0lO~O!]+ZOa)Sa'y)Sa~OR#zO!Q#yO!S#{O!l#xO(`VOP!ri[!rij!rir!ri!]!ri!p!ri#R!ri#n!ri#o!ri#p!ri#q!ri#r!ri#s!ri#t!ri#u!ri#v!ri#x!ri#z!ri#{!ri(q!ri(x!ri(y!ri~Oa!ri'y!ri'v!ri!Y!ri!k!riv!ri!_!ri%i!ri!g!ri~P$*bOh%VOr%XOs$tOt$tOz%YO|%ZO!O<eO!S${O!_$|O!i=vO!l$xO#j<kO$W%_O$t<gO$v<iO$y%`O(UTO(XUO(`$uO(x$}O(y%PO~Op0uO%]0vO(S0tO~P$,xO!g+fOa([a!_([a'y([a!]([a~O#k0|O~O[]X!]fX!^fX~O!]0}O!^)WX~O!^1PO~O[1QO~Ob1SO(S+nO(UTO(XUO~O!_&OO(S%fO`'tX!]'tX~O!]+sO`)Va~O!k1VO~P!:aO[1YO~O`1ZO~O#`1^O~On1aO!_$|O~O(d(zO!^)TP~Oh%VOn1jO!_1gO%i1iO~O[1tO!]1rO!^)UX~O!^1uO~O`1wOa%mO'y%mO~O(S#nO(UTO(XUO~O#S$dO#`$eO$Q$eOP(fXR(fX[(fXr(fX!Q(fX!S(fX!](fX!l(fX!p(fX#R(fX#n(fX#o(fX#p(fX#q(fX#r(fX#s(fX#t(fX#u(fX#v(fX#x(fX#z(fX#{(fX(`(fX(q(fX(x(fX(y(fX~Oj1zO&Z1{Oa(fX~P$2cOj1zO#`$eO&Z1{O~Oa1}O~P%[Oa2PO~O&d2SOP&biQ&biS&biY&bia&bid&bie&bil&bip&bir&bis&bit&biz&bi|&bi!O&bi!S&bi!W&bi!X&bi!_&bi!i&bi!l&bi!o&bi!p&bi!q&bi!s&bi!u&bi!x&bi!|&bi$W&bi$n&bi%h&bi%j&bi%l&bi%m&bi%n&bi%q&bi%s&bi%v&bi%w&bi%y&bi&V&bi&]&bi&_&bi&a&bi&c&bi&f&bi&l&bi&r&bi&t&bi&v&bi&x&bi&z&bi'v&bi(S&bi(U&bi(X&bi(`&bi(n&bi!^&bib&bi&i&bi~Ob2YO!^2WO&i2XO~P`O!_XO!l2[O~O&p,vOP&kiQ&kiS&kiY&kia&kid&kie&kil&kip&kir&kis&kit&kiz&ki|&ki!O&ki!S&ki!W&ki!X&ki!_&ki!i&ki!l&ki!o&ki!p&ki!q&ki!s&ki!u&ki!x&ki!|&ki$W&ki$n&ki%h&ki%j&ki%l&ki%m&ki%n&ki%q&ki%s&ki%v&ki%w&ki%y&ki&V&ki&]&ki&_&ki&a&ki&c&ki&f&ki&l&ki&r&ki&t&ki&v&ki&x&ki&z&ki'v&ki(S&ki(U&ki(X&ki(`&ki(n&ki!^&ki&d&kib&ki&i&ki~O!Y2bO~O!]!aa!^!aa~P#B]Os!nO!S!oO![2hO(d!mO!]'WX!^'WX~P@cO!]-WO!^(ha~O!]'^X!^'^X~P!9iO!]-ZO!^(wa~O!^2oO~P'_Oa%mO#`2xO'y%mO~Oa%mO!g#vO#`2xO'y%mO~Oa%mO!g#vO!p2|O#`2xO'y%mO(q'nO~Oa%mO'y%mO~P!:aO!]$_Ov$qa~O!Y'Vi!]'Vi~P!:aO!](TO!Y(gi~O!]([O!Y(ui~O!Y(vi!](vi~P!:aO!](si!k(sia(si'y(si~P!:aO#`3OO!](si!k(sia(si'y(si~O!](hO!k(ri~O!S%gO!_%hO!|]O#i3TO#j3SO(S%fO~O!S%gO!_%hO#j3SO(S%fO~On3[O!_'^O%i3ZO~Oh%VOn3[O!_'^O%i3ZO~O#k%aaP%aaR%aa[%aaa%aaj%aar%aa!S%aa!l%aa!p%aa#R%aa#n%aa#o%aa#p%aa#q%aa#r%aa#s%aa#t%aa#u%aa#v%aa#x%aa#z%aa#{%aa'y%aa(`%aa(q%aa!k%aa!Y%aa'v%aav%aa!_%aa%i%aa!g%aa~P#LaO#k%caP%caR%ca[%caa%caj%car%ca!S%ca!l%ca!p%ca#R%ca#n%ca#o%ca#p%ca#q%ca#r%ca#s%ca#t%ca#u%ca#v%ca#x%ca#z%ca#{%ca'y%ca(`%ca(q%ca!k%ca!Y%ca'v%cav%ca!_%ca%i%ca!g%ca~P#MSO#k%aaP%aaR%aa[%aaa%aaj%aar%aa!S%aa!]%aa!l%aa!p%aa#R%aa#n%aa#o%aa#p%aa#q%aa#r%aa#s%aa#t%aa#u%aa#v%aa#x%aa#z%aa#{%aa'y%aa(`%aa(q%aa!k%aa!Y%aa'v%aa#`%aav%aa!_%aa%i%aa!g%aa~P#/XO#k%caP%caR%ca[%caa%caj%car%ca!S%ca!]%ca!l%ca!p%ca#R%ca#n%ca#o%ca#p%ca#q%ca#r%ca#s%ca#t%ca#u%ca#v%ca#x%ca#z%ca#{%ca'y%ca(`%ca(q%ca!k%ca!Y%ca'v%ca#`%cav%ca!_%ca%i%ca!g%ca~P#/XO#k}aP}a[}aa}aj}ar}a!l}a!p}a#R}a#n}a#o}a#p}a#q}a#r}a#s}a#t}a#u}a#v}a#x}a#z}a#{}a'y}a(`}a(q}a!k}a!Y}a'v}av}a!_}a%i}a!g}a~P$&vO#k$saP$saR$sa[$saa$saj$sar$sa!S$sa!l$sa!p$sa#R$sa#n$sa#o$sa#p$sa#q$sa#r$sa#s$sa#t$sa#u$sa#v$sa#x$sa#z$sa#{$sa'y$sa(`$sa(q$sa!k$sa!Y$sa'v$sav$sa!_$sa%i$sa!g$sa~P$'rO#k$uaP$uaR$ua[$uaa$uaj$uar$ua!S$ua!l$ua!p$ua#R$ua#n$ua#o$ua#p$ua#q$ua#r$ua#s$ua#t$ua#u$ua#v$ua#x$ua#z$ua#{$ua'y$ua(`$ua(q$ua!k$ua!Y$ua'v$uav$ua!_$ua%i$ua!g$ua~P$(eO#k%TaP%TaR%Ta[%Taa%Taj%Tar%Ta!S%Ta!]%Ta!l%Ta!p%Ta#R%Ta#n%Ta#o%Ta#p%Ta#q%Ta#r%Ta#s%Ta#t%Ta#u%Ta#v%Ta#x%Ta#z%Ta#{%Ta'y%Ta(`%Ta(q%Ta!k%Ta!Y%Ta'v%Ta#`%Tav%Ta!_%Ta%i%Ta!g%Ta~P#/XOa#cq!]#cq'y#cq'v#cq!Y#cq!k#cqv#cq!_#cq%i#cq!g#cq~P!:aO![3dO!]'XX!k'XX~P%[O!].oO!k(ja~O!].oO!k(ja~P!:aO!Y3gO~O$O!na!^!na~PKaO$O!ja!]!ja!^!ja~P#B]O$O!ra!^!ra~P!<wO$O!ta!^!ta~P!?_Og'[X!]'[X~P!+xO!].zOg(oa~OSfO!_3{O$d3|O~O!^4QO~Ov4RO~P#/XOa$mq!]$mq'y$mq'v$mq!Y$mq!k$mqv$mq!_$mq%i$mq!g$mq~P!:aO!Y4TO~P!&oO!S4UO~O!Q)|O'x)}O(y%POn'ha(x'ha!]'ha#`'ha~Og'ha$O'ha~P%,XO!Q)|O'x)}On'ja(x'ja(y'ja!]'ja#`'ja~Og'ja$O'ja~P%,zO(q$YO~P#/XO!YfX!Y$zX!]fX!]$zX!g%RX#`fX~P!/wO(S<xO~P!1jO!S%gO![4XO!_%hO(S%fO!]'dX!k'dX~O!]/kO!k(}a~O!]/kO!g#vO!k(}a~O!]/kO!g#vO(q'nO!k(}a~Og$|i!]$|i#`$|i$O$|i~P!0{O![4aO!Y'fX!]'fX~P!3iO!]/sO!Y)Oa~O!]/sO!Y)Oa~P#/XOP]XR]X[]Xj]Xr]X!Q]X!S]X!Y]X!]]X!l]X!p]X#R]X#S]X#`]X#kfX#n]X#o]X#p]X#q]X#r]X#s]X#t]X#u]X#v]X#x]X#z]X#{]X$Q]X(`]X(q]X(x]X(y]X~Oj%YX!g%YX~P%0kOj4fO!g#vO~Oh%VO!g#vO!l%dO~Oh%VOr4kO!l%dO(q'nO~Or4pO!g#vO(q'nO~Os!nO!S4qO(UTO(XUO(d!mO~O(x$}On%ai!Q%ai'x%ai(y%ai!]%ai#`%ai~Og%ai$O%ai~P%4[O(y%POn%ci!Q%ci'x%ci(x%ci!]%ci#`%ci~Og%ci$O%ci~P%4}Og(^i!](^i~P!0{O#`4wOg(^i!](^i~P!0{O!k4zO~Oa$oq!]$oq'y$oq'v$oq!Y$oq!k$oqv$oq!_$oq%i$oq!g$oq~P!:aO!Y5QO~O!]5RO!_)PX~P#/XOa$zX!_$zX%^]X'y$zX!]$zX~P!/wO%^5UOaoXnoX!QoX!_oX'xoX'yoX(xoX(yoX!]oX~Op5VO(S#nO~O%^5UO~Ob5]O%j5^O(S+nO(UTO(XUO!]'sX!^'sX~O!]0}O!^)Wa~O[5bO~O`5cO~Oa%mO'y%mO~P#/XO!]5kO#`5mO!^)TX~O!^5nO~Or5tOs!nO!S*fO!b!yO!c!vO!d!vO!|;wO#T!pO#U!pO#V!pO#W!pO#X!pO#[5sO#]!zO(T!lO(UTO(XUO(d!mO(n!sO~O!^5rO~P%:YOn5yO!_1gO%i5xO~Oh%VOn5yO!_1gO%i5xO~Ob6QO(S#nO(UTO(XUO!]'rX!^'rX~O!]1rO!^)Ua~O(UTO(XUO(d6SO~O`6WO~Oj6ZO&Z6[O~PM|O!k6]O~P%[Oa6_O~Oa6_O~P%[Ob2YO!^6dO&i2XO~P`O!g6fO~O!g6hOh(ii!](ii!^(ii!g(ii!l(iir(ii(q(ii~O!]#hi!^#hi~P#B]O#`6iO!]#hi!^#hi~O!]!ai!^!ai~P#B]Oa%mO#`6rO'y%mO~Oa%mO!g#vO#`6rO'y%mO~O!](sq!k(sqa(sq'y(sq~P!:aO!](hO!k(rq~O!S%gO!_%hO#j6yO(S%fO~O!_'^O%i6|O~On7QO!_'^O%i6|O~O#k'haP'haR'ha['haa'haj'har'ha!S'ha!l'ha!p'ha#R'ha#n'ha#o'ha#p'ha#q'ha#r'ha#s'ha#t'ha#u'ha#v'ha#x'ha#z'ha#{'ha'y'ha(`'ha(q'ha!k'ha!Y'ha'v'hav'ha!_'ha%i'ha!g'ha~P%,XO#k'jaP'jaR'ja['jaa'jaj'jar'ja!S'ja!l'ja!p'ja#R'ja#n'ja#o'ja#p'ja#q'ja#r'ja#s'ja#t'ja#u'ja#v'ja#x'ja#z'ja#{'ja'y'ja(`'ja(q'ja!k'ja!Y'ja'v'jav'ja!_'ja%i'ja!g'ja~P%,zO#k$|iP$|iR$|i[$|ia$|ij$|ir$|i!S$|i!]$|i!l$|i!p$|i#R$|i#n$|i#o$|i#p$|i#q$|i#r$|i#s$|i#t$|i#u$|i#v$|i#x$|i#z$|i#{$|i'y$|i(`$|i(q$|i!k$|i!Y$|i'v$|i#`$|iv$|i!_$|i%i$|i!g$|i~P#/XO#k%aiP%aiR%ai[%aia%aij%air%ai!S%ai!l%ai!p%ai#R%ai#n%ai#o%ai#p%ai#q%ai#r%ai#s%ai#t%ai#u%ai#v%ai#x%ai#z%ai#{%ai'y%ai(`%ai(q%ai!k%ai!Y%ai'v%aiv%ai!_%ai%i%ai!g%ai~P%4[O#k%ciP%ciR%ci[%cia%cij%cir%ci!S%ci!l%ci!p%ci#R%ci#n%ci#o%ci#p%ci#q%ci#r%ci#s%ci#t%ci#u%ci#v%ci#x%ci#z%ci#{%ci'y%ci(`%ci(q%ci!k%ci!Y%ci'v%civ%ci!_%ci%i%ci!g%ci~P%4}O!]'Xa!k'Xa~P!:aO!].oO!k(ji~O$O#ci!]#ci!^#ci~P#B]OP$[OR#zO!Q#yO!S#{O!l#xO!p$[O(`VO[#mij#mir#mi#R#mi#o#mi#p#mi#q#mi#r#mi#s#mi#t#mi#u#mi#v#mi#x#mi#z#mi#{#mi$O#mi(q#mi(x#mi(y#mi!]#mi!^#mi~O#n#mi~P%MXO#n<PO~P%MXOP$[OR#zOr<]O!Q#yO!S#{O!l#xO!p$[O#n<PO#o<QO#p<QO#q<QO(`VO[#mij#mi#R#mi#s#mi#t#mi#u#mi#v#mi#x#mi#z#mi#{#mi$O#mi(q#mi(x#mi(y#mi!]#mi!^#mi~O#r#mi~P& aO#r<RO~P& aOP$[OR#zO[<_Oj<SOr<]O!Q#yO!S#{O!l#xO!p$[O#R<SO#n<PO#o<QO#p<QO#q<QO#r<RO#s<SO#t<SO#u<^O(`VO#x#mi#z#mi#{#mi$O#mi(q#mi(x#mi(y#mi!]#mi!^#mi~O#v#mi~P&#iOP$[OR#zO[<_Oj<SOr<]O!Q#yO!S#{O!l#xO!p$[O#R<SO#n<PO#o<QO#p<QO#q<QO#r<RO#s<SO#t<SO#u<^O#v<TO(`VO(y#}O#z#mi#{#mi$O#mi(q#mi(x#mi!]#mi!^#mi~O#x<VO~P&%jO#x#mi~P&%jO#v<TO~P&#iOP$[OR#zO[<_Oj<SOr<]O!Q#yO!S#{O!l#xO!p$[O#R<SO#n<PO#o<QO#p<QO#q<QO#r<RO#s<SO#t<SO#u<^O#v<TO#x<VO(`VO(x#|O(y#}O#{#mi$O#mi(q#mi!]#mi!^#mi~O#z#mi~P&'yO#z<XO~P&'yOa#|y!]#|y'y#|y'v#|y!Y#|y!k#|yv#|y!_#|y%i#|y!g#|y~P!:aO[#mij#mir#mi#R#mi#r#mi#s#mi#t#mi#u#mi#v#mi#x#mi#z#mi#{#mi$O#mi(q#mi!]#mi!^#mi~OP$[OR#zO!Q#yO!S#{O!l#xO!p$[O#n<PO#o<QO#p<QO#q<QO(`VO(x#mi(y#mi~P&*uOn=}O!Q)|O'x)}O(x$}O(y%POP#miR#mi!S#mi!l#mi!p#mi#n#mi#o#mi#p#mi#q#mi(`#mi~P&*uO#S$dOP(_XR(_X[(_Xj(_Xn(_Xr(_X!Q(_X!S(_X!l(_X!p(_X#R(_X#n(_X#o(_X#p(_X#q(_X#r(_X#s(_X#t(_X#u(_X#v(_X#x(_X#z(_X#{(_X$O(_X'x(_X(`(_X(q(_X(x(_X(y(_X!](_X!^(_X~O$O$Pi!]$Pi!^$Pi~P#B]O$O!ri!^!ri~P$*bOg'[a!]'[a~P!0{O!^7dO~O!]'ca!^'ca~P#B]O!Y7eO~P#/XO!g#vO(q'nO!]'da!k'da~O!]/kO!k(}i~O!]/kO!g#vO!k(}i~Og$|q!]$|q#`$|q$O$|q~P!0{O!Y'fa!]'fa~P#/XO!g7lO~O!]/sO!Y)Oi~P#/XO!]/sO!Y)Oi~O!Y7oO~Oh%VOr7tO!l%dO(q'nO~Oj7vO!g#vO~Or7yO!g#vO(q'nO~O!Q)|O'x)}O(y%POn'ia(x'ia!]'ia#`'ia~Og'ia$O'ia~P&3vO!Q)|O'x)}On'ka(x'ka(y'ka!]'ka#`'ka~Og'ka$O'ka~P&4iO!Y7{O~Og%Oq!]%Oq#`%Oq$O%Oq~P!0{Og(^q!](^q~P!0{O#`7|Og(^q!](^q~P!0{Oa$oy!]$oy'y$oy'v$oy!Y$oy!k$oyv$oy!_$oy%i$oy!g$oy~P!:aO!g6hO~O!]5RO!_)Pa~O!_'^OP$TaR$Ta[$Taj$Tar$Ta!Q$Ta!S$Ta!]$Ta!l$Ta!p$Ta#R$Ta#n$Ta#o$Ta#p$Ta#q$Ta#r$Ta#s$Ta#t$Ta#u$Ta#v$Ta#x$Ta#z$Ta#{$Ta(`$Ta(q$Ta(x$Ta(y$Ta~O%i6|O~P&7ZO%^8QOa%[i!_%[i'y%[i!]%[i~Oa#cy!]#cy'y#cy'v#cy!Y#cy!k#cyv#cy!_#cy%i#cy!g#cy~P!:aO[8SO~Ob8UO(S+nO(UTO(XUO~O!]0}O!^)Wi~O`8YO~O(d(zO!]'oX!^'oX~O!]5kO!^)Ta~O!^8cO~P%:YO(n!sO~P$${O#[8dO~O!_1gO~O!_1gO%i8fO~On8iO!_1gO%i8fO~O[8nO!]'ra!^'ra~O!]1rO!^)Ui~O!k8rO~O!k8sO~O!k8vO~O!k8vO~P%[Oa8xO~O!g8yO~O!k8zO~O!](vi!^(vi~P#B]Oa%mO#`9SO'y%mO~O!](sy!k(sya(sy'y(sy~P!:aO!](hO!k(ry~O%i9VO~P&7ZO!_'^O%i9VO~O#k$|qP$|qR$|q[$|qa$|qj$|qr$|q!S$|q!]$|q!l$|q!p$|q#R$|q#n$|q#o$|q#p$|q#q$|q#r$|q#s$|q#t$|q#u$|q#v$|q#x$|q#z$|q#{$|q'y$|q(`$|q(q$|q!k$|q!Y$|q'v$|q#`$|qv$|q!_$|q%i$|q!g$|q~P#/XO#k'iaP'iaR'ia['iaa'iaj'iar'ia!S'ia!l'ia!p'ia#R'ia#n'ia#o'ia#p'ia#q'ia#r'ia#s'ia#t'ia#u'ia#v'ia#x'ia#z'ia#{'ia'y'ia(`'ia(q'ia!k'ia!Y'ia'v'iav'ia!_'ia%i'ia!g'ia~P&3vO#k'kaP'kaR'ka['kaa'kaj'kar'ka!S'ka!l'ka!p'ka#R'ka#n'ka#o'ka#p'ka#q'ka#r'ka#s'ka#t'ka#u'ka#v'ka#x'ka#z'ka#{'ka'y'ka(`'ka(q'ka!k'ka!Y'ka'v'kav'ka!_'ka%i'ka!g'ka~P&4iO#k%OqP%OqR%Oq[%Oqa%Oqj%Oqr%Oq!S%Oq!]%Oq!l%Oq!p%Oq#R%Oq#n%Oq#o%Oq#p%Oq#q%Oq#r%Oq#s%Oq#t%Oq#u%Oq#v%Oq#x%Oq#z%Oq#{%Oq'y%Oq(`%Oq(q%Oq!k%Oq!Y%Oq'v%Oq#`%Oqv%Oq!_%Oq%i%Oq!g%Oq~P#/XO!]'Xi!k'Xi~P!:aO$O#cq!]#cq!^#cq~P#B]O(x$}OP%aaR%aa[%aaj%aar%aa!S%aa!l%aa!p%aa#R%aa#n%aa#o%aa#p%aa#q%aa#r%aa#s%aa#t%aa#u%aa#v%aa#x%aa#z%aa#{%aa$O%aa(`%aa(q%aa!]%aa!^%aa~On%aa!Q%aa'x%aa(y%aa~P&HnO(y%POP%caR%ca[%caj%car%ca!S%ca!l%ca!p%ca#R%ca#n%ca#o%ca#p%ca#q%ca#r%ca#s%ca#t%ca#u%ca#v%ca#x%ca#z%ca#{%ca$O%ca(`%ca(q%ca!]%ca!^%ca~On%ca!Q%ca'x%ca(x%ca~P&JuOn=}O!Q)|O'x)}O(y%PO~P&HnOn=}O!Q)|O'x)}O(x$}O~P&JuOR0cO!Q0cO!S0dO#S$dOP}a[}aj}an}ar}a!l}a!p}a#R}a#n}a#o}a#p}a#q}a#r}a#s}a#t}a#u}a#v}a#x}a#z}a#{}a$O}a'x}a(`}a(q}a(x}a(y}a!]}a!^}a~O!Q)|O'x)}OP$saR$sa[$saj$san$sar$sa!S$sa!l$sa!p$sa#R$sa#n$sa#o$sa#p$sa#q$sa#r$sa#s$sa#t$sa#u$sa#v$sa#x$sa#z$sa#{$sa$O$sa(`$sa(q$sa(x$sa(y$sa!]$sa!^$sa~O!Q)|O'x)}OP$uaR$ua[$uaj$uan$uar$ua!S$ua!l$ua!p$ua#R$ua#n$ua#o$ua#p$ua#q$ua#r$ua#s$ua#t$ua#u$ua#v$ua#x$ua#z$ua#{$ua$O$ua(`$ua(q$ua(x$ua(y$ua!]$ua!^$ua~On=}O!Q)|O'x)}O(x$}O(y%PO~OP%TaR%Ta[%Taj%Tar%Ta!S%Ta!l%Ta!p%Ta#R%Ta#n%Ta#o%Ta#p%Ta#q%Ta#r%Ta#s%Ta#t%Ta#u%Ta#v%Ta#x%Ta#z%Ta#{%Ta$O%Ta(`%Ta(q%Ta!]%Ta!^%Ta~P'%zO$O$mq!]$mq!^$mq~P#B]O$O$oq!]$oq!^$oq~P#B]O!^9dO~O$O9eO~P!0{O!g#vO!]'di!k'di~O!g#vO(q'nO!]'di!k'di~O!]/kO!k(}q~O!Y'fi!]'fi~P#/XO!]/sO!Y)Oq~Or9lO!g#vO(q'nO~O[9nO!Y9mO~P#/XO!Y9mO~Oj9tO!g#vO~Og(^y!](^y~P!0{O!]'ma!_'ma~P#/XOa%[q!_%[q'y%[q!]%[q~P#/XO[9yO~O!]0}O!^)Wq~O#`9}O!]'oa!^'oa~O!]5kO!^)Ti~P#B]O!S:PO~O!_1gO%i:SO~O(UTO(XUO(d:XO~O!]1rO!^)Uq~O!k:[O~O!k:]O~O!k:^O~O!k:^O~P%[O#`:aO!]#hy!^#hy~O!]#hy!^#hy~P#B]O%i:fO~P&7ZO!_'^O%i:fO~O$O#|y!]#|y!^#|y~P#B]OP$|iR$|i[$|ij$|ir$|i!S$|i!l$|i!p$|i#R$|i#n$|i#o$|i#p$|i#q$|i#r$|i#s$|i#t$|i#u$|i#v$|i#x$|i#z$|i#{$|i$O$|i(`$|i(q$|i!]$|i!^$|i~P'%zO!Q)|O'x)}O(y%POP'haR'ha['haj'han'har'ha!S'ha!l'ha!p'ha#R'ha#n'ha#o'ha#p'ha#q'ha#r'ha#s'ha#t'ha#u'ha#v'ha#x'ha#z'ha#{'ha$O'ha(`'ha(q'ha(x'ha!]'ha!^'ha~O!Q)|O'x)}OP'jaR'ja['jaj'jan'jar'ja!S'ja!l'ja!p'ja#R'ja#n'ja#o'ja#p'ja#q'ja#r'ja#s'ja#t'ja#u'ja#v'ja#x'ja#z'ja#{'ja$O'ja(`'ja(q'ja(x'ja(y'ja!]'ja!^'ja~O(x$}OP%aiR%ai[%aij%ain%air%ai!Q%ai!S%ai!l%ai!p%ai#R%ai#n%ai#o%ai#p%ai#q%ai#r%ai#s%ai#t%ai#u%ai#v%ai#x%ai#z%ai#{%ai$O%ai'x%ai(`%ai(q%ai(y%ai!]%ai!^%ai~O(y%POP%ciR%ci[%cij%cin%cir%ci!Q%ci!S%ci!l%ci!p%ci#R%ci#n%ci#o%ci#p%ci#q%ci#r%ci#s%ci#t%ci#u%ci#v%ci#x%ci#z%ci#{%ci$O%ci'x%ci(`%ci(q%ci(x%ci!]%ci!^%ci~O$O$oy!]$oy!^$oy~P#B]O$O#cy!]#cy!^#cy~P#B]O!g#vO!]'dq!k'dq~O!]/kO!k(}y~O!Y'fq!]'fq~P#/XOr:pO!g#vO(q'nO~O[:tO!Y:sO~P#/XO!Y:sO~Og(^!R!](^!R~P!0{Oa%[y!_%[y'y%[y!]%[y~P#/XO!]0}O!^)Wy~O!]5kO!^)Tq~O(S:zO~O!_1gO%i:}O~O!k;QO~O%i;VO~P&7ZOP$|qR$|q[$|qj$|qr$|q!S$|q!l$|q!p$|q#R$|q#n$|q#o$|q#p$|q#q$|q#r$|q#s$|q#t$|q#u$|q#v$|q#x$|q#z$|q#{$|q$O$|q(`$|q(q$|q!]$|q!^$|q~P'%zO!Q)|O'x)}O(y%POP'iaR'ia['iaj'ian'iar'ia!S'ia!l'ia!p'ia#R'ia#n'ia#o'ia#p'ia#q'ia#r'ia#s'ia#t'ia#u'ia#v'ia#x'ia#z'ia#{'ia$O'ia(`'ia(q'ia(x'ia!]'ia!^'ia~O!Q)|O'x)}OP'kaR'ka['kaj'kan'kar'ka!S'ka!l'ka!p'ka#R'ka#n'ka#o'ka#p'ka#q'ka#r'ka#s'ka#t'ka#u'ka#v'ka#x'ka#z'ka#{'ka$O'ka(`'ka(q'ka(x'ka(y'ka!]'ka!^'ka~OP%OqR%Oq[%Oqj%Oqr%Oq!S%Oq!l%Oq!p%Oq#R%Oq#n%Oq#o%Oq#p%Oq#q%Oq#r%Oq#s%Oq#t%Oq#u%Oq#v%Oq#x%Oq#z%Oq#{%Oq$O%Oq(`%Oq(q%Oq!]%Oq!^%Oq~P'%zOg%e!Z!]%e!Z#`%e!Z$O%e!Z~P!0{O!Y;ZO~P#/XOr;[O!g#vO(q'nO~O[;^O!Y;ZO~P#/XO!]'oq!^'oq~P#B]O!]#h!Z!^#h!Z~P#B]O#k%e!ZP%e!ZR%e!Z[%e!Za%e!Zj%e!Zr%e!Z!S%e!Z!]%e!Z!l%e!Z!p%e!Z#R%e!Z#n%e!Z#o%e!Z#p%e!Z#q%e!Z#r%e!Z#s%e!Z#t%e!Z#u%e!Z#v%e!Z#x%e!Z#z%e!Z#{%e!Z'y%e!Z(`%e!Z(q%e!Z!k%e!Z!Y%e!Z'v%e!Z#`%e!Zv%e!Z!_%e!Z%i%e!Z!g%e!Z~P#/XOr;fO!g#vO(q'nO~O!Y;gO~P#/XOr;nO!g#vO(q'nO~O!Y;oO~P#/XOP%e!ZR%e!Z[%e!Zj%e!Zr%e!Z!S%e!Z!l%e!Z!p%e!Z#R%e!Z#n%e!Z#o%e!Z#p%e!Z#q%e!Z#r%e!Z#s%e!Z#t%e!Z#u%e!Z#v%e!Z#x%e!Z#z%e!Z#{%e!Z$O%e!Z(`%e!Z(q%e!Z!]%e!Z!^%e!Z~P'%zOr;rO!g#vO(q'nO~Ov(eX~P1qO!Q%qO~P!)PO(T!lO~P!)PO!YfX!]fX#`fX~P%0kOP]XR]X[]Xj]Xr]X!Q]X!S]X!]]X!]fX!l]X!p]X#R]X#S]X#`]X#`fX#kfX#n]X#o]X#p]X#q]X#r]X#s]X#t]X#u]X#v]X#x]X#z]X#{]X$Q]X(`]X(q]X(x]X(y]X~O!gfX!k]X!kfX(qfX~P'JsOP;vOQ;vOSfOd=rOe!iOpkOr;vOskOtkOzkO|;vO!O;vO!SWO!WkO!XkO!_XO!i;yO!lZO!o;vO!p;vO!q;vO!s;zO!u;}O!x!hO$W!kO$n=pO(S)ZO(UTO(XUO(`VO(n[O~O!]<ZO!^$qa~Oh%VOp%WOr%XOs$tOt$tOz%YO|%ZO!O<fO!S${O!_$|O!i=wO!l$xO#j<lO$W%_O$t<hO$v<jO$y%`O(S(tO(UTO(XUO(`$uO(x$}O(y%PO~Ol)bO~P( iOr!eX(q!eX~P# }Or(iX(q(iX~P#!pO!^]X!^fX~P'JsO!YfX!Y$zX!]fX!]$zX#`fX~P!/wO#k<OO~O!g#vO#k<OO~O#`<`O~Oj<SO~O#`<pO!](vX!^(vX~O#`<`O!](tX!^(tX~O#k<qO~Og<sO~P!0{O#k<yO~O#k<zO~O!g#vO#k<{O~O!g#vO#k<qO~O$O<|O~P#B]O#k<}O~O#k=OO~O#k=TO~O#k=UO~O#k=VO~O#k=WO~O$O=XO~P!0{O$O=YO~P!0{Ok#S#T#U#W#X#[#i#j#u$n$t$v$y%]%^%h%i%j%q%s%v%w%y%{~'}T#o!X'{(T#ps#n#qr!Q'|$]'|(S$_(d~",
+    goto: "$8g)[PPPPPP)]PP)`P)qP+R/WPPPP6bPP6xPP<pPPP@dP@zP@zPPP@zPCSP@zP@zP@zPCWPC]PCzPHtPPPHxPPPPHxK{PPPLRLsPHxPHxPP! RHxPPPHxPHxP!#YHxP!&p!'u!(OP!(r!(v!(r!,TPPPPPPP!,t!'uPP!-U!.vP!2SHxHx!2X!5e!:R!:R!>QPPP!>YHxPPPPPPPPP!AiP!BvPPHx!DXPHxPHxHxHxHxHxPHx!EkP!HuP!K{P!LP!LZ!L_!L_P!HrP!Lc!LcP# iP# mHxPHx# s#$xCW@zP@zP@z@zP#&V@z@z#(i@z#+a@z#-m@z@z#.]#0q#0q#0v#1P#0q#1[PP#0qP@z#1t@z#5s@z@z6bPPP#9xPPP#:c#:cP#:cP#:y#:cPP#;PP#:vP#:v#;d#:v#<O#<U#<X)`#<[)`P#<c#<c#<cP)`P)`P)`P)`PP)`P#<i#<lP#<l)`P#<pP#<sP)`P)`P)`P)`P)`P)`)`PP#<y#=P#=[#=b#=h#=n#=t#>S#>Y#>d#>j#>t#>z#?[#?b#@S#@f#@l#@r#AQ#Ag#C[#Cj#Cq#E]#Ek#G]#Gk#Gq#Gw#G}#HX#H_#He#Ho#IR#IXPPPPPPPPPPP#I_PPPPPPP#JS#MZ#Ns#Nz$ SPPP$&nP$&w$)p$0Z$0^$0a$1`$1c$1j$1rP$1x$1{P$2i$2m$3e$4s$4x$5`PP$5e$5k$5o$5r$5v$5z$6v$7_$7v$7z$7}$8Q$8W$8Z$8_$8cR!|RoqOXst!Z#d%l&p&r&s&u,n,s2S2VY!vQ'^-`1g5qQ%svQ%{yQ&S|Q&h!VS'U!e-WQ'd!iS'j!r!yU*h$|*X*lQ+l%|Q+y&UQ,_&bQ-^']Q-h'eQ-p'kQ0U*nQ1q,`R<m;z%SdOPWXYZstuvw!Z!`!g!o#S#W#Z#d#o#u#x#{$O$P$Q$R$S$T$U$V$W$X$_$a$e%l%s&Q&i&l&p&r&s&u&y'R'`'p(R(T(Z(b(v(x(|){*f+U+Y,k,n,s-d-l-z.Q.o.v/i0V0d0l0|1j1z1{1}2P2S2V2X2x3O3d4q5y6Z6[6_6r8i8x9SS#q];w!r)]$Z$n'V)q-P-S/Q2h3{5m6i9}:a;v;y;z;}<O<P<Q<R<S<T<U<V<W<X<Y<Z<]<`<m<p<q<s<{<|=V=W=sU*{%[<e<fQ+q&OQ,a&eQ,h&mQ0r+dQ0w+fQ1S+rQ1y,fQ3W.bQ5V0vQ5]0}Q6Q1rQ7O3[Q8U5^R9Y7Q'QkOPWXYZstuvw!Z!`!g!o#S#W#Z#d#o#u#x#{$O$P$Q$R$S$T$U$V$W$X$Z$_$a$e$n%l%s&Q&i&l&m&p&r&s&u&y'R'V'`'p(R(T(Z(b(v(x(|)q){*f+U+Y+d,k,n,s-P-S-d-l-z.Q.b.o.v/Q/i0V0d0l0|1j1z1{1}2P2S2V2X2h2x3O3[3d3{4q5m5y6Z6[6_6i6r7Q8i8x9S9}:a;v;y;z;}<O<P<Q<R<S<T<U<V<W<X<Y<Z<]<`<m<p<q<s<{<|=V=W=s!S!nQ!r!v!y!z$|'U']'^'j'k'l*h*l*n*o-W-^-`-p0U0X1g5q5s%[$ti#v$b$c$d$x${%O%Q%]%^%b)w*P*R*T*W*^*d*t*u+c+f+},Q.a.z/_/h/r/s/u0Y0[0g0h0i1^1a1i3Z4U4V4a4f4w5R5U5x6|7l7v7|8Q8f9V9e9n9t:S:f:t:};V;^<^<_<a<b<c<d<g<h<i<j<k<l<t<u<v<w<y<z<}=O=P=Q=R=S=T=U=X=Y=p=x=y=|=}Q&V|Q'S!eS'Y%h-ZQ+q&OQ,a&eQ0f+OQ1S+rQ1X+xQ1x,eQ1y,fQ5]0}Q5f1ZQ6Q1rQ6T1tQ6U1wQ8U5^Q8X5cQ8q6WQ9|8YQ:Y8nR<o*XrnOXst!V!Z#d%l&g&p&r&s&u,n,s2S2VR,c&i&z^OPXYstuvwz!Z!`!g!j!o#S#d#o#u#x#{$O$P$Q$R$S$T$U$V$W$X$Z$_$a$e$n%l%s&Q&i&l&m&p&r&s&u&y'R'`'p(T(Z(b(v(x(|)q){*f+U+Y+d,k,n,s-P-S-d-l-z.Q.b.o.v/Q/i0V0d0l0|1j1z1{1}2P2S2V2X2h2x3O3[3d3{4q5m5y6Z6[6_6i6r7Q8i8x9S9}:a;v;y;z;}<O<P<Q<R<S<T<U<V<W<X<Y<Z<]<`<m<p<q<s<{<|=V=W=r=s[#]WZ#W#Z'V(R!b%im#h#i#l$x%d%g([(f(g(h*W*[*_+W+X+Z,j-Q.O.U.V.W.Y/h/k2[3S3T4X6h6yQ%vxQ%zyS&P|&UQ&]!TQ'a!hQ'c!iQ(o#sS+k%{%|Q+o&OQ,Y&`Q,^&bS-g'd'eQ.d(pQ0{+lQ1R+rQ1T+sQ1W+wQ1l,ZS1p,_,`Q2t-hQ5[0}Q5`1QQ5e1YQ6P1qQ8T5^Q8W5bQ9x8SR:w9y!U$zi$d%O%Q%]%^%b*P*R*^*t*u.z/r0Y0[0g0h0i4V4w7|9e=p=x=y!^%xy!i!u%z%{%|'T'c'd'e'i's*g+k+l-T-g-h-o/{0O0{2m2t2{4i4j4m7s9pQ+e%vQ,O&YQ,R&ZQ,]&bQ.c(oQ1k,YU1o,^,_,`Q3].dQ5z1lS6O1p1qQ8m6P#f=t#v$b$c$x${)w*T*W*d+c+f+},Q.a/_/h/s/u1^1a1i3Z4U4a4f5R5U5x6|7l7v8Q8f9V9n9t:S:f:t:};V;^<a<c<g<i<k<t<v<y<}=P=R=T=X=|=}o=u<^<_<b<d<h<j<l<u<w<z=O=Q=S=U=YW%Ti%V*v=pS&Y!Q&gQ&Z!RQ&[!SQ+S%cR+|&W%]%Si#v$b$c$d$x${%O%Q%]%^%b)w*P*R*T*W*^*d*t*u+c+f+},Q.a.z/_/h/r/s/u0Y0[0g0h0i1^1a1i3Z4U4V4a4f4w5R5U5x6|7l7v7|8Q8f9V9e9n9t:S:f:t:};V;^<^<_<a<b<c<d<g<h<i<j<k<l<t<u<v<w<y<z<}=O=P=Q=R=S=T=U=X=Y=p=x=y=|=}T)x$u)yV*{%[<e<fW'Y!e%h*X-ZS({#y#zQ+`%qQ+v&RS.](k(lQ1b,SQ4x0cR8^5k'QkOPWXYZstuvw!Z!`!g!o#S#W#Z#d#o#u#x#{$O$P$Q$R$S$T$U$V$W$X$Z$_$a$e$n%l%s&Q&i&l&m&p&r&s&u&y'R'V'`'p(R(T(Z(b(v(x(|)q){*f+U+Y+d,k,n,s-P-S-d-l-z.Q.b.o.v/Q/i0V0d0l0|1j1z1{1}2P2S2V2X2h2x3O3[3d3{4q5m5y6Z6[6_6i6r7Q8i8x9S9}:a;v;y;z;}<O<P<Q<R<S<T<U<V<W<X<Y<Z<]<`<m<p<q<s<{<|=V=W=s$i$^c#Y#e%p%r%t(Q(W(r(w)P)Q)R)S)T)U)V)W)X)Y)[)^)`)e)o+a+u-U-s-x-}.P.n.q.u.w.x.y/]0j2c2f2v2}3c3h3i3j3k3l3m3n3o3p3q3r3s3t3w3x4P5O5Y6k6q6v7V7W7a7b8`8|9Q9[9b9c:c:y;R;x=gT#TV#U'RkOPWXYZstuvw!Z!`!g!o#S#W#Z#d#o#u#x#{$O$P$Q$R$S$T$U$V$W$X$Z$_$a$e$n%l%s&Q&i&l&m&p&r&s&u&y'R'V'`'p(R(T(Z(b(v(x(|)q){*f+U+Y+d,k,n,s-P-S-d-l-z.Q.b.o.v/Q/i0V0d0l0|1j1z1{1}2P2S2V2X2h2x3O3[3d3{4q5m5y6Z6[6_6i6r7Q8i8x9S9}:a;v;y;z;}<O<P<Q<R<S<T<U<V<W<X<Y<Z<]<`<m<p<q<s<{<|=V=W=sQ'W!eR2i-W!W!nQ!e!r!v!y!z$|'U']'^'j'k'l*X*h*l*n*o-W-^-`-p0U0X1g5q5sR1d,UnqOXst!Z#d%l&p&r&s&u,n,s2S2VQ&w!^Q't!xS(q#u<OQ+i%yQ,W&]Q,X&_Q-e'bQ-r'mS.m(v<qS0k+U<{Q0y+jQ1f,VQ2Z,uQ2],vQ2e-RQ2r-fQ2u-jS5P0l=VQ5W0zS5Z0|=WQ6j2gQ6n2sQ6s2zQ8R5XQ8}6lQ9O6oQ9R6tR:`8z$d$]c#Y#e%r%t(Q(W(r(w)P)Q)R)S)T)U)V)W)X)Y)[)^)`)e)o+a+u-U-s-x-}.P.n.q.u.x.y/]0j2c2f2v2}3c3h3i3j3k3l3m3n3o3p3q3r3s3t3w3x4P5O5Y6k6q6v7V7W7a7b8`8|9Q9[9b9c:c:y;R;x=gS(m#p'gQ(}#zS+_%p.wS.^(l(nR3U._'QkOPWXYZstuvw!Z!`!g!o#S#W#Z#d#o#u#x#{$O$P$Q$R$S$T$U$V$W$X$Z$_$a$e$n%l%s&Q&i&l&m&p&r&s&u&y'R'V'`'p(R(T(Z(b(v(x(|)q){*f+U+Y+d,k,n,s-P-S-d-l-z.Q.b.o.v/Q/i0V0d0l0|1j1z1{1}2P2S2V2X2h2x3O3[3d3{4q5m5y6Z6[6_6i6r7Q8i8x9S9}:a;v;y;z;}<O<P<Q<R<S<T<U<V<W<X<Y<Z<]<`<m<p<q<s<{<|=V=W=sS#q];wQ&r!XQ&s!YQ&u![Q&v!]R2R,qQ'_!hQ+b%vQ-c'aS.`(o+eQ2p-bW3Y.c.d0q0sQ6m2qW6z3V3X3]5TU9U6{6}7PU:e9W9X9ZS;T:d:gQ;b;UR;j;cU!wQ'^-`T5o1g5q!Q_OXZ`st!V!Z#d#h%d%l&g&i&p&r&s&u(h,n,s.V2S2V]!pQ!r'^-`1g5qT#q];w%^{OPWXYZstuvw!Z!`!g!o#S#W#Z#d#o#u#x#{$O$P$Q$R$S$T$U$V$W$X$_$a$e%l%s&Q&i&l&m&p&r&s&u&y'R'`'p(R(T(Z(b(v(x(|){*f+U+Y+d,k,n,s-d-l-z.Q.b.o.v/i0V0d0l0|1j1z1{1}2P2S2V2X2x3O3[3d4q5y6Z6[6_6r7Q8i8x9SS({#y#zS.](k(l!s=^$Z$n'V)q-P-S/Q2h3{5m6i9}:a;v;y;z;}<O<P<Q<R<S<T<U<V<W<X<Y<Z<]<`<m<p<q<s<{<|=V=W=sU$fd)],hS(n#p'gU*s%R(u3vU0e*z.i7]Q5T0rQ6{3WQ9X7OR:g9Ym!tQ!r!v!y!z'^'j'k'l-`-p1g5q5sQ'r!uS(d#g1|S-n'i'uQ/n*ZQ/{*gQ2|-qQ4]/oQ4i/}Q4j0OQ4o0WQ7h4WS7s4k4mS7w4p4rQ9g7iQ9k7oQ9p7tQ9u7yS:o9l9mS;Y:p:sS;e;Z;[S;m;f;gS;q;n;oR;t;rQ#wbQ'q!uS(c#g1|S(e#m+TQ+V%eQ+g%wQ+m%}U-m'i'r'uQ.R(dQ/m*ZQ/|*gQ0P*iQ0x+hQ1m,[S2y-n-qQ3R.ZS4[/n/oQ4e/yS4h/{0WQ4l0QQ5|1nQ6u2|Q7g4WQ7k4]U7r4i4o4rQ7u4nQ8k5}S9f7h7iQ9j7oQ9r7wQ9s7xQ:V8lQ:m9gS:n9k9mQ:v9uQ;P:WS;X:o:sS;d;Y;ZS;l;e;gS;p;m;oQ;s;qQ;u;tQ=a=[Q=l=eR=m=fV!wQ'^-`%^aOPWXYZstuvw!Z!`!g!o#S#W#Z#d#o#u#x#{$O$P$Q$R$S$T$U$V$W$X$_$a$e%l%s&Q&i&l&m&p&r&s&u&y'R'`'p(R(T(Z(b(v(x(|){*f+U+Y+d,k,n,s-d-l-z.Q.b.o.v/i0V0d0l0|1j1z1{1}2P2S2V2X2x3O3[3d4q5y6Z6[6_6r7Q8i8x9SS#wz!j!r=Z$Z$n'V)q-P-S/Q2h3{5m6i9}:a;v;y;z;}<O<P<Q<R<S<T<U<V<W<X<Y<Z<]<`<m<p<q<s<{<|=V=W=sR=a=r%^bOPWXYZstuvw!Z!`!g!o#S#W#Z#d#o#u#x#{$O$P$Q$R$S$T$U$V$W$X$_$a$e%l%s&Q&i&l&m&p&r&s&u&y'R'`'p(R(T(Z(b(v(x(|){*f+U+Y+d,k,n,s-d-l-z.Q.b.o.v/i0V0d0l0|1j1z1{1}2P2S2V2X2x3O3[3d4q5y6Z6[6_6r7Q8i8x9SQ%ej!^%wy!i!u%z%{%|'T'c'd'e'i's*g+k+l-T-g-h-o/{0O0{2m2t2{4i4j4m7s9pS%}z!jQ+h%xQ,[&bW1n,],^,_,`U5}1o1p1qS8l6O6PQ:W8m!r=[$Z$n'V)q-P-S/Q2h3{5m6i9}:a;v;y;z;}<O<P<Q<R<S<T<U<V<W<X<Y<Z<]<`<m<p<q<s<{<|=V=W=sQ=e=qR=f=r%QeOPXYstuvw!Z!`!g!o#S#d#o#u#x#{$O$P$Q$R$S$T$U$V$W$X$_$a$e%l%s&Q&i&l&p&r&s&u&y'R'`'p(T(Z(b(v(x(|){*f+U+Y+d,k,n,s-d-l-z.Q.b.o.v/i0V0d0l0|1j1z1{1}2P2S2V2X2x3O3[3d4q5y6Z6[6_6r7Q8i8x9SY#bWZ#W#Z(R!b%im#h#i#l$x%d%g([(f(g(h*W*[*_+W+X+Z,j-Q.O.U.V.W.Y/h/k2[3S3T4X6h6yQ,i&m!p=]$Z$n)q-P-S/Q2h3{5m6i9}:a;v;y;z;}<O<P<Q<R<S<T<U<V<W<X<Y<Z<]<`<m<p<q<s<{<|=V=W=sR=`'VU'Z!e%h*XR2k-Z%SdOPWXYZstuvw!Z!`!g!o#S#W#Z#d#o#u#x#{$O$P$Q$R$S$T$U$V$W$X$_$a$e%l%s&Q&i&l&p&r&s&u&y'R'`'p(R(T(Z(b(v(x(|){*f+U+Y,k,n,s-d-l-z.Q.o.v/i0V0d0l0|1j1z1{1}2P2S2V2X2x3O3d4q5y6Z6[6_6r8i8x9S!r)]$Z$n'V)q-P-S/Q2h3{5m6i9}:a;v;y;z;}<O<P<Q<R<S<T<U<V<W<X<Y<Z<]<`<m<p<q<s<{<|=V=W=sQ,h&mQ0r+dQ3W.bQ7O3[R9Y7Q!b$Tc#Y%p(Q(W(r(w)X)Y)^)e+u-s-x-}.P.n.q/]0j2v2}3c3s5O5Y6q6v7V9Q:c;x!P<U)[)o-U.w2c2f3h3q3r3w4P6k7W7a7b8`8|9[9b9c:y;R=g!f$Vc#Y%p(Q(W(r(w)U)V)X)Y)^)e+u-s-x-}.P.n.q/]0j2v2}3c3s5O5Y6q6v7V9Q:c;x!T<W)[)o-U.w2c2f3h3n3o3q3r3w4P6k7W7a7b8`8|9[9b9c:y;R=g!^$Zc#Y%p(Q(W(r(w)^)e+u-s-x-}.P.n.q/]0j2v2}3c3s5O5Y6q6v7V9Q:c;xQ4V/fz=s)[)o-U.w2c2f3h3w4P6k7W7a7b8`8|9[9b9c:y;R=gQ=x=zR=y={'QkOPWXYZstuvw!Z!`!g!o#S#W#Z#d#o#u#x#{$O$P$Q$R$S$T$U$V$W$X$Z$_$a$e$n%l%s&Q&i&l&m&p&r&s&u&y'R'V'`'p(R(T(Z(b(v(x(|)q){*f+U+Y+d,k,n,s-P-S-d-l-z.Q.b.o.v/Q/i0V0d0l0|1j1z1{1}2P2S2V2X2h2x3O3[3d3{4q5m5y6Z6[6_6i6r7Q8i8x9S9}:a;v;y;z;}<O<P<Q<R<S<T<U<V<W<X<Y<Z<]<`<m<p<q<s<{<|=V=W=sS$oh$pR3|/P'XgOPWXYZhstuvw!Z!`!g!o#S#W#Z#d#o#u#x#{$O$P$Q$R$S$T$U$V$W$X$Z$_$a$e$n$p%l%s&Q&i&l&m&p&r&s&u&y'R'V'`'p(R(T(Z(b(v(x(|)q){*f+U+Y+d,k,n,s-P-S-d-l-z.Q.b.o.v/P/Q/i0V0d0l0|1j1z1{1}2P2S2V2X2h2x3O3[3d3{4q5m5y6Z6[6_6i6r7Q8i8x9S9}:a;v;y;z;}<O<P<Q<R<S<T<U<V<W<X<Y<Z<]<`<m<p<q<s<{<|=V=W=sT$kf$qQ$ifS)h$l)lR)t$qT$jf$qT)j$l)l'XhOPWXYZhstuvw!Z!`!g!o#S#W#Z#d#o#u#x#{$O$P$Q$R$S$T$U$V$W$X$Z$_$a$e$n$p%l%s&Q&i&l&m&p&r&s&u&y'R'V'`'p(R(T(Z(b(v(x(|)q){*f+U+Y+d,k,n,s-P-S-d-l-z.Q.b.o.v/P/Q/i0V0d0l0|1j1z1{1}2P2S2V2X2h2x3O3[3d3{4q5m5y6Z6[6_6i6r7Q8i8x9S9}:a;v;y;z;}<O<P<Q<R<S<T<U<V<W<X<Y<Z<]<`<m<p<q<s<{<|=V=W=sT$oh$pQ$rhR)s$p%^jOPWXYZstuvw!Z!`!g!o#S#W#Z#d#o#u#x#{$O$P$Q$R$S$T$U$V$W$X$_$a$e%l%s&Q&i&l&m&p&r&s&u&y'R'`'p(R(T(Z(b(v(x(|){*f+U+Y+d,k,n,s-d-l-z.Q.b.o.v/i0V0d0l0|1j1z1{1}2P2S2V2X2x3O3[3d4q5y6Z6[6_6r7Q8i8x9S!s=q$Z$n'V)q-P-S/Q2h3{5m6i9}:a;v;y;z;}<O<P<Q<R<S<T<U<V<W<X<Y<Z<]<`<m<p<q<s<{<|=V=W=s#glOPXZst!Z!`!o#S#d#o#{$n%l&i&l&m&p&r&s&u&y'R'`(|)q*f+Y+d,k,n,s-d.b/Q/i0V0d1j1z1{1}2P2S2V2X3[3{4q5y6Z6[6_7Q8i8x!U%Ri$d%O%Q%]%^%b*P*R*^*t*u.z/r0Y0[0g0h0i4V4w7|9e=p=x=y#f(u#v$b$c$x${)w*T*W*d+c+f+},Q.a/_/h/s/u1^1a1i3Z4U4a4f5R5U5x6|7l7v8Q8f9V9n9t:S:f:t:};V;^<a<c<g<i<k<t<v<y<}=P=R=T=X=|=}Q+P%`Q/^)|o3v<^<_<b<d<h<j<l<u<w<z=O=Q=S=U=Y!U$yi$d%O%Q%]%^%b*P*R*^*t*u.z/r0Y0[0g0h0i4V4w7|9e=p=x=yQ*`$zU*i$|*X*lQ+Q%aQ0Q*j#f=c#v$b$c$x${)w*T*W*d+c+f+},Q.a/_/h/s/u1^1a1i3Z4U4a4f5R5U5x6|7l7v8Q8f9V9n9t:S:f:t:};V;^<a<c<g<i<k<t<v<y<}=P=R=T=X=|=}n=d<^<_<b<d<h<j<l<u<w<z=O=Q=S=U=YQ=h=tQ=i=uQ=j=vR=k=w!U%Ri$d%O%Q%]%^%b*P*R*^*t*u.z/r0Y0[0g0h0i4V4w7|9e=p=x=y#f(u#v$b$c$x${)w*T*W*d+c+f+},Q.a/_/h/s/u1^1a1i3Z4U4a4f5R5U5x6|7l7v8Q8f9V9n9t:S:f:t:};V;^<a<c<g<i<k<t<v<y<}=P=R=T=X=|=}o3v<^<_<b<d<h<j<l<u<w<z=O=Q=S=U=YnoOXst!Z#d%l&p&r&s&u,n,s2S2VS*c${*WQ,|&|Q,}'OR4`/s%[%Si#v$b$c$d$x${%O%Q%]%^%b)w*P*R*T*W*^*d*t*u+c+f+},Q.a.z/_/h/r/s/u0Y0[0g0h0i1^1a1i3Z4U4V4a4f4w5R5U5x6|7l7v7|8Q8f9V9e9n9t:S:f:t:};V;^<^<_<a<b<c<d<g<h<i<j<k<l<t<u<v<w<y<z<}=O=P=Q=R=S=T=U=X=Y=p=x=y=|=}Q,P&ZQ1`,RQ5i1_R8]5jV*k$|*X*lU*k$|*X*lT5p1g5qS/y*f/iQ4n0VT7x4q:PQ+g%wQ0P*iQ0x+hQ1m,[Q5|1nQ8k5}Q:V8lR;P:W!U%Oi$d%O%Q%]%^%b*P*R*^*t*u.z/r0Y0[0g0h0i4V4w7|9e=p=x=yx*P$v)c*Q*r+R/q0^0_3y4^4{4|4}7f7z9v:l=b=n=oS0Y*q0Z#f<a#v$b$c$x${)w*T*W*d+c+f+},Q.a/_/h/s/u1^1a1i3Z4U4a4f5R5U5x6|7l7v8Q8f9V9n9t:S:f:t:};V;^<a<c<g<i<k<t<v<y<}=P=R=T=X=|=}n<b<^<_<b<d<h<j<l<u<w<z=O=Q=S=U=Y!d<t(s)a*Y*b.e.h.l/Y/f/v0p1]3`4S4_4c5h7R7U7m7p7}8P9i9q9w:q:u;W;];h=z={`<u3u7X7[7`9]:h:k;kS=P.g3aT=Q7Z9`!U%Qi$d%O%Q%]%^%b*P*R*^*t*u.z/r0Y0[0g0h0i4V4w7|9e=p=x=y|*R$v)c*S*q+R/b/q0^0_3y4^4s4{4|4}7f7z9v:l=b=n=oS0[*r0]#f<c#v$b$c$x${)w*T*W*d+c+f+},Q.a/_/h/s/u1^1a1i3Z4U4a4f5R5U5x6|7l7v8Q8f9V9n9t:S:f:t:};V;^<a<c<g<i<k<t<v<y<}=P=R=T=X=|=}n<d<^<_<b<d<h<j<l<u<w<z=O=Q=S=U=Y!h<v(s)a*Y*b.f.g.l/Y/f/v0p1]3^3`4S4_4c5h7R7S7U7m7p7}8P9i9q9w:q:u;W;];h=z={d<w3u7Y7Z7`9]9^:h:i:k;kS=R.h3bT=S7[9arnOXst!V!Z#d%l&g&p&r&s&u,n,s2S2VQ&d!UR,k&mrnOXst!V!Z#d%l&g&p&r&s&u,n,s2S2VR&d!UQ,T&[R1[+|snOXst!V!Z#d%l&g&p&r&s&u,n,s2S2VQ1h,YS5w1k1lU8e5u5v5zS:R8g8hS:{:Q:TQ;_:|R;i;`Q&k!VR,d&gR6T1tR:Y8nS&P|&UR1T+sQ&p!WR,n&qR,t&vT2T,s2VR,x&wQ,w&wR2^,xQ'w!{R-t'wSsOtQ#dXT%os#dQ#OTR'y#OQ#RUR'{#RQ)y$uR/Z)yQ#UVR(O#UQ#XWU(U#X(V-{Q(V#YR-{(WQ-X'WR2j-XQ.p(wS3e.p3fR3f.qQ-`'^R2n-`Y!rQ'^-`1g5qR'h!rQ.{)cR3z.{U#_W%g*WU(]#_(^-|Q(^#`R-|(XQ-['ZR2l-[t`OXst!V!Z#d%l&g&i&p&r&s&u,n,s2S2VS#hZ%dU#r`#h.VR.V(hQ(i#jQ.S(eW.[(i.S3P6wQ3P.TR6w3QQ)l$lR/R)lQ$phR)r$pQ$`cU)_$`-w<[Q-w;xR<[)oQ/l*ZW4Y/l4Z7j9hU4Z/m/n/oS7j4[4]R9h7k$e*O$v(s)a)c*Y*b*q*r*|*}+R.g.h.j.k.l/Y/b/d/f/q/v0^0_0p1]3^3_3`3u3y4S4^4_4c4s4u4{4|4}5h7R7S7T7U7Z7[7^7_7`7f7m7p7z7}8P9]9^9_9i9q9v9w:h:i:j:k:l:q:u;W;];h;k=b=n=o=z={Q/t*bU4b/t4d7nQ4d/vR7n4cS*l$|*XR0S*lx*Q$v)c*q*r+R/q0^0_3y4^4{4|4}7f7z9v:l=b=n=o!d.e(s)a*Y*b.g.h.l/Y/f/v0p1]3`4S4_4c5h7R7U7m7p7}8P9i9q9w:q:u;W;];h=z={U/c*Q.e7Xa7X3u7Z7[7`9]:h:k;kQ0Z*qQ3a.gU4t0Z3a9`R9`7Z|*S$v)c*q*r+R/b/q0^0_3y4^4s4{4|4}7f7z9v:l=b=n=o!h.f(s)a*Y*b.g.h.l/Y/f/v0p1]3^3`4S4_4c5h7R7S7U7m7p7}8P9i9q9w:q:u;W;];h=z={U/e*S.f7Ye7Y3u7Z7[7`9]9^:h:i:k;kQ0]*rQ3b.hU4v0]3b9aR9a7[Q*w%UR0a*wQ5S0pR8O5SQ+[%jR0o+[Q5l1bS8_5l:OR:O8`Q,V&]R1e,VQ5q1gR8b5qQ1s,aS6R1s8oR8o6TQ1O+oW5_1O5a8V9zQ5a1RQ8V5`R9z8WQ+t&PR1U+tQ2V,sR6c2VYrOXst#dQ&t!ZQ+^%lQ,m&pQ,o&rQ,p&sQ,r&uQ2Q,nS2T,s2VR6b2SQ%npQ&x!_Q&{!aQ&}!bQ'P!cQ'o!uQ+]%kQ+i%yQ+{&VQ,c&kQ,z&zW-k'i'q'r'uQ-r'mQ0R*kQ0y+jS1v,d,gQ2_,yQ2`,|Q2a,}Q2u-jW2w-m-n-q-sQ5W0zQ5d1XQ5g1]Q5{1mQ6V1xQ6a2RU6p2v2y2|Q6s2zQ8R5XQ8Z5fQ8[5hQ8a5pQ8j5|Q8p6US9P6q6uQ9R6tQ9{8XQ:U8kQ:Z8qQ:b9QQ:x9|Q;O:VQ;S:cR;a;PQ%yyQ'b!iQ'm!uU+j%z%{%|Q-R'TU-f'c'd'eS-j'i'sQ/z*gS0z+k+lQ2g-TS2s-g-hQ2z-oS4g/{0OQ5X0{Q6l2mQ6o2tQ6t2{U7q4i4j4mQ9o7sR:r9pS$wi=pR*x%VU%Ui%V=pR0`*vQ$viS(s#v+fS)a$b$cQ)c$dQ*Y$xS*b${*WQ*q%OQ*r%QQ*|%]Q*}%^Q+R%bQ.g<aQ.h<cQ.j<gQ.k<iQ.l<kQ/Y)wQ/b*PQ/d*RQ/f*TQ/q*^S/v*d/hQ0^*tQ0_*ul0p+c,Q.a1a1i3Z5x6|8f9V:S:f:};VQ1]+}Q3^<tQ3_<vQ3`<yS3u<^<_Q3y.zS4S/_4UQ4^/rQ4_/sQ4c/uQ4s0YQ4u0[Q4{0gQ4|0hQ4}0iQ5h1^Q7R<}Q7S=PQ7T=RQ7U=TQ7Z<bQ7[<dQ7^<hQ7_<jQ7`<lQ7f4VQ7m4aQ7p4fQ7z4wQ7}5RQ8P5UQ9]<zQ9^<uQ9_<wQ9i7lQ9q7vQ9v7|Q9w8QQ:h=OQ:i=QQ:j=SQ:k=UQ:l9eQ:q9nQ:u9tQ;W=XQ;]:tQ;h;^Q;k=YQ=b=pQ=n=xQ=o=yQ=z=|R={=}Q*z%[Q.i<eR7]<fnpOXst!Z#d%l&p&r&s&u,n,s2S2VQ!fPS#fZ#oQ&z!`W'f!o*f0V4qQ'}#SQ)O#{Q)p$nS,g&i&lQ,l&mQ,y&yS-O'R/iQ-b'`Q.s(|Q/V)qQ0m+YQ0s+dQ2O,kQ2q-dQ3X.bQ4O/QQ4y0dQ5v1jQ6X1zQ6Y1{Q6^1}Q6`2PQ6e2XQ7P3[Q7c3{Q8h5yQ8t6ZQ8u6[Q8w6_Q9Z7QQ:T8iR:_8x#[cOPXZst!Z!`!o#d#o#{%l&i&l&m&p&r&s&u&y'R'`(|*f+Y+d,k,n,s-d.b/i0V0d1j1z1{1}2P2S2V2X3[4q5y6Z6[6_7Q8i8xQ#YWQ#eYQ%puQ%rvS%tw!gS(Q#W(TQ(W#ZQ(r#uQ(w#xQ)P$OQ)Q$PQ)R$QQ)S$RQ)T$SQ)U$TQ)V$UQ)W$VQ)X$WQ)Y$XQ)[$ZQ)^$_Q)`$aQ)e$eW)o$n)q/Q3{Q+a%sQ+u&QS-U'V2hQ-s'pS-x(R-zQ-}(ZQ.P(bQ.n(vQ.q(xQ.u;vQ.w;yQ.x;zQ.y;}Q/]){Q0j+UQ2c-PQ2f-SQ2v-lQ2}.QQ3c.oQ3h<OQ3i<PQ3j<QQ3k<RQ3l<SQ3m<TQ3n<UQ3o<VQ3p<WQ3q<XQ3r<YQ3s.vQ3t<]Q3w<`Q3x<mQ4P<ZQ5O0lQ5Y0|Q6k<pQ6q2xQ6v3OQ7V3dQ7W<qQ7a<sQ7b<{Q8`5mQ8|6iQ9Q6rQ9[<|Q9b=VQ9c=WQ:c9SQ:y9}Q;R:aQ;x#SR=g=sR#[WR'X!el!tQ!r!v!y!z'^'j'k'l-`-p1g5q5sS'T!e-WU*g$|*X*lS-T'U']S0O*h*nQ0W*oQ2m-^Q4m0UR4r0XR(y#xQ!fQT-_'^-`]!qQ!r'^-`1g5qQ#p]R'g;wR)d$dY!uQ'^-`1g5qQ'i!rS's!v!yS'u!z5sS-o'j'kQ-q'lR2{-pT#kZ%dS#jZ%dS%jm,jU(e#h#i#lS.T(f(gQ.X(hQ0n+ZQ3Q.UU3R.V.W.YS6x3S3TR9T6yd#^W#W#Z%g(R([*W+W.O/hr#gZm#h#i#l%d(f(g(h+Z.U.V.W.Y3S3T6yS*Z$x*_Q/o*[Q1|,jQ2d-QQ4W/kQ6g2[Q7i4XQ8{6hT=_'V+XV#aW%g*WU#`W%g*WS(S#W([U(X#Z+W/hS-V'V+XT-y(R.OV'[!e%h*XQ$lfR)v$qT)k$l)lR3}/PT*]$x*_T*e${*WQ0q+cQ1_,QQ3V.aQ5j1aQ5u1iQ6}3ZQ8g5xQ9W6|Q:Q8fQ:d9VQ:|:SQ;U:fQ;`:}R;c;VnqOXst!Z#d%l&p&r&s&u,n,s2S2VQ&j!VR,c&gtmOXst!U!V!Z#d%l&g&p&r&s&u,n,s2S2VR,j&mT%km,jR1c,SR,b&eQ&T|R+z&UR+p&OT&n!W&qT&o!W&qT2U,s2V",
+    nodeNames: "⚠ ArithOp ArithOp ?. JSXStartTag LineComment BlockComment Script Hashbang ExportDeclaration export Star as VariableName String Escape from ; default FunctionDeclaration async function VariableDefinition > < TypeParamList in out const TypeDefinition extends ThisType this LiteralType ArithOp Number BooleanLiteral TemplateType InterpolationEnd Interpolation InterpolationStart NullType null VoidType void TypeofType typeof MemberExpression . PropertyName [ TemplateString Escape Interpolation super RegExp ] ArrayExpression Spread , } { ObjectExpression Property async get set PropertyDefinition Block : NewTarget new NewExpression ) ( ArgList UnaryExpression delete LogicOp BitOp YieldExpression yield AwaitExpression await ParenthesizedExpression ClassExpression class ClassBody MethodDeclaration Decorator @ MemberExpression PrivatePropertyName CallExpression TypeArgList CompareOp < declare Privacy static abstract override PrivatePropertyDefinition PropertyDeclaration readonly accessor Optional TypeAnnotation Equals StaticBlock FunctionExpression ArrowFunction ParamList ParamList ArrayPattern ObjectPattern PatternProperty Privacy readonly Arrow MemberExpression BinaryExpression ArithOp ArithOp ArithOp ArithOp BitOp CompareOp instanceof satisfies CompareOp BitOp BitOp BitOp LogicOp LogicOp ConditionalExpression LogicOp LogicOp AssignmentExpression UpdateOp PostfixExpression CallExpression InstantiationExpression TaggedTemplateExpression DynamicImport import ImportMeta JSXElement JSXSelfCloseEndTag JSXSelfClosingTag JSXIdentifier JSXBuiltin JSXIdentifier JSXNamespacedName JSXMemberExpression JSXSpreadAttribute JSXAttribute JSXAttributeValue JSXEscape JSXEndTag JSXOpenTag JSXFragmentTag JSXText JSXEscape JSXStartCloseTag JSXCloseTag PrefixCast < ArrowFunction TypeParamList SequenceExpression InstantiationExpression KeyofType keyof UniqueType unique ImportType InferredType infer TypeName ParenthesizedType FunctionSignature ParamList NewSignature IndexedType TupleType Label ArrayType ReadonlyType ObjectType MethodType PropertyType IndexSignature PropertyDefinition CallSignature TypePredicate asserts is NewSignature new UnionType LogicOp IntersectionType LogicOp ConditionalType ParameterizedType ClassDeclaration abstract implements type VariableDeclaration let var using TypeAliasDeclaration InterfaceDeclaration interface EnumDeclaration enum EnumBody NamespaceDeclaration namespace module AmbientDeclaration declare GlobalDeclaration global ClassDeclaration ClassBody AmbientFunctionDeclaration ExportGroup VariableName VariableName ImportDeclaration ImportGroup ForStatement for ForSpec ForInSpec ForOfSpec of WhileStatement while WithStatement with DoStatement do IfStatement if else SwitchStatement switch SwitchBody CaseLabel case DefaultLabel TryStatement try CatchClause catch FinallyClause finally ReturnStatement return ThrowStatement throw BreakStatement break ContinueStatement continue DebuggerStatement debugger LabeledStatement ExpressionStatement SingleExpression SingleClassItem",
+    maxTerm: 379,
+    context: trackNewline,
+    nodeProps: [
+        ["isolate", -8, 5, 6, 14, 37, 39, 51, 53, 55, ""],
+        ["group", -26, 9, 17, 19, 68, 207, 211, 215, 216, 218, 221, 224, 234, 236, 242, 244, 246, 248, 251, 257, 263, 265, 267, 269, 271, 273, 274, "Statement", -34, 13, 14, 32, 35, 36, 42, 51, 54, 55, 57, 62, 70, 72, 76, 80, 82, 84, 85, 110, 111, 120, 121, 136, 139, 141, 142, 143, 144, 145, 147, 148, 167, 169, 171, "Expression", -23, 31, 33, 37, 41, 43, 45, 173, 175, 177, 178, 180, 181, 182, 184, 185, 186, 188, 189, 190, 201, 203, 205, 206, "Type", -3, 88, 103, 109, "ClassItem"],
+        ["openedBy", 23, "<", 38, "InterpolationStart", 56, "[", 60, "{", 73, "(", 160, "JSXStartCloseTag"],
+        ["closedBy", -2, 24, 168, ">", 40, "InterpolationEnd", 50, "]", 61, "}", 74, ")", 165, "JSXEndTag"]
+    ],
+    propSources: [jsHighlight],
+    skippedNodes: [0, 5, 6, 277],
+    repeatNodeCount: 37,
+    tokenData: "$Fq07[R!bOX%ZXY+gYZ-yZ[+g[]%Z]^.c^p%Zpq+gqr/mrs3cst:_tuEruvJSvwLkwx! Yxy!'iyz!(sz{!)}{|!,q|}!.O}!O!,q!O!P!/Y!P!Q!9j!Q!R#:O!R![#<_![!]#I_!]!^#Jk!^!_#Ku!_!`$![!`!a$$v!a!b$*T!b!c$,r!c!}Er!}#O$-|#O#P$/W#P#Q$4o#Q#R$5y#R#SEr#S#T$7W#T#o$8b#o#p$<r#p#q$=h#q#r$>x#r#s$@U#s$f%Z$f$g+g$g#BYEr#BY#BZ$A`#BZ$ISEr$IS$I_$A`$I_$I|Er$I|$I}$Dk$I}$JO$Dk$JO$JTEr$JT$JU$A`$JU$KVEr$KV$KW$A`$KW&FUEr&FU&FV$A`&FV;'SEr;'S;=`I|<%l?HTEr?HT?HU$A`?HUOEr(n%d_$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z&j&hT$i&jO!^&c!_#o&c#p;'S&c;'S;=`&w<%lO&c&j&zP;=`<%l&c'|'U]$i&j(Y!bOY&}YZ&cZw&}wx&cx!^&}!^!_'}!_#O&}#O#P&c#P#o&}#o#p'}#p;'S&};'S;=`(l<%lO&}!b(SU(Y!bOY'}Zw'}x#O'}#P;'S'};'S;=`(f<%lO'}!b(iP;=`<%l'}'|(oP;=`<%l&}'[(y]$i&j(VpOY(rYZ&cZr(rrs&cs!^(r!^!_)r!_#O(r#O#P&c#P#o(r#o#p)r#p;'S(r;'S;=`*a<%lO(rp)wU(VpOY)rZr)rs#O)r#P;'S)r;'S;=`*Z<%lO)rp*^P;=`<%l)r'[*dP;=`<%l(r#S*nX(Vp(Y!bOY*gZr*grs'}sw*gwx)rx#O*g#P;'S*g;'S;=`+Z<%lO*g#S+^P;=`<%l*g(n+dP;=`<%l%Z07[+rq$i&j(Vp(Y!b'{0/lOX%ZXY+gYZ&cZ[+g[p%Zpq+gqr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_#O%Z#O#P&c#P#o%Z#o#p*g#p$f%Z$f$g+g$g#BY%Z#BY#BZ+g#BZ$IS%Z$IS$I_+g$I_$JT%Z$JT$JU+g$JU$KV%Z$KV$KW+g$KW&FU%Z&FU&FV+g&FV;'S%Z;'S;=`+a<%l?HT%Z?HT?HU+g?HUO%Z07[.ST(W#S$i&j'|0/lO!^&c!_#o&c#p;'S&c;'S;=`&w<%lO&c07[.n_$i&j(Vp(Y!b'|0/lOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z)3p/x`$i&j!p),Q(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_!`0z!`#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z(KW1V`#v(Ch$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_!`2X!`#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z(KW2d_#v(Ch$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z'At3l_(U':f$i&j(Y!bOY4kYZ5qZr4krs7nsw4kwx5qx!^4k!^!_8p!_#O4k#O#P5q#P#o4k#o#p8p#p;'S4k;'S;=`:X<%lO4k(^4r_$i&j(Y!bOY4kYZ5qZr4krs7nsw4kwx5qx!^4k!^!_8p!_#O4k#O#P5q#P#o4k#o#p8p#p;'S4k;'S;=`:X<%lO4k&z5vX$i&jOr5qrs6cs!^5q!^!_6y!_#o5q#o#p6y#p;'S5q;'S;=`7h<%lO5q&z6jT$d`$i&jO!^&c!_#o&c#p;'S&c;'S;=`&w<%lO&c`6|TOr6yrs7]s;'S6y;'S;=`7b<%lO6y`7bO$d``7eP;=`<%l6y&z7kP;=`<%l5q(^7w]$d`$i&j(Y!bOY&}YZ&cZw&}wx&cx!^&}!^!_'}!_#O&}#O#P&c#P#o&}#o#p'}#p;'S&};'S;=`(l<%lO&}!r8uZ(Y!bOY8pYZ6yZr8prs9hsw8pwx6yx#O8p#O#P6y#P;'S8p;'S;=`:R<%lO8p!r9oU$d`(Y!bOY'}Zw'}x#O'}#P;'S'};'S;=`(f<%lO'}!r:UP;=`<%l8p(^:[P;=`<%l4k%9[:hh$i&j(Vp(Y!bOY%ZYZ&cZq%Zqr<Srs&}st%ZtuCruw%Zwx(rx!^%Z!^!_*g!_!c%Z!c!}Cr!}#O%Z#O#P&c#P#R%Z#R#SCr#S#T%Z#T#oCr#o#p*g#p$g%Z$g;'SCr;'S;=`El<%lOCr(r<__WS$i&j(Vp(Y!bOY<SYZ&cZr<Srs=^sw<Swx@nx!^<S!^!_Bm!_#O<S#O#P>`#P#o<S#o#pBm#p;'S<S;'S;=`Cl<%lO<S(Q=g]WS$i&j(Y!bOY=^YZ&cZw=^wx>`x!^=^!^!_?q!_#O=^#O#P>`#P#o=^#o#p?q#p;'S=^;'S;=`@h<%lO=^&n>gXWS$i&jOY>`YZ&cZ!^>`!^!_?S!_#o>`#o#p?S#p;'S>`;'S;=`?k<%lO>`S?XSWSOY?SZ;'S?S;'S;=`?e<%lO?SS?hP;=`<%l?S&n?nP;=`<%l>`!f?xWWS(Y!bOY?qZw?qwx?Sx#O?q#O#P?S#P;'S?q;'S;=`@b<%lO?q!f@eP;=`<%l?q(Q@kP;=`<%l=^'`@w]WS$i&j(VpOY@nYZ&cZr@nrs>`s!^@n!^!_Ap!_#O@n#O#P>`#P#o@n#o#pAp#p;'S@n;'S;=`Bg<%lO@ntAwWWS(VpOYApZrAprs?Ss#OAp#O#P?S#P;'SAp;'S;=`Ba<%lOAptBdP;=`<%lAp'`BjP;=`<%l@n#WBvYWS(Vp(Y!bOYBmZrBmrs?qswBmwxApx#OBm#O#P?S#P;'SBm;'S;=`Cf<%lOBm#WCiP;=`<%lBm(rCoP;=`<%l<S%9[C}i$i&j(n%1l(Vp(Y!bOY%ZYZ&cZr%Zrs&}st%ZtuCruw%Zwx(rx!Q%Z!Q![Cr![!^%Z!^!_*g!_!c%Z!c!}Cr!}#O%Z#O#P&c#P#R%Z#R#SCr#S#T%Z#T#oCr#o#p*g#p$g%Z$g;'SCr;'S;=`El<%lOCr%9[EoP;=`<%lCr07[FRk$i&j(Vp(Y!b$]#t(S,2j(d$I[OY%ZYZ&cZr%Zrs&}st%ZtuEruw%Zwx(rx}%Z}!OGv!O!Q%Z!Q![Er![!^%Z!^!_*g!_!c%Z!c!}Er!}#O%Z#O#P&c#P#R%Z#R#SEr#S#T%Z#T#oEr#o#p*g#p$g%Z$g;'SEr;'S;=`I|<%lOEr+dHRk$i&j(Vp(Y!b$]#tOY%ZYZ&cZr%Zrs&}st%ZtuGvuw%Zwx(rx}%Z}!OGv!O!Q%Z!Q![Gv![!^%Z!^!_*g!_!c%Z!c!}Gv!}#O%Z#O#P&c#P#R%Z#R#SGv#S#T%Z#T#oGv#o#p*g#p$g%Z$g;'SGv;'S;=`Iv<%lOGv+dIyP;=`<%lGv07[JPP;=`<%lEr(KWJ_`$i&j(Vp(Y!b#p(ChOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_!`Ka!`#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z(KWKl_$i&j$Q(Ch(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z,#xLva(y+JY$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sv%ZvwM{wx(rx!^%Z!^!_*g!_!`Ka!`#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z(KWNW`$i&j#z(Ch(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_!`Ka!`#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z'At! c_(X';W$i&j(VpOY!!bYZ!#hZr!!brs!#hsw!!bwx!$xx!^!!b!^!_!%z!_#O!!b#O#P!#h#P#o!!b#o#p!%z#p;'S!!b;'S;=`!'c<%lO!!b'l!!i_$i&j(VpOY!!bYZ!#hZr!!brs!#hsw!!bwx!$xx!^!!b!^!_!%z!_#O!!b#O#P!#h#P#o!!b#o#p!%z#p;'S!!b;'S;=`!'c<%lO!!b&z!#mX$i&jOw!#hwx6cx!^!#h!^!_!$Y!_#o!#h#o#p!$Y#p;'S!#h;'S;=`!$r<%lO!#h`!$]TOw!$Ywx7]x;'S!$Y;'S;=`!$l<%lO!$Y`!$oP;=`<%l!$Y&z!$uP;=`<%l!#h'l!%R]$d`$i&j(VpOY(rYZ&cZr(rrs&cs!^(r!^!_)r!_#O(r#O#P&c#P#o(r#o#p)r#p;'S(r;'S;=`*a<%lO(r!Q!&PZ(VpOY!%zYZ!$YZr!%zrs!$Ysw!%zwx!&rx#O!%z#O#P!$Y#P;'S!%z;'S;=`!']<%lO!%z!Q!&yU$d`(VpOY)rZr)rs#O)r#P;'S)r;'S;=`*Z<%lO)r!Q!'`P;=`<%l!%z'l!'fP;=`<%l!!b/5|!'t_!l/.^$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z#&U!)O_!k!Lf$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z-!n!*[b$i&j(Vp(Y!b(T%&f#q(ChOY%ZYZ&cZr%Zrs&}sw%Zwx(rxz%Zz{!+d{!^%Z!^!_*g!_!`Ka!`#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z(KW!+o`$i&j(Vp(Y!b#n(ChOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_!`Ka!`#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z+;x!,|`$i&j(Vp(Y!br+4YOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_!`Ka!`#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z,$U!.Z_!]+Jf$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z07[!/ec$i&j(Vp(Y!b!Q.2^OY%ZYZ&cZr%Zrs&}sw%Zwx(rx!O%Z!O!P!0p!P!Q%Z!Q![!3Y![!^%Z!^!_*g!_#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z#%|!0ya$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!O%Z!O!P!2O!P!^%Z!^!_*g!_#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z#%|!2Z_![!L^$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z'Ad!3eg$i&j(Vp(Y!bs'9tOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!Q%Z!Q![!3Y![!^%Z!^!_*g!_!g%Z!g!h!4|!h#O%Z#O#P&c#P#R%Z#R#S!3Y#S#X%Z#X#Y!4|#Y#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z'Ad!5Vg$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx{%Z{|!6n|}%Z}!O!6n!O!Q%Z!Q![!8S![!^%Z!^!_*g!_#O%Z#O#P&c#P#R%Z#R#S!8S#S#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z'Ad!6wc$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!Q%Z!Q![!8S![!^%Z!^!_*g!_#O%Z#O#P&c#P#R%Z#R#S!8S#S#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z'Ad!8_c$i&j(Vp(Y!bs'9tOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!Q%Z!Q![!8S![!^%Z!^!_*g!_#O%Z#O#P&c#P#R%Z#R#S!8S#S#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z07[!9uf$i&j(Vp(Y!b#o(ChOY!;ZYZ&cZr!;Zrs!<nsw!;Zwx!Lcxz!;Zz{#-}{!P!;Z!P!Q#/d!Q!^!;Z!^!_#(i!_!`#7S!`!a#8i!a!}!;Z!}#O#,f#O#P!Dy#P#o!;Z#o#p#(i#p;'S!;Z;'S;=`#-w<%lO!;Z?O!;fb$i&j(Vp(Y!b!X7`OY!;ZYZ&cZr!;Zrs!<nsw!;Zwx!Lcx!P!;Z!P!Q#&`!Q!^!;Z!^!_#(i!_!}!;Z!}#O#,f#O#P!Dy#P#o!;Z#o#p#(i#p;'S!;Z;'S;=`#-w<%lO!;Z>^!<w`$i&j(Y!b!X7`OY!<nYZ&cZw!<nwx!=yx!P!<n!P!Q!Eq!Q!^!<n!^!_!Gr!_!}!<n!}#O!KS#O#P!Dy#P#o!<n#o#p!Gr#p;'S!<n;'S;=`!L]<%lO!<n<z!>Q^$i&j!X7`OY!=yYZ&cZ!P!=y!P!Q!>|!Q!^!=y!^!_!@c!_!}!=y!}#O!CW#O#P!Dy#P#o!=y#o#p!@c#p;'S!=y;'S;=`!Ek<%lO!=y<z!?Td$i&j!X7`O!^&c!_#W&c#W#X!>|#X#Z&c#Z#[!>|#[#]&c#]#^!>|#^#a&c#a#b!>|#b#g&c#g#h!>|#h#i&c#i#j!>|#j#k!>|#k#m&c#m#n!>|#n#o&c#p;'S&c;'S;=`&w<%lO&c7`!@hX!X7`OY!@cZ!P!@c!P!Q!AT!Q!}!@c!}#O!Ar#O#P!Bq#P;'S!@c;'S;=`!CQ<%lO!@c7`!AYW!X7`#W#X!AT#Z#[!AT#]#^!AT#a#b!AT#g#h!AT#i#j!AT#j#k!AT#m#n!AT7`!AuVOY!ArZ#O!Ar#O#P!B[#P#Q!@c#Q;'S!Ar;'S;=`!Bk<%lO!Ar7`!B_SOY!ArZ;'S!Ar;'S;=`!Bk<%lO!Ar7`!BnP;=`<%l!Ar7`!BtSOY!@cZ;'S!@c;'S;=`!CQ<%lO!@c7`!CTP;=`<%l!@c<z!C][$i&jOY!CWYZ&cZ!^!CW!^!_!Ar!_#O!CW#O#P!DR#P#Q!=y#Q#o!CW#o#p!Ar#p;'S!CW;'S;=`!Ds<%lO!CW<z!DWX$i&jOY!CWYZ&cZ!^!CW!^!_!Ar!_#o!CW#o#p!Ar#p;'S!CW;'S;=`!Ds<%lO!CW<z!DvP;=`<%l!CW<z!EOX$i&jOY!=yYZ&cZ!^!=y!^!_!@c!_#o!=y#o#p!@c#p;'S!=y;'S;=`!Ek<%lO!=y<z!EnP;=`<%l!=y>^!Ezl$i&j(Y!b!X7`OY&}YZ&cZw&}wx&cx!^&}!^!_'}!_#O&}#O#P&c#P#W&}#W#X!Eq#X#Z&}#Z#[!Eq#[#]&}#]#^!Eq#^#a&}#a#b!Eq#b#g&}#g#h!Eq#h#i&}#i#j!Eq#j#k!Eq#k#m&}#m#n!Eq#n#o&}#o#p'}#p;'S&};'S;=`(l<%lO&}8r!GyZ(Y!b!X7`OY!GrZw!Grwx!@cx!P!Gr!P!Q!Hl!Q!}!Gr!}#O!JU#O#P!Bq#P;'S!Gr;'S;=`!J|<%lO!Gr8r!Hse(Y!b!X7`OY'}Zw'}x#O'}#P#W'}#W#X!Hl#X#Z'}#Z#[!Hl#[#]'}#]#^!Hl#^#a'}#a#b!Hl#b#g'}#g#h!Hl#h#i'}#i#j!Hl#j#k!Hl#k#m'}#m#n!Hl#n;'S'};'S;=`(f<%lO'}8r!JZX(Y!bOY!JUZw!JUwx!Arx#O!JU#O#P!B[#P#Q!Gr#Q;'S!JU;'S;=`!Jv<%lO!JU8r!JyP;=`<%l!JU8r!KPP;=`<%l!Gr>^!KZ^$i&j(Y!bOY!KSYZ&cZw!KSwx!CWx!^!KS!^!_!JU!_#O!KS#O#P!DR#P#Q!<n#Q#o!KS#o#p!JU#p;'S!KS;'S;=`!LV<%lO!KS>^!LYP;=`<%l!KS>^!L`P;=`<%l!<n=l!Ll`$i&j(Vp!X7`OY!LcYZ&cZr!Lcrs!=ys!P!Lc!P!Q!Mn!Q!^!Lc!^!_# o!_!}!Lc!}#O#%P#O#P!Dy#P#o!Lc#o#p# o#p;'S!Lc;'S;=`#&Y<%lO!Lc=l!Mwl$i&j(Vp!X7`OY(rYZ&cZr(rrs&cs!^(r!^!_)r!_#O(r#O#P&c#P#W(r#W#X!Mn#X#Z(r#Z#[!Mn#[#](r#]#^!Mn#^#a(r#a#b!Mn#b#g(r#g#h!Mn#h#i(r#i#j!Mn#j#k!Mn#k#m(r#m#n!Mn#n#o(r#o#p)r#p;'S(r;'S;=`*a<%lO(r8Q# vZ(Vp!X7`OY# oZr# ors!@cs!P# o!P!Q#!i!Q!}# o!}#O#$R#O#P!Bq#P;'S# o;'S;=`#$y<%lO# o8Q#!pe(Vp!X7`OY)rZr)rs#O)r#P#W)r#W#X#!i#X#Z)r#Z#[#!i#[#])r#]#^#!i#^#a)r#a#b#!i#b#g)r#g#h#!i#h#i)r#i#j#!i#j#k#!i#k#m)r#m#n#!i#n;'S)r;'S;=`*Z<%lO)r8Q#$WX(VpOY#$RZr#$Rrs!Ars#O#$R#O#P!B[#P#Q# o#Q;'S#$R;'S;=`#$s<%lO#$R8Q#$vP;=`<%l#$R8Q#$|P;=`<%l# o=l#%W^$i&j(VpOY#%PYZ&cZr#%Prs!CWs!^#%P!^!_#$R!_#O#%P#O#P!DR#P#Q!Lc#Q#o#%P#o#p#$R#p;'S#%P;'S;=`#&S<%lO#%P=l#&VP;=`<%l#%P=l#&]P;=`<%l!Lc?O#&kn$i&j(Vp(Y!b!X7`OY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_#O%Z#O#P&c#P#W%Z#W#X#&`#X#Z%Z#Z#[#&`#[#]%Z#]#^#&`#^#a%Z#a#b#&`#b#g%Z#g#h#&`#h#i%Z#i#j#&`#j#k#&`#k#m%Z#m#n#&`#n#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z9d#(r](Vp(Y!b!X7`OY#(iZr#(irs!Grsw#(iwx# ox!P#(i!P!Q#)k!Q!}#(i!}#O#+`#O#P!Bq#P;'S#(i;'S;=`#,`<%lO#(i9d#)th(Vp(Y!b!X7`OY*gZr*grs'}sw*gwx)rx#O*g#P#W*g#W#X#)k#X#Z*g#Z#[#)k#[#]*g#]#^#)k#^#a*g#a#b#)k#b#g*g#g#h#)k#h#i*g#i#j#)k#j#k#)k#k#m*g#m#n#)k#n;'S*g;'S;=`+Z<%lO*g9d#+gZ(Vp(Y!bOY#+`Zr#+`rs!JUsw#+`wx#$Rx#O#+`#O#P!B[#P#Q#(i#Q;'S#+`;'S;=`#,Y<%lO#+`9d#,]P;=`<%l#+`9d#,cP;=`<%l#(i?O#,o`$i&j(Vp(Y!bOY#,fYZ&cZr#,frs!KSsw#,fwx#%Px!^#,f!^!_#+`!_#O#,f#O#P!DR#P#Q!;Z#Q#o#,f#o#p#+`#p;'S#,f;'S;=`#-q<%lO#,f?O#-tP;=`<%l#,f?O#-zP;=`<%l!;Z07[#.[b$i&j(Vp(Y!b'}0/l!X7`OY!;ZYZ&cZr!;Zrs!<nsw!;Zwx!Lcx!P!;Z!P!Q#&`!Q!^!;Z!^!_#(i!_!}!;Z!}#O#,f#O#P!Dy#P#o!;Z#o#p#(i#p;'S!;Z;'S;=`#-w<%lO!;Z07[#/o_$i&j(Vp(Y!bT0/lOY#/dYZ&cZr#/drs#0nsw#/dwx#4Ox!^#/d!^!_#5}!_#O#/d#O#P#1p#P#o#/d#o#p#5}#p;'S#/d;'S;=`#6|<%lO#/d06j#0w]$i&j(Y!bT0/lOY#0nYZ&cZw#0nwx#1px!^#0n!^!_#3R!_#O#0n#O#P#1p#P#o#0n#o#p#3R#p;'S#0n;'S;=`#3x<%lO#0n05W#1wX$i&jT0/lOY#1pYZ&cZ!^#1p!^!_#2d!_#o#1p#o#p#2d#p;'S#1p;'S;=`#2{<%lO#1p0/l#2iST0/lOY#2dZ;'S#2d;'S;=`#2u<%lO#2d0/l#2xP;=`<%l#2d05W#3OP;=`<%l#1p01O#3YW(Y!bT0/lOY#3RZw#3Rwx#2dx#O#3R#O#P#2d#P;'S#3R;'S;=`#3r<%lO#3R01O#3uP;=`<%l#3R06j#3{P;=`<%l#0n05x#4X]$i&j(VpT0/lOY#4OYZ&cZr#4Ors#1ps!^#4O!^!_#5Q!_#O#4O#O#P#1p#P#o#4O#o#p#5Q#p;'S#4O;'S;=`#5w<%lO#4O00^#5XW(VpT0/lOY#5QZr#5Qrs#2ds#O#5Q#O#P#2d#P;'S#5Q;'S;=`#5q<%lO#5Q00^#5tP;=`<%l#5Q05x#5zP;=`<%l#4O01p#6WY(Vp(Y!bT0/lOY#5}Zr#5}rs#3Rsw#5}wx#5Qx#O#5}#O#P#2d#P;'S#5};'S;=`#6v<%lO#5}01p#6yP;=`<%l#5}07[#7PP;=`<%l#/d)3h#7ab$i&j$Q(Ch(Vp(Y!b!X7`OY!;ZYZ&cZr!;Zrs!<nsw!;Zwx!Lcx!P!;Z!P!Q#&`!Q!^!;Z!^!_#(i!_!}!;Z!}#O#,f#O#P!Dy#P#o!;Z#o#p#(i#p;'S!;Z;'S;=`#-w<%lO!;ZAt#8vb$Z#t$i&j(Vp(Y!b!X7`OY!;ZYZ&cZr!;Zrs!<nsw!;Zwx!Lcx!P!;Z!P!Q#&`!Q!^!;Z!^!_#(i!_!}!;Z!}#O#,f#O#P!Dy#P#o!;Z#o#p#(i#p;'S!;Z;'S;=`#-w<%lO!;Z'Ad#:Zp$i&j(Vp(Y!bs'9tOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!O%Z!O!P!3Y!P!Q%Z!Q![#<_![!^%Z!^!_*g!_!g%Z!g!h!4|!h#O%Z#O#P&c#P#R%Z#R#S#<_#S#U%Z#U#V#?i#V#X%Z#X#Y!4|#Y#b%Z#b#c#>_#c#d#Bq#d#l%Z#l#m#Es#m#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z'Ad#<jk$i&j(Vp(Y!bs'9tOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!O%Z!O!P!3Y!P!Q%Z!Q![#<_![!^%Z!^!_*g!_!g%Z!g!h!4|!h#O%Z#O#P&c#P#R%Z#R#S#<_#S#X%Z#X#Y!4|#Y#b%Z#b#c#>_#c#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z'Ad#>j_$i&j(Vp(Y!bs'9tOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z'Ad#?rd$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!Q%Z!Q!R#AQ!R!S#AQ!S!^%Z!^!_*g!_#O%Z#O#P&c#P#R%Z#R#S#AQ#S#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z'Ad#A]f$i&j(Vp(Y!bs'9tOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!Q%Z!Q!R#AQ!R!S#AQ!S!^%Z!^!_*g!_#O%Z#O#P&c#P#R%Z#R#S#AQ#S#b%Z#b#c#>_#c#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z'Ad#Bzc$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!Q%Z!Q!Y#DV!Y!^%Z!^!_*g!_#O%Z#O#P&c#P#R%Z#R#S#DV#S#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z'Ad#Dbe$i&j(Vp(Y!bs'9tOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!Q%Z!Q!Y#DV!Y!^%Z!^!_*g!_#O%Z#O#P&c#P#R%Z#R#S#DV#S#b%Z#b#c#>_#c#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z'Ad#E|g$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!Q%Z!Q![#Ge![!^%Z!^!_*g!_!c%Z!c!i#Ge!i#O%Z#O#P&c#P#R%Z#R#S#Ge#S#T%Z#T#Z#Ge#Z#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z'Ad#Gpi$i&j(Vp(Y!bs'9tOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!Q%Z!Q![#Ge![!^%Z!^!_*g!_!c%Z!c!i#Ge!i#O%Z#O#P&c#P#R%Z#R#S#Ge#S#T%Z#T#Z#Ge#Z#b%Z#b#c#>_#c#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z*)x#Il_!g$b$i&j$O)Lv(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z)[#Jv_al$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z04f#LS^h#)`#R-<U(Vp(Y!b$n7`OY*gZr*grs'}sw*gwx)rx!P*g!P!Q#MO!Q!^*g!^!_#Mt!_!`$ f!`#O*g#P;'S*g;'S;=`+Z<%lO*g(n#MXX$k&j(Vp(Y!bOY*gZr*grs'}sw*gwx)rx#O*g#P;'S*g;'S;=`+Z<%lO*g(El#M}Z#r(Ch(Vp(Y!bOY*gZr*grs'}sw*gwx)rx!_*g!_!`#Np!`#O*g#P;'S*g;'S;=`+Z<%lO*g(El#NyX$Q(Ch(Vp(Y!bOY*gZr*grs'}sw*gwx)rx#O*g#P;'S*g;'S;=`+Z<%lO*g(El$ oX#s(Ch(Vp(Y!bOY*gZr*grs'}sw*gwx)rx#O*g#P;'S*g;'S;=`+Z<%lO*g*)x$!ga#`*!Y$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_!`0z!`!a$#l!a#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z(K[$#w_#k(Cl$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z*)x$%Vag!*r#s(Ch$f#|$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_!`$&[!`!a$'f!a#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z(KW$&g_#s(Ch$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z(KW$'qa#r(Ch$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_!`Ka!`!a$(v!a#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z(KW$)R`#r(Ch$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_!`Ka!`#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z(Kd$*`a(q(Ct$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_!a%Z!a!b$+e!b#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z(KW$+p`$i&j#{(Ch(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_!`Ka!`#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z%#`$,}_!|$Ip$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z04f$.X_!S0,v$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z(n$/]Z$i&jO!^$0O!^!_$0f!_#i$0O#i#j$0k#j#l$0O#l#m$2^#m#o$0O#o#p$0f#p;'S$0O;'S;=`$4i<%lO$0O(n$0VT_#S$i&jO!^&c!_#o&c#p;'S&c;'S;=`&w<%lO&c#S$0kO_#S(n$0p[$i&jO!Q&c!Q![$1f![!^&c!_!c&c!c!i$1f!i#T&c#T#Z$1f#Z#o&c#o#p$3|#p;'S&c;'S;=`&w<%lO&c(n$1kZ$i&jO!Q&c!Q![$2^![!^&c!_!c&c!c!i$2^!i#T&c#T#Z$2^#Z#o&c#p;'S&c;'S;=`&w<%lO&c(n$2cZ$i&jO!Q&c!Q![$3U![!^&c!_!c&c!c!i$3U!i#T&c#T#Z$3U#Z#o&c#p;'S&c;'S;=`&w<%lO&c(n$3ZZ$i&jO!Q&c!Q![$0O![!^&c!_!c&c!c!i$0O!i#T&c#T#Z$0O#Z#o&c#p;'S&c;'S;=`&w<%lO&c#S$4PR!Q![$4Y!c!i$4Y#T#Z$4Y#S$4]S!Q![$4Y!c!i$4Y#T#Z$4Y#q#r$0f(n$4lP;=`<%l$0O#1[$4z_!Y#)l$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z(KW$6U`#x(Ch$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_!`Ka!`#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z+;p$7c_$i&j(Vp(Y!b(`+4QOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z07[$8qk$i&j(Vp(Y!b(S,2j$_#t(d$I[OY%ZYZ&cZr%Zrs&}st%Ztu$8buw%Zwx(rx}%Z}!O$:f!O!Q%Z!Q![$8b![!^%Z!^!_*g!_!c%Z!c!}$8b!}#O%Z#O#P&c#P#R%Z#R#S$8b#S#T%Z#T#o$8b#o#p*g#p$g%Z$g;'S$8b;'S;=`$<l<%lO$8b+d$:qk$i&j(Vp(Y!b$_#tOY%ZYZ&cZr%Zrs&}st%Ztu$:fuw%Zwx(rx}%Z}!O$:f!O!Q%Z!Q![$:f![!^%Z!^!_*g!_!c%Z!c!}$:f!}#O%Z#O#P&c#P#R%Z#R#S$:f#S#T%Z#T#o$:f#o#p*g#p$g%Z$g;'S$:f;'S;=`$<f<%lO$:f+d$<iP;=`<%l$:f07[$<oP;=`<%l$8b#Jf$<{X!_#Hb(Vp(Y!bOY*gZr*grs'}sw*gwx)rx#O*g#P;'S*g;'S;=`+Z<%lO*g,#x$=sa(x+JY$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_!`Ka!`#O%Z#O#P&c#P#o%Z#o#p*g#p#q$+e#q;'S%Z;'S;=`+a<%lO%Z)>v$?V_!^(CdvBr$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z?O$@a_!q7`$i&j(Vp(Y!bOY%ZYZ&cZr%Zrs&}sw%Zwx(rx!^%Z!^!_*g!_#O%Z#O#P&c#P#o%Z#o#p*g#p;'S%Z;'S;=`+a<%lO%Z07[$Aq|$i&j(Vp(Y!b'{0/l$]#t(S,2j(d$I[OX%ZXY+gYZ&cZ[+g[p%Zpq+gqr%Zrs&}st%ZtuEruw%Zwx(rx}%Z}!OGv!O!Q%Z!Q![Er![!^%Z!^!_*g!_!c%Z!c!}Er!}#O%Z#O#P&c#P#R%Z#R#SEr#S#T%Z#T#oEr#o#p*g#p$f%Z$f$g+g$g#BYEr#BY#BZ$A`#BZ$ISEr$IS$I_$A`$I_$JTEr$JT$JU$A`$JU$KVEr$KV$KW$A`$KW&FUEr&FU&FV$A`&FV;'SEr;'S;=`I|<%l?HTEr?HT?HU$A`?HUOEr07[$D|k$i&j(Vp(Y!b'|0/l$]#t(S,2j(d$I[OY%ZYZ&cZr%Zrs&}st%ZtuEruw%Zwx(rx}%Z}!OGv!O!Q%Z!Q![Er![!^%Z!^!_*g!_!c%Z!c!}Er!}#O%Z#O#P&c#P#R%Z#R#SEr#S#T%Z#T#oEr#o#p*g#p$g%Z$g;'SEr;'S;=`I|<%lOEr",
+    tokenizers: [noSemicolon, noSemicolonType, operatorToken, jsx, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, insertSemicolon, new LocalTokenGroup("$S~RRtu[#O#Pg#S#T#|~_P#o#pb~gOx~~jVO#i!P#i#j!U#j#l!P#l#m!q#m;'S!P;'S;=`#v<%lO!P~!UO!U~~!XS!Q![!e!c!i!e#T#Z!e#o#p#Z~!hR!Q![!q!c!i!q#T#Z!q~!tR!Q![!}!c!i!}#T#Z!}~#QR!Q![!P!c!i!P#T#Z!P~#^R!Q![#g!c!i#g#T#Z#g~#jS!Q![#g!c!i#g#T#Z#g#q#r!P~#yP;=`<%l!P~$RO(b~~", 141, 339), new LocalTokenGroup("j~RQYZXz{^~^O(P~~aP!P!Qd~iO(Q~~", 25, 322)],
+    topRules: { "Script": [0, 7], "SingleExpression": [1, 275], "SingleClassItem": [2, 276] },
+    dialects: { jsx: 0, ts: 15098 },
+    dynamicPrecedences: { "80": 1, "82": 1, "94": 1, "169": 1, "199": 1 },
+    specialized: [{ term: 326, get: (value) => dist_spec_identifier[value] || -1 }, { term: 342, get: (value) => spec_word[value] || -1 }, { term: 95, get: (value) => spec_LessThan[value] || -1 }],
+    tokenPrec: 15124
+});
+
+
+;// ./node_modules/@codemirror/lang-javascript/dist/index.js
+
+
+
+
+
+
+const snippets = [
+    snippetCompletion("function ${name}(${params}) {\n\t${}\n}", {
+        label: "function",
+        detail: "definition",
+        type: "keyword"
+    }),
+    snippetCompletion("for (let ${index} = 0; ${index} < ${bound}; ${index}++) {\n\t${}\n}", {
+        label: "for",
+        detail: "loop",
+        type: "keyword"
+    }),
+    snippetCompletion("for (let ${name} of ${collection}) {\n\t${}\n}", {
+        label: "for",
+        detail: "of loop",
+        type: "keyword"
+    }),
+    snippetCompletion("do {\n\t${}\n} while (${})", {
+        label: "do",
+        detail: "loop",
+        type: "keyword"
+    }),
+    snippetCompletion("while (${}) {\n\t${}\n}", {
+        label: "while",
+        detail: "loop",
+        type: "keyword"
+    }),
+    snippetCompletion("try {\n\t${}\n} catch (${error}) {\n\t${}\n}", {
+        label: "try",
+        detail: "/ catch block",
+        type: "keyword"
+    }),
+    snippetCompletion("if (${}) {\n\t${}\n}", {
+        label: "if",
+        detail: "block",
+        type: "keyword"
+    }),
+    snippetCompletion("if (${}) {\n\t${}\n} else {\n\t${}\n}", {
+        label: "if",
+        detail: "/ else block",
+        type: "keyword"
+    }),
+    snippetCompletion("class ${name} {\n\tconstructor(${params}) {\n\t\t${}\n\t}\n}", {
+        label: "class",
+        detail: "definition",
+        type: "keyword"
+    }),
+    snippetCompletion("import {${names}} from \"${module}\"\n${}", {
+        label: "import",
+        detail: "named",
+        type: "keyword"
+    }),
+    snippetCompletion("import ${name} from \"${module}\"\n${}", {
+        label: "import",
+        detail: "default",
+        type: "keyword"
+    })
+];
+const typescriptSnippets = snippets.concat([
+    snippetCompletion("interface ${name} {\n\t${}\n}", {
+        label: "interface",
+        detail: "definition",
+        type: "keyword"
+    }),
+    snippetCompletion("type ${name} = ${type}", {
+        label: "type",
+        detail: "definition",
+        type: "keyword"
+    }),
+    snippetCompletion("enum ${name} {\n\t${}\n}", {
+        label: "enum",
+        detail: "definition",
+        type: "keyword"
+    })
+]);
+const cache = new NodeWeakMap();
+const ScopeNodes = new Set([
+    "Script", "Block",
+    "FunctionExpression", "FunctionDeclaration", "ArrowFunction", "MethodDeclaration",
+    "ForStatement"
+]);
+function defID(type) {
+    return (node, def) => {
+        let id = node.node.getChild("VariableDefinition");
+        if (id)
+            def(id, type);
+        return true;
+    };
+}
+const functionContext = ["FunctionDeclaration"];
+const gatherCompletions = {
+    FunctionDeclaration: defID("function"),
+    ClassDeclaration: defID("class"),
+    ClassExpression: () => true,
+    EnumDeclaration: defID("constant"),
+    TypeAliasDeclaration: defID("type"),
+    NamespaceDeclaration: defID("namespace"),
+    VariableDefinition(node, def) {
+        if (!node.matchContext(functionContext))
+            def(node, "variable");
+    },
+    TypeDefinition(node, def) { def(node, "type"); },
+    __proto__: null
+};
+function getScope(doc, node) {
+    let cached = cache.get(node);
+    if (cached)
+        return cached;
+    let completions = [], top = true;
+    function def(node, type) {
+        let name = doc.sliceString(node.from, node.to);
+        completions.push({ label: name, type });
+    }
+    node.cursor(IterMode.IncludeAnonymous).iterate(node => {
+        if (top) {
+            top = false;
+        }
+        else if (node.name) {
+            let gather = gatherCompletions[node.name];
+            if (gather && gather(node, def) || ScopeNodes.has(node.name))
+                return false;
+        }
+        else if (node.to - node.from > 8192) {
+            for (let c of getScope(doc, node.node))
+                completions.push(c);
+            return false;
+        }
+    });
+    cache.set(node, completions);
+    return completions;
+}
+const Identifier = /^[\w$\xa1-\uffff][\w$\d\xa1-\uffff]*$/;
+const dontComplete = [
+    "TemplateString", "String", "RegExp",
+    "LineComment", "BlockComment",
+    "VariableDefinition", "TypeDefinition", "Label",
+    "PropertyDefinition", "PropertyName",
+    "PrivatePropertyDefinition", "PrivatePropertyName",
+    "JSXText", "JSXAttributeValue", "JSXOpenTag", "JSXCloseTag", "JSXSelfClosingTag",
+    ".", "?."
+];
+function localCompletionSource(context) {
+    let inner = dist_syntaxTree(context.state).resolveInner(context.pos, -1);
+    if (dontComplete.indexOf(inner.name) > -1)
+        return null;
+    let isWord = inner.name == "VariableName" ||
+        inner.to - inner.from < 20 && Identifier.test(context.state.sliceDoc(inner.from, inner.to));
+    if (!isWord && !context.explicit)
+        return null;
+    let options = [];
+    for (let pos = inner; pos; pos = pos.parent) {
+        if (ScopeNodes.has(pos.name))
+            options = options.concat(getScope(context.state.doc, pos));
+    }
+    return {
+        options,
+        from: isWord ? inner.from : context.pos,
+        validFor: Identifier
+    };
+}
+function pathFor(read, member, name) {
+    var _a;
+    let path = [];
+    for (;;) {
+        let obj = member.firstChild, prop;
+        if ((obj === null || obj === void 0 ? void 0 : obj.name) == "VariableName") {
+            path.push(read(obj));
+            return { path: path.reverse(), name };
+        }
+        else if ((obj === null || obj === void 0 ? void 0 : obj.name) == "MemberExpression" && ((_a = (prop = obj.lastChild)) === null || _a === void 0 ? void 0 : _a.name) == "PropertyName") {
+            path.push(read(prop));
+            member = obj;
+        }
+        else {
+            return null;
+        }
+    }
+}
+function completionPath(context) {
+    let read = (node) => context.state.doc.sliceString(node.from, node.to);
+    let inner = syntaxTree(context.state).resolveInner(context.pos, -1);
+    if (inner.name == "PropertyName") {
+        return pathFor(read, inner.parent, read(inner));
+    }
+    else if ((inner.name == "." || inner.name == "?.") && inner.parent.name == "MemberExpression") {
+        return pathFor(read, inner.parent, "");
+    }
+    else if (dontComplete.indexOf(inner.name) > -1) {
+        return null;
+    }
+    else if (inner.name == "VariableName" || inner.to - inner.from < 20 && Identifier.test(read(inner))) {
+        return { path: [], name: read(inner) };
+    }
+    else if (inner.name == "MemberExpression") {
+        return pathFor(read, inner, "");
+    }
+    else {
+        return context.explicit ? { path: [], name: "" } : null;
+    }
+}
+function enumeratePropertyCompletions(obj, top) {
+    let options = [], seen = new Set;
+    for (let depth = 0;; depth++) {
+        for (let name of (Object.getOwnPropertyNames || Object.keys)(obj)) {
+            if (!/^[a-zA-Z_$\xaa-\uffdc][\w$\xaa-\uffdc]*$/.test(name) || seen.has(name))
+                continue;
+            seen.add(name);
+            let value;
+            try {
+                value = obj[name];
+            }
+            catch (_) {
+                continue;
+            }
+            options.push({
+                label: name,
+                type: typeof value == "function" ? (/^[A-Z]/.test(name) ? "class" : top ? "function" : "method")
+                    : top ? "variable" : "property",
+                boost: -depth
+            });
+        }
+        let next = Object.getPrototypeOf(obj);
+        if (!next)
+            return options;
+        obj = next;
+    }
+}
+function scopeCompletionSource(scope) {
+    let cache = new Map;
+    return (context) => {
+        let path = completionPath(context);
+        if (!path)
+            return null;
+        let target = scope;
+        for (let step of path.path) {
+            target = target[step];
+            if (!target)
+                return null;
+        }
+        let options = cache.get(target);
+        if (!options)
+            cache.set(target, options = enumeratePropertyCompletions(target, !path.path.length));
+        return {
+            from: context.pos - path.name.length,
+            options,
+            validFor: Identifier
+        };
+    };
+}
+const javascriptLanguage = LRLanguage.define({
+    name: "javascript",
+    parser: dist_parser.configure({
+        props: [
+            indentNodeProp.add({
+                IfStatement: continuedIndent({ except: /^\s*({|else\b)/ }),
+                TryStatement: continuedIndent({ except: /^\s*({|catch\b|finally\b)/ }),
+                LabeledStatement: flatIndent,
+                SwitchBody: context => {
+                    let after = context.textAfter, closed = /^\s*\}/.test(after), isCase = /^\s*(case|default)\b/.test(after);
+                    return context.baseIndent + (closed ? 0 : isCase ? 1 : 2) * context.unit;
+                },
+                Block: delimitedIndent({ closing: "}" }),
+                ArrowFunction: cx => cx.baseIndent + cx.unit,
+                "TemplateString BlockComment": () => null,
+                "Statement Property": continuedIndent({ except: /^\s*{/ }),
+                JSXElement(context) {
+                    let closed = /^\s*<\//.test(context.textAfter);
+                    return context.lineIndent(context.node.from) + (closed ? 0 : context.unit);
+                },
+                JSXEscape(context) {
+                    let closed = /\s*\}/.test(context.textAfter);
+                    return context.lineIndent(context.node.from) + (closed ? 0 : context.unit);
+                },
+                "JSXOpenTag JSXSelfClosingTag"(context) {
+                    return context.column(context.node.from) + context.unit;
+                }
+            }),
+            foldNodeProp.add({
+                "Block ClassBody SwitchBody EnumBody ObjectExpression ArrayExpression ObjectType": foldInside,
+                BlockComment(tree) { return { from: tree.from + 2, to: tree.to - 2 }; }
+            })
+        ]
+    }),
+    languageData: {
+        closeBrackets: { brackets: ["(", "[", "{", "'", '"', "`"] },
+        commentTokens: { line: "//", block: { open: "/*", close: "*/" } },
+        indentOnInput: /^\s*(?:case |default:|\{|\}|<\/)$/,
+        wordChars: "$"
+    }
+});
+const jsxSublanguage = {
+    test: node => /^JSX/.test(node.name),
+    facet: defineLanguageFacet({ commentTokens: { block: { open: "{/*", close: "*/}" } } })
+};
+const typescriptLanguage = javascriptLanguage.configure({ dialect: "ts" }, "typescript");
+const jsxLanguage = javascriptLanguage.configure({
+    dialect: "jsx",
+    props: [sublanguageProp.add(n => n.isTop ? [jsxSublanguage] : undefined)]
+});
+const tsxLanguage = javascriptLanguage.configure({
+    dialect: "jsx ts",
+    props: [sublanguageProp.add(n => n.isTop ? [jsxSublanguage] : undefined)]
+}, "typescript");
+let kwCompletion = (name) => ({ label: name, type: "keyword" });
+const keywords = "break case const continue default delete export extends false finally in instanceof let new return static super switch this throw true typeof var yield".split(" ").map(kwCompletion);
+const typescriptKeywords = keywords.concat(["declare", "implements", "private", "protected", "public"].map(kwCompletion));
+function javascript(config = {}) {
+    let lang = config.jsx ? (config.typescript ? tsxLanguage : jsxLanguage)
+        : config.typescript ? typescriptLanguage : javascriptLanguage;
+    let completions = config.typescript ? typescriptSnippets.concat(typescriptKeywords) : snippets.concat(keywords);
+    return new LanguageSupport(lang, [
+        javascriptLanguage.data.of({
+            autocomplete: ifNotIn(dontComplete, completeFromList(completions))
+        }),
+        javascriptLanguage.data.of({
+            autocomplete: localCompletionSource
+        }),
+        config.jsx ? autoCloseTags : [],
+    ]);
+}
+function findOpenTag(node) {
+    for (;;) {
+        if (node.name == "JSXOpenTag" || node.name == "JSXSelfClosingTag" || node.name == "JSXFragmentTag")
+            return node;
+        if (node.name == "JSXEscape" || !node.parent)
+            return null;
+        node = node.parent;
+    }
+}
+function elementName(doc, tree, max = doc.length) {
+    for (let ch = tree === null || tree === void 0 ? void 0 : tree.firstChild; ch; ch = ch.nextSibling) {
+        if (ch.name == "JSXIdentifier" || ch.name == "JSXBuiltin" || ch.name == "JSXNamespacedName" ||
+            ch.name == "JSXMemberExpression")
+            return doc.sliceString(ch.from, Math.min(ch.to, max));
+    }
+    return "";
+}
+const dist_android = typeof navigator == "object" && /Android\b/.test(navigator.userAgent);
+const autoCloseTags = EditorView.inputHandler.of((view, from, to, text, defaultInsert) => {
+    if ((dist_android ? view.composing : view.compositionStarted) || view.state.readOnly ||
+        from != to || (text != ">" && text != "/") ||
+        !javascriptLanguage.isActiveAt(view.state, from, -1))
+        return false;
+    let base = defaultInsert(), { state } = base;
+    let closeTags = state.changeByRange(range => {
+        var _a;
+        let { head } = range, around = dist_syntaxTree(state).resolveInner(head - 1, -1), name;
+        if (around.name == "JSXStartTag")
+            around = around.parent;
+        if (state.doc.sliceString(head - 1, head) != text || around.name == "JSXAttributeValue" && around.to > head)
+            ;
+        else if (text == ">" && around.name == "JSXFragmentTag") {
+            return { range, changes: { from: head, insert: `</>` } };
+        }
+        else if (text == "/" && around.name == "JSXStartCloseTag") {
+            let empty = around.parent, base = empty.parent;
+            if (base && empty.from == head - 2 &&
+                ((name = elementName(state.doc, base.firstChild, head)) || ((_a = base.firstChild) === null || _a === void 0 ? void 0 : _a.name) == "JSXFragmentTag")) {
+                let insert = `${name}>`;
+                return { range: dist_EditorSelection.cursor(head + insert.length, -1), changes: { from: head, insert } };
+            }
+        }
+        else if (text == ">") {
+            let openTag = findOpenTag(around);
+            if (openTag && openTag.name == "JSXOpenTag" &&
+                !/^\/?>|^<\//.test(state.doc.sliceString(head, head + 2)) &&
+                (name = elementName(state.doc, openTag, head)))
+                return { range, changes: { from: head, insert: `</${name}>` } };
+        }
+        return { range };
+    });
+    if (closeTags.changes.empty)
+        return false;
+    view.dispatch([
+        base,
+        state.update(closeTags, { userEvent: "input.complete", scrollIntoView: true })
+    ]);
+    return true;
+});
+function esLint(eslint, config) {
+    if (!config) {
+        config = {
+            parserOptions: { ecmaVersion: 2019, sourceType: "module" },
+            env: { browser: true, node: true, es6: true, es2015: true, es2017: true, es2020: true },
+            rules: {}
+        };
+        eslint.getRules().forEach((desc, name) => {
+            var _a;
+            if ((_a = desc.meta.docs) === null || _a === void 0 ? void 0 : _a.recommended)
+                config.rules[name] = 2;
+        });
+    }
+    return (view) => {
+        let { state } = view, found = [];
+        for (let { from, to } of javascriptLanguage.findRegions(state)) {
+            let fromLine = state.doc.lineAt(from), offset = { line: fromLine.number - 1, col: from - fromLine.from, pos: from };
+            for (let d of eslint.verify(state.sliceDoc(from, to), config))
+                found.push(translateDiagnostic(d, state.doc, offset));
+        }
+        return found;
+    };
+}
+function mapPos(line, col, doc, offset) {
+    return doc.line(line + offset.line).from + col + (line == 1 ? offset.col - 1 : -1);
+}
+function translateDiagnostic(input, doc, offset) {
+    let start = mapPos(input.line, input.column, doc, offset);
+    let result = {
+        from: start,
+        to: input.endLine != null && input.endColumn != 1 ? mapPos(input.endLine, input.endColumn, doc, offset) : start,
+        message: input.message,
+        source: input.ruleId ? "eslint:" + input.ruleId : "eslint",
+        severity: input.severity == 1 ? "warning" : "error",
+    };
+    if (input.fix) {
+        let { range, text } = input.fix, from = range[0] + offset.pos - start, to = range[1] + offset.pos - start;
+        result.actions = [{
+                name: "fix",
+                apply(view, start) {
+                    view.dispatch({ changes: { from: start + from, to: start + to, insert: text }, scrollIntoView: true });
+                }
+            }];
+    }
+    return result;
+}
+
+
+;// ./src/@development/index.tsx
+
+
+
+
+
+
+
+
+
+
+const controls = [
+    (0,jsx_runtime.jsx)(RecordingControl, { plugins: [AudioRecording, CodeRecording] })
+];
+const playback = new Playback({ duration: 30000 });
 function Lesson() {
-    return ((0,jsx_runtime.jsxs)(Player, Object.assign({ playback: playback }, { children: [(0,jsx_runtime.jsxs)(Audio, { children: [(0,jsx_runtime.jsx)("source", { src: audio_namespaceObject, type: 'audio/mp4' }), (0,jsx_runtime.jsx)("source", { src: static_audio_namespaceObject_0, type: 'audio/webm' })] }), (0,jsx_runtime.jsx)(ui_UI, {})] })));
+    const extensions = react.useMemo(() => [basicSetup, cpp(), javascript()], []);
+    return ((0,jsx_runtime.jsx)(Player, Object.assign({ controls: controls, playback: playback }, { children: (0,jsx_runtime.jsx)(components_RecordCode, { extensions: extensions }) })));
 }
 (0,client/* createRoot */.H)(document.querySelector('main')).render((0,jsx_runtime.jsx)(Lesson, {}));
+
+})();
 
 /******/ })()
 ;

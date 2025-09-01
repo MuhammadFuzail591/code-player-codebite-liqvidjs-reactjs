@@ -45,7 +45,7 @@ export const handleCompile = async (language_id, code) => {
 
     const response = await axios.request(options)
     const token = response.data.token
-    return await checkStatus(token) // ✅ This is now properly returned
+    return await checkStatus(token) 
   } catch (err) {
     console.error('Compilation error:', err)
     throw err
@@ -69,7 +69,7 @@ export const checkStatus = async token => {
 
     if (statusId === 1 || statusId === 2) {
       await new Promise(resolve => setTimeout(resolve, 2000))
-      return await checkStatus(token) // ✅ Recursive wait
+      return await checkStatus(token)
     } else {
       response.data.stdout = decodeBase64(response.data.stdout)
       return response.data.stdout

@@ -21,7 +21,6 @@ export function UI () {
   useEffect(() => {
     loadJSON('code')
       .then(json => {
-        console.log('Replay data loaded:', json)
         setData(json)
       })
       .catch(err => {
